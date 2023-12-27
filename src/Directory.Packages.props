@@ -1,0 +1,27 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <!-- Projects -->
+  <ItemGroup>
+    <PackageVersion Include="OneOf" Version="3.0.263" />
+    <PackageVersion Include="Explicit.Validation" Version="$(ExplicitVersion)" />
+    <PackageVersion Include="Explicit.Configuration" Version="$(ExplicitVersion)" />
+    <PackageVersion Include="Explicit.Arguments" Version="$(ExplicitVersion)" />
+    <PackageVersion Include="Explicit.Utils" Version="1.0.2" />
+    <PackageVersion Include="Microsoft.FeatureManagement.AspNetCore" Version="3.1.1" />
+    <PackageVersion Include="Explicit.Validation.FluentValidation" Version="$(ExplicitVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
+  </ItemGroup>
+  <!-- Tests -->
+  <ItemGroup>
+    <PackageVersion Include="FluentAssertions" Version="7.0.0-alpha.3" />
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.6.0" />
+    <PackageVersion Include="xunit" Version="2.4.2" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.4.5" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+  </ItemGroup>
+</Project>

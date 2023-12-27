@@ -1,0 +1,22 @@
+<Project>
+
+    <PropertyGroup>
+        <Authors>Hubert Dzikuc</Authors>
+        <PackageLicenseFile>LICENSE</PackageLicenseFile>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageProjectUrl>https://github.com/HubiBoar/FeatureSlice</PackageProjectUrl>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/HubiBoar/FeatureSlice</RepositoryUrl>
+    </PropertyGroup>
+    
+    <ItemGroup>
+        <None Include="../../README.md" Pack="true" PackagePath="" Visible="false" />
+        <None Include="../../LICENSE" Pack="true" PackagePath="" Visible="false" />
+    </ItemGroup>
+    
+    <PropertyGroup>
+        <Dotnet>net8.0</Dotnet>
+        <ExplicitVersion>1.0.2</ExplicitVersion>
+        <MicrosoftExtensionsVersion>8.0.0</MicrosoftExtensionsVersion>
+    </PropertyGroup>
+</Project>
