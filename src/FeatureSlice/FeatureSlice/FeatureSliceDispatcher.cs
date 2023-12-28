@@ -5,9 +5,9 @@ namespace FeatureSlice;
 
 public sealed record Disabled;
 
-public interface IDispatcher<TRequest, TResponse>
+public interface IDispatcher
 {
-    internal Task<OneOf<TResponse, Disabled>> Send(Func<TRequest, Task<TResponse>> featureMethod, TRequest request);
+    internal Task<OneOf<TResponse, Disabled>> Send<TRequest, TResponse>(Func<TRequest, Task<TResponse>> featureMethod, TRequest request);
 }
 
 internal sealed class FeatureSliceDispatcher<TRequest, TResponse, TFeatureName>
