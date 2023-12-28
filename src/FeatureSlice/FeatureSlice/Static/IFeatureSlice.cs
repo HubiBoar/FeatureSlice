@@ -1,5 +1,6 @@
 using OneOf.Types;
 using OneOf;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice.Static;
 
@@ -77,7 +78,31 @@ public class ExampleMethod2 : IExampleMethod2
     }
 }
 
-public class Example<TDependency>
+
+public class Example<TMethodDispatcher, TExampleMethod1, TExampleMethod2, TMessageDispatcher, TExampleConsumer1>
+    where TMethodDispatcher : IMethodDispatcher
+    where TExampleMethod1 : IExampleMethod1
+    where TExampleMethod2 : IExampleMethod2
+    where TMessageDispatcher : IMessageDispatcher
+    where TExampleConsumer1 : IExampleConsumer1
+{
+    public Task<ExampleOutput1> Test1()
+    {
+        return TMethodDispatcher.Send<ExampleInput1, ExampleOutput1, TExampleMethod1>(new ExampleInput1());
+    }
+
+    public Task<ExampleOutput2> Test2()
+    {
+        return IMethodDispatcher.Send<ExampleInput2, ExampleOutput2, TExampleMethod2>(new ExampleInput2());
+    }
+
+    public Task TestConsumer()
+    {
+        return TMessageDispatcher.Send<ExampleMessage1, TExampleConsumer1>(new ExampleMessage1());
+    }
+}
+
+public class Example2<TDependency>
     where TDependency : IMethodDispatcher, IExampleMethod1, IExampleMethod2, IMessageDispatcher, IExampleConsumer1
 {
     public Task<ExampleOutput1> Test1()
@@ -98,6 +123,12 @@ public class Example<TDependency>
 
 public class Module : IMethodDispatcher, IExampleMethod1, IExampleMethod2, IMessageDispatcher, IExampleConsumer1
 {
+    public void Register(IServiceCollection services)
+    {
+        services.AddSingleton<Example<MethodDispatcher, ExampleMethod1, ExampleMethod2, MessageDispatcher, ExampleConsumer1>>();
+        services.AddSingleton<Example2<Module>>();
+    }
+
     public static Task<TOutput> Send<TInput, TOutput, TSlice>(TInput input) where TSlice : IMethod<TInput, TOutput> => MethodDispatcher.Send<TInput, TOutput, TSlice>(input);
 
     public static Task Send<TInput, TSlice>(TInput input) where TSlice : IMessageConsumer<TInput> => MessageDispatcher.Send<TInput, TSlice>(input);
