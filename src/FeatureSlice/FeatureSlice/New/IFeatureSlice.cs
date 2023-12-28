@@ -11,7 +11,14 @@ public interface IMethod<TInput, TOutput>
 
 public interface IFeatureSlice<TRequest, TResponse> : IMethod<TRequest, Task<TResponse>>
 {
+    protected IFeatureDispatcher<TRequest, TResponse> Dispatcher { get; set; }
+
     public Task<TResponse> Send(TRequest input)
+    {
+        return Dispatcher.Send(input, this);
+    }
+
+    internal Task<TResponse> InternalHandle(TRequest input)
     {
         return Handle(input);
     }
@@ -20,18 +27,42 @@ public interface IFeatureSlice<TRequest, TResponse> : IMethod<TRequest, Task<TRe
         where TService : class, IFeatureSlice<TRequest, TResponse>
         where TImplementation : class, TService
     {
-        services.AddSingleton<TService, TImplementation>();
+        services.AddSingleton<TImplementation>();
+
+        services.AddSingleton<TService>(provider => {
+            var implementation = provider.GetRequiredService<TImplementation>();
+
+            implementation.Dispatcher = new FeatureSliceDispatcher<TRequest, TResponse>();
+
+            return implementation;
+        });
     }
 }
 
+public interface IFeatureDispatcher<TRequest, TResponse>
+{
+    internal Task<TResponse> Send(TRequest input, IFeatureSlice<TRequest, TResponse> slice);
+}
+
+internal class FeatureSliceDispatcher<TRequest, TResponse> : IFeatureDispatcher<TRequest, TResponse>
+{
+    Task<TResponse> IFeatureDispatcher<TRequest, TResponse>.Send(TRequest input, IFeatureSlice<TRequest, TResponse> slice)
+    {
+        return slice.InternalHandle(input);
+    }
+}
+
+
+
+
 public sealed record Disabled;
 
-public interface IFeatureDispatcher<TRequest, TResponse>
+public interface IFeatureToggleDispatcher<TRequest, TResponse>
 {
     internal Task<OneOf<TResponse, Disabled>> Send(TRequest input, IFeatureSliceToggle<TRequest, TResponse> slice);
 }
 
-internal class FeatureSliceToggleDispatcher<TRequest, TResponse> : IFeatureDispatcher<TRequest, TResponse>
+internal class FeatureSliceToggleDispatcher<TRequest, TResponse> : IFeatureToggleDispatcher<TRequest, TResponse>
 {
     private readonly IFeatureManager _featureManager;
 
@@ -40,7 +71,7 @@ internal class FeatureSliceToggleDispatcher<TRequest, TResponse> : IFeatureDispa
         _featureManager = featureManager;
     }
 
-    async Task<OneOf<TResponse, Disabled>> IFeatureDispatcher<TRequest, TResponse>.Send(TRequest input, IFeatureSliceToggle<TRequest, TResponse> slice)
+    async Task<OneOf<TResponse, Disabled>> IFeatureToggleDispatcher<TRequest, TResponse>.Send(TRequest input, IFeatureSliceToggle<TRequest, TResponse> slice)
     {
         var enabled = await _featureManager.IsEnabledAsync(slice.FeatureName);
 
@@ -49,24 +80,24 @@ internal class FeatureSliceToggleDispatcher<TRequest, TResponse> : IFeatureDispa
             return new Disabled();
         }
 
-        return await slice.InternalSliceHandle(input);
+        return await slice.InternalHandle(input);
     }
 }
 
 public interface IFeatureSliceToggle<TRequest, TResponse> : IMethod<TRequest, Task<TResponse>>
 {
-    internal abstract string FeatureName { get; }
+    public abstract string FeatureName { get; }
 
-    protected IFeatureDispatcher<TRequest, TResponse> Dispatcher { get; }
+    protected IFeatureToggleDispatcher<TRequest, TResponse> Dispatcher { get; set; }
 
     public Task<OneOf<TResponse, Disabled>> Send(TRequest input)
     {
         return Dispatcher.Send(input, this);
     }
 
-    internal Task<TResponse> InternalSliceHandle(TRequest input)
+    internal Task<TResponse> InternalHandle(TRequest input)
     {
-        return this.Handle(input);
+        return Handle(input);
     }
 
     public static void Register<TService, TImplementation>(IServiceCollection services)
@@ -74,8 +105,16 @@ public interface IFeatureSliceToggle<TRequest, TResponse> : IMethod<TRequest, Ta
         where TImplementation : class, TService
     {
         services.AddFeatureManagement();
-        services.AddSingleton<TService, TImplementation>();
-        services.AddSingleton<IFeatureDispatcher<TRequest, TResponse>, FeatureSliceToggleDispatcher<TRequest, TResponse>>();
+        services.AddSingleton<TImplementation>();
+
+        services.AddSingleton<TService>(provider => {
+            var implementation = provider.GetRequiredService<TImplementation>();
+            var manager = provider.GetRequiredService<IFeatureManager>();
+
+            implementation.Dispatcher = new FeatureSliceToggleDispatcher<TRequest, TResponse>(manager);
+
+            return implementation;
+        });
     }
 }
 
