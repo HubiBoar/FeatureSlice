@@ -4,23 +4,26 @@ using OneOf;
 
 namespace FeatureSlice.New;
 
+
+public interface IFeatureDispatcher
+{
+    internal Task<TResponse> Send<TRequest, TResponse>(TRequest input, IFeatureSlice<TRequest, TResponse>.Delegate method);
+}
+
 public interface IMethod<TInput, TOutput>
 {
-    protected TOutput Handle(TInput input);
+    internal TOutput Handle(TInput input);
 }
 
 public interface IFeatureSlice<TRequest, TResponse> : IMethod<TRequest, Task<TResponse>>
 {
-    protected IFeatureDispatcher<TRequest, TResponse> Dispatcher { get; set; }
+    public delegate Task<TResponse> Delegate(TRequest request);
+
+    protected IFeatureDispatcher? Dispatcher { get; set; }
 
     public Task<TResponse> Send(TRequest input)
     {
-        return Dispatcher.Send(input, this);
-    }
-
-    internal Task<TResponse> InternalHandle(TRequest input)
-    {
-        return Handle(input);
+        return Dispatcher!.Send(input, this.Handle);
     }
 
     public static void Register<TService, TImplementation>(IServiceCollection services)
@@ -32,7 +35,7 @@ public interface IFeatureSlice<TRequest, TResponse> : IMethod<TRequest, Task<TRe
         services.AddSingleton<TService>(provider => {
             var implementation = provider.GetRequiredService<TImplementation>();
 
-            implementation.Dispatcher = new FeatureSliceDispatcher<TRequest, TResponse>();
+            implementation.Dispatcher = new FeatureSliceDispatcher();
 
             return implementation;
         });
@@ -44,11 +47,11 @@ public interface IFeatureDispatcher<TRequest, TResponse>
     internal Task<TResponse> Send(TRequest input, IFeatureSlice<TRequest, TResponse> slice);
 }
 
-internal class FeatureSliceDispatcher<TRequest, TResponse> : IFeatureDispatcher<TRequest, TResponse>
+internal class FeatureSliceDispatcher : IFeatureDispatcher
 {
-    Task<TResponse> IFeatureDispatcher<TRequest, TResponse>.Send(TRequest input, IFeatureSlice<TRequest, TResponse> slice)
+    public Task<TResponse> Send<TRequest, TResponse>(TRequest input, IFeatureSlice<TRequest, TResponse>.Delegate method)
     {
-        return slice.InternalHandle(input);
+        return method(input);
     }
 }
 
