@@ -65,15 +65,17 @@ public interface IFeatureToggleDispatcher<TRequest, TResponse>
 internal class FeatureSliceToggleDispatcher<TRequest, TResponse> : IFeatureToggleDispatcher<TRequest, TResponse>
 {
     private readonly IFeatureManager _featureManager;
+    private readonly string _featureName;
 
-    public FeatureSliceToggleDispatcher(IFeatureManager featureManager)
+    public FeatureSliceToggleDispatcher(IFeatureManager featureManager, string featureName)
     {
+        _featureName = featureName;
         _featureManager = featureManager;
     }
 
     async Task<OneOf<TResponse, Disabled>> IFeatureToggleDispatcher<TRequest, TResponse>.Send(TRequest input, IFeatureSliceToggle<TRequest, TResponse> slice)
     {
-        var enabled = await _featureManager.IsEnabledAsync(slice.FeatureName);
+        var enabled = await _featureManager.IsEnabledAsync(_featureName);
 
         if (enabled == false)
         {
@@ -86,7 +88,7 @@ internal class FeatureSliceToggleDispatcher<TRequest, TResponse> : IFeatureToggl
 
 public interface IFeatureSliceToggle<TRequest, TResponse> : IMethod<TRequest, Task<TResponse>>
 {
-    public abstract string FeatureName { get; }
+    public static abstract string FeatureName { get; }
 
     protected IFeatureToggleDispatcher<TRequest, TResponse> Dispatcher { get; set; }
 
@@ -111,20 +113,9 @@ public interface IFeatureSliceToggle<TRequest, TResponse> : IMethod<TRequest, Ta
             var implementation = provider.GetRequiredService<TImplementation>();
             var manager = provider.GetRequiredService<IFeatureManager>();
 
-            implementation.Dispatcher = new FeatureSliceToggleDispatcher<TRequest, TResponse>(manager);
+            implementation.Dispatcher = new FeatureSliceToggleDispatcher<TRequest, TResponse>(manager, TImplementation.FeatureName);
 
             return implementation;
         });
     }
 }
-
-
-
-
-
-
-
-
-
-
-
