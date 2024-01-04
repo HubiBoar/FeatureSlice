@@ -1,14 +1,15 @@
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice.New;
 
-public record ExampleRequest();
-public record ExampleResponse();
+public sealed record ExampleRequest();
+public sealed record ExampleResponse();
 
 public interface IExampleFeatureSlice : IFeatureSlice<ExampleRequest, ExampleResponse>
 {
 }
 
-public class ExampleFeatureSlice : IExampleFeatureSlice
+internal sealed class ExampleFeatureSlice : IExampleFeatureSlice
 {
     public IFeatureDispatcher? Dispatcher { get; set; }
 
@@ -20,5 +21,10 @@ public class ExampleFeatureSlice : IExampleFeatureSlice
     private Task<ExampleResponse> Run(IExampleFeatureSlice slice)
     {
         return slice.Send(new ExampleRequest());
+    }
+
+    public void Register(IServiceCollection collection)
+    {
+        IExampleFeatureSlice.Register<IExampleFeatureSlice, ExampleFeatureSlice>(collection);
     }
 }

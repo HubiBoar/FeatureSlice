@@ -42,10 +42,6 @@ public interface IFeatureSlice<TRequest, TResponse> : IMethod<TRequest, Task<TRe
     }
 }
 
-public interface IFeatureDispatcher<TRequest, TResponse>
-{
-    internal Task<TResponse> Send(TRequest input, IFeatureSlice<TRequest, TResponse> slice);
-}
 
 internal class FeatureSliceDispatcher : IFeatureDispatcher
 {
@@ -60,12 +56,12 @@ internal class FeatureSliceDispatcher : IFeatureDispatcher
 
 public sealed record Disabled;
 
-public interface IFeatureToggleDispatcher<TRequest, TResponse>
+public interface IFeatureToggleDispatcher
 {
-    internal Task<OneOf<TResponse, Disabled>> Send(TRequest input, IFeatureSliceToggle<TRequest, TResponse> slice);
+    internal Task<OneOf<TResponse, Disabled>> Send<TRequest, TResponse>(TRequest input, IFeatureSliceToggle<TRequest, TResponse>.Delegate method);
 }
 
-internal class FeatureSliceToggleDispatcher<TRequest, TResponse> : IFeatureToggleDispatcher<TRequest, TResponse>
+internal class FeatureSliceToggleDispatcher : IFeatureToggleDispatcher
 {
     private readonly IFeatureManager _featureManager;
     private readonly string _featureName;
@@ -76,7 +72,7 @@ internal class FeatureSliceToggleDispatcher<TRequest, TResponse> : IFeatureToggl
         _featureManager = featureManager;
     }
 
-    async Task<OneOf<TResponse, Disabled>> IFeatureToggleDispatcher<TRequest, TResponse>.Send(TRequest input, IFeatureSliceToggle<TRequest, TResponse> slice)
+    async Task<OneOf<TResponse, Disabled>> IFeatureToggleDispatcher.Send<TRequest, TResponse>(TRequest input, IFeatureSliceToggle<TRequest, TResponse>.Delegate method)
     {
         var enabled = await _featureManager.IsEnabledAsync(_featureName);
 
@@ -85,24 +81,26 @@ internal class FeatureSliceToggleDispatcher<TRequest, TResponse> : IFeatureToggl
             return new Disabled();
         }
 
-        return await slice.InternalHandle(input);
+        return await method.Invoke(input);
     }
+}
+
+public interface IFeatureToggleName
+{
+    public static abstract string FeatureName { get; }
 }
 
 public interface IFeatureSliceToggle<TRequest, TResponse> : IMethod<TRequest, Task<TResponse>>
 {
     public static abstract string FeatureName { get; }
 
-    protected IFeatureToggleDispatcher<TRequest, TResponse> Dispatcher { get; set; }
+    public delegate Task<TResponse> Delegate(TRequest request);
+
+    protected IFeatureToggleDispatcher Dispatcher { get; set; }
 
     public Task<OneOf<TResponse, Disabled>> Send(TRequest input)
     {
-        return Dispatcher.Send(input, this);
-    }
-
-    internal Task<TResponse> InternalHandle(TRequest input)
-    {
-        return Handle(input);
+        return Dispatcher.Send(input, Handle);
     }
 
     public static void Register<TService, TImplementation>(IServiceCollection services)
@@ -116,7 +114,7 @@ public interface IFeatureSliceToggle<TRequest, TResponse> : IMethod<TRequest, Ta
             var implementation = provider.GetRequiredService<TImplementation>();
             var manager = provider.GetRequiredService<IFeatureManager>();
 
-            implementation.Dispatcher = new FeatureSliceToggleDispatcher<TRequest, TResponse>(manager, TImplementation.FeatureName);
+            implementation.Dispatcher = new FeatureSliceToggleDispatcher(manager, TImplementation.FeatureName);
 
             return implementation;
         });
