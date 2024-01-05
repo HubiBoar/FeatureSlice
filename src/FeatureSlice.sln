@@ -11,6 +11,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "FeatureSlice", "FeatureSlic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeatureSlice", "FeatureSlice\FeatureSlice\FeatureSlice.csproj", "{5C5E89E0-4F9D-4E38-B603-44FDC0E76D70}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeatureSliceGenerator", "FeatureSlice\Generator\Generator\FeatureSliceGenerator.csproj", "{9970963A-1AA6-4936-8AB4-8653F18AF505}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,9 +30,14 @@ Global
 		{5C5E89E0-4F9D-4E38-B603-44FDC0E76D70}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C5E89E0-4F9D-4E38-B603-44FDC0E76D70}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C5E89E0-4F9D-4E38-B603-44FDC0E76D70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9970963A-1AA6-4936-8AB4-8653F18AF505}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9970963A-1AA6-4936-8AB4-8653F18AF505}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9970963A-1AA6-4936-8AB4-8653F18AF505}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9970963A-1AA6-4936-8AB4-8653F18AF505}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{DCC49367-E120-44D7-A673-A093ECBDAEBB} = {85C48B36-DA1B-4C30-A540-6217EEDA39B4}
 		{5C5E89E0-4F9D-4E38-B603-44FDC0E76D70} = {56AE5EF6-0179-4D75-B1FD-08EE7476786D}
+		{9970963A-1AA6-4936-8AB4-8653F18AF505} = {56AE5EF6-0179-4D75-B1FD-08EE7476786D}
 	EndGlobalSection
 EndGlobal
