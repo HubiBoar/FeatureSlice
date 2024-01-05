@@ -81,7 +81,7 @@ public class FeatureSliceGen : IIncrementalGenerator
             extensionsList.Add(code);
         }
 
-        var extensions = string.Join(",\n   ", extensionsList);
+        var extensions = string.Join("\n\n", extensionsList);
 
         //set namespace to be the same as class implementing it
         var extensionsClass = $$"""
