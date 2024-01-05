@@ -1,9 +1,9 @@
-﻿namespace ClassListGenerator;
+﻿namespace ClassesList;
 
-public static class ClassNames
+public static class ClassesNamesList
 {
     public static List<string> Names = new ()
     {
-        "Samples.Class1"
+        "IMethod<IExampleMethod.Request, IExampleMethod.Response>"
     };
 }

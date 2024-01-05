@@ -4,7 +4,6 @@ using OneOf;
 
 namespace FeatureSlice.New;
 
-
 public interface IFeatureDispatcher
 {
     internal Task<TResponse> Send<TRequest, TResponse>(TRequest input, IFeatureSlice<TRequest, TResponse>.Delegate method);

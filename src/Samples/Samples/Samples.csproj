@@ -22,6 +22,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\FeatureSlice\Generator\Generator\FeatureSliceGenerator.csproj" OutputItemType="Analyzer"/>
+    <ProjectReference Include="..\..\FeatureSlice\FeatureSlice\FeatureSlice.csproj"/>
+  </ItemGroup>
+
+  <ItemGroup>
+      <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
+      <PackageReference Include="Explicit.Utils" />
   </ItemGroup>
 
 </Project>

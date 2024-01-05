@@ -3,20 +3,20 @@ using Microsoft.FeatureManagement;
 using OneOf;
 using OneOf.Types;
 
-
+namespace FeatureSlice.New.Generation;
 
 //------------ Base
 
-internal interface IMethod
+public interface IMethod
 {
 }
 
-internal interface IMethodBase<TRequest, TResponse> : IMethod
+public interface IMethodBase<TRequest, TResponse> : IMethod
 {
     public TResponse Handle(TRequest request);
 }
 
-internal interface IMethodPipeline<TRequest, TResponse>
+public interface IMethodPipeline<TRequest, TResponse>
 {
     public TResponse Handle(TRequest request, Func<TRequest, TResponse> next);
 }
@@ -26,7 +26,7 @@ internal interface IMethodPipeline<TRequest, TResponse>
 
 //------------ Dispatcher
 
-internal interface IDispatcher<T>
+public interface IDispatcher<T>
     where T : IMethod
 {
     internal T Method { get; }
@@ -52,7 +52,7 @@ internal sealed class Dispatcher<T> : IDispatcher<T>
 
 //------------ Method
 
-internal interface IMethodRegisterer : IMethod
+public interface IMethodRegisterer : IMethod
 {
     public static void AddFeature<TService, TImplementation>(IServiceCollection services)
         where TService : class, IMethodRegisterer
@@ -69,7 +69,7 @@ internal interface IMethodRegisterer : IMethod
     }
 }
 
-internal interface IMethod<TRequest, TResponse> : IMethodBase<TRequest, TResponse>, IMethodRegisterer
+public interface IMethod<TRequest, TResponse> : IMethodBase<TRequest, TResponse>, IMethodRegisterer
 {
     public static TResponse Send<T>(IDispatcher<T> dispatcher, TRequest request)
         where T : IMethod<TRequest, TResponse>
@@ -80,21 +80,13 @@ internal interface IMethod<TRequest, TResponse> : IMethodBase<TRequest, TRespons
     }
 }
 
-internal interface IExampleMethod : IMethod<IExampleMethod.Request, IExampleMethod.Response>
+public interface IExampleMethod : IMethod<IExampleMethod.Request, IExampleMethod.Response>
 {
     public sealed record Request();
     public sealed record Response();
 }
 
-internal sealed class ExampleMethod : IExampleMethod
-{
-    public IExampleMethod.Response Handle(IExampleMethod.Request request)
-    {
-        return new IExampleMethod.Response();
-    }
-}
-
-internal static class MethodRegisterer
+public static class MethodRegisterer
 {
     public static void AddFeature<TService, TImplementation>(this IServiceCollection services)
         where TService : class, IMethodRegisterer
@@ -108,7 +100,7 @@ internal static class MethodRegisterer
 
 //------------ FeatureSlice
 
-internal interface IFeatureSliceRegisterer : IMethod
+public interface IFeatureSliceRegisterer : IMethod
 {
     public static void AddFeature<TService, TImplementation>(IServiceCollection services)
         where TService : class, IFeatureSliceRegisterer
@@ -128,7 +120,7 @@ internal interface IFeatureSliceRegisterer : IMethod
 
 public struct Disabled();
 
-internal interface IFeatureSlice<TRequest, TResponse> : IMethodBase<TRequest, Task<TResponse>>, IFeatureName, IFeatureSliceRegisterer
+public interface IFeatureSlice<TRequest, TResponse> : IMethodBase<TRequest, Task<TResponse>>, IFeatureName, IFeatureSliceRegisterer
 {
     public static async Task<OneOf<TResponse, Disabled>> Send<T>(IDispatcher<T> dispatcher, TRequest request)
         where T : IFeatureSlice<TRequest, TResponse>
@@ -146,28 +138,18 @@ internal interface IFeatureSlice<TRequest, TResponse> : IMethodBase<TRequest, Ta
     }
 }
 
-internal interface IFeatureName
+public interface IFeatureName
 {
     public abstract string FeatureName { get; }
 }
 
-internal interface IExampleFeatureSlice : IFeatureSlice<IExampleFeatureSlice.Request, IExampleFeatureSlice.Response>
+public interface IExampleFeatureSlice : IFeatureSlice<IExampleFeatureSlice.Request, IExampleFeatureSlice.Response>
 {
     public sealed record Request();
     public sealed record Response();
 }
 
-internal class ExampleFeatureSlice : IExampleFeatureSlice
-{
-    public string FeatureName => "ExampleFeatureSlice";
-
-    public Task<IExampleFeatureSlice.Response> Handle(IExampleFeatureSlice.Request request)
-    {
-        return Task.FromResult(new IExampleFeatureSlice.Response());
-    }
-}
-
-internal static class FeatureRegisterer
+public static class FeatureRegisterer
 {
     public static void AddFeature<TService, TImplementation>(this IServiceCollection services)
         where TService : class, IFeatureSliceRegisterer
@@ -182,14 +164,14 @@ internal static class FeatureRegisterer
 //------------ MessageConsumer
 
 
-internal interface IMessage
+public interface IMessage
 {
     public static abstract string MessageName { get; }
 }
 
-internal struct Retry();
+public struct Retry();
 
-internal interface IMessagingConfiguration
+public interface IMessagingConfiguration
 {
     public Task Register<TMessage>(IMessageConsumer<TMessage> consumer)
         where TMessage : IMessage;
@@ -198,7 +180,7 @@ internal interface IMessagingConfiguration
         where TMessage : IMessage;
 }
 
-internal interface IMessageConsumerRegisterer : IMethod
+public interface IMessageConsumerRegisterer : IMethod
 {
     public static void AddFeature<TService, TImplementation>(IServiceCollection services)
         where TService : class, IMessageConsumerRegisterer
@@ -219,7 +201,7 @@ internal interface IMessageConsumerRegisterer : IMethod
     internal Task Setup(IMessagingConfiguration configuration);
 }
 
-internal interface IMessageConsumer<TMessage> : IMethodBase<TMessage, Task<OneOf<Success, Retry, Error>>>, IMessageConsumerRegisterer, IFeatureName
+public interface IMessageConsumer<TMessage> : IMethodBase<TMessage, Task<OneOf<Success, Retry, Error>>>, IMessageConsumerRegisterer, IFeatureName
     where TMessage : IMessage
 {
     public static async Task<OneOf<Success, Disabled>> Send<T>(IDispatcher<T> dispatcher, TMessage request)
@@ -246,7 +228,7 @@ internal interface IMessageConsumer<TMessage> : IMethodBase<TMessage, Task<OneOf
 }
 
 
-internal interface IExampleMessageConsumer : IMessageConsumer<IExampleMessageConsumer.Message>
+public interface IExampleMessageConsumer : IMessageConsumer<IExampleMessageConsumer.Message>
 {
     public sealed record Message() : IMessage
     {
@@ -254,17 +236,7 @@ internal interface IExampleMessageConsumer : IMessageConsumer<IExampleMessageCon
     }
 }
 
-internal sealed class ExampleMessageConsumer : IExampleMessageConsumer
-{
-    public string FeatureName => "ExampleMessageConsumer";
-
-    public Task<OneOf<Success, Retry, Error>> Handle(IExampleMessageConsumer.Message request)
-    {
-        return Task.FromResult(OneOf<Success, Retry, Error>.FromT0(new Success()));
-    }
-}
-
-internal static class MessageConsumerRegisterer
+public static class MessageConsumerRegisterer
 {
     public static void AddFeature<TService, TImplementation>(this IServiceCollection services)
         where TService : class, IMessageConsumerRegisterer
@@ -277,37 +249,7 @@ internal static class MessageConsumerRegisterer
 
 
 
-//------------ Example
-
-internal sealed class Dependncy
-{
-    public static void Register(IServiceCollection services)
-    {
-        services.AddFeature<IExampleFeatureSlice, ExampleFeatureSlice>();
-        services.AddFeature<IExampleMethod, ExampleMethod>();
-        services.AddFeature<IExampleMessageConsumer, ExampleMessageConsumer>();
-    }
-
-    private readonly IDispatcher<IExampleMethod> _method;
-    private readonly IDispatcher<IExampleFeatureSlice> _featureSlice;
-    private readonly IDispatcher<IExampleMessageConsumer> _consumer;
-
-    public Dependncy(IDispatcher<IExampleMethod> method, IDispatcher<IExampleFeatureSlice> featureSlice, IDispatcher<IExampleMessageConsumer> consumer)
-    {
-        _method = method;
-        _featureSlice = featureSlice;
-        _consumer = consumer;
-    }
-
-    private async Task Run()
-    {
-        var methodResult = _method.Send(new IExampleMethod.Request());
-        var featureResult = await _featureSlice.Send(new IExampleFeatureSlice.Request());
-        var consumerResult = await _consumer.Send(new IExampleMessageConsumer.Message());
-    }
-}
-
-internal static class DispatcherHelper
+public static class DispatcherHelper
 {
     public static TResponse RunPipeline<TRequest, TResponse>(
         TRequest request,
@@ -335,23 +277,23 @@ internal static class DispatcherHelper
 
 
 //------------ Generate Automatically
-internal static class DisaptcherExtensions
-{
-    public static IExampleMethod.Response Send<T>(this IDispatcher<T> dispatcher, IExampleMethod.Request request)
-        where T : IExampleMethod
-    {
-        return IExampleMethod.Send(dispatcher, request);
-    }
+// internal static class DisaptcherExtensions
+// {
+//     public static IExampleMethod.Response Send<T>(this IDispatcher<T> dispatcher, IExampleMethod.Request request)
+//         where T : IMethod<IExampleMethod.Request, IExampleMethod.Response>
+//     {
+//         return IMethod<IExampleMethod.Request, IExampleMethod.Response>.Send(dispatcher, request);
+//     }
 
-    public static Task<OneOf<IExampleFeatureSlice.Response, Disabled>> Send<T>(this IDispatcher<T> dispatcher, IExampleFeatureSlice.Request request)
-        where T : IExampleFeatureSlice
-    {
-        return IExampleFeatureSlice.Send(dispatcher, request);
-    }
+//     public static Task<OneOf<IExampleFeatureSlice.Response, Disabled>> Send<T>(this IDispatcher<T> dispatcher, IExampleFeatureSlice.Request request)
+//         where T : IExampleFeatureSlice
+//     {
+//         return IExampleFeatureSlice.Send(dispatcher, request);
+//     }
 
-    public static Task<OneOf<Success, Disabled>> Send<T>(this IDispatcher<T> dispatcher, IExampleMessageConsumer.Message message)
-        where T : IExampleMessageConsumer
-    {
-        return IExampleMessageConsumer.Send(dispatcher, message);
-    }
-}
+//     public static Task<OneOf<Success, Disabled>> Send<T>(this IDispatcher<T> dispatcher, IExampleMessageConsumer.Message message)
+//         where T : IExampleMessageConsumer
+//     {
+//         return IExampleMessageConsumer.Send(dispatcher, message);
+//     }
+// }

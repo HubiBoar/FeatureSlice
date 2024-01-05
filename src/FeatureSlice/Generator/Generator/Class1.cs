@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -46,23 +47,62 @@ public class FeatureSliceGen : IIncrementalGenerator
     {
         var (comilation, syntaxes) = tuple;
 
-        var nameList = new List<string>();
+        var methods = new List<string>();
 
         foreach(var syntax in syntaxes)
         {
             var symbol = comilation
                 .GetSemanticModel(syntax.SyntaxTree)
-                .GetDeclaredSymbol(syntax) as INamedTypeSymbol;
+                .GetDeclaredSymbol(syntax) as ITypeSymbol;
 
-            nameList.Add($"\"{symbol.ToDisplayString()}\"");
+            var implemented = symbol.AllInterfaces.Where(x => x.ToDisplayString().StartsWith("FeatureSlice.New.Generation.IMethod<")).Select(x => x.ToDisplayString()).ToArray();
+
+            foreach(var i in implemented)
+            {
+                methods.Add(i.Replace("FeatureSlice.New.Generation.", string.Empty));
+            }
         }
 
-        var names = String.Join(",\n     ", nameList);
+        var extensionsList = new List<string>();
+        foreach(var i in methods)
+        {
+            var onlyTypes = i.Replace("IMethod<", string.Empty).Replace(">", string.Empty).Replace(" ", string.Empty);
+            var types = onlyTypes.Split(',');
+            var request = types[0];
+            var response = types[1];
+            var code = $$"""
+                public static {{response}} Send<T>(this IDispatcher<T> dispatcher, {{request}} request)
+                    where T : {{i}}
+                {
+                    return {{i}}.Send(dispatcher, request);
+                }
+            """;
+
+            extensionsList.Add(code);
+        }
+
+        var extensions = string.Join(",\n   ", extensionsList);
+
+        //set namespace to be the same as class implementing it
+        var extensionsClass = $$"""
+        using FeatureSlice.New.Generation;
+
+        namespace ServicesExtensions;
+
+        public static class Extensions
+        {
+        {{extensions}}
+        }
+        """;
+
+        var methodNames = methods.Select(x => $"\"{x}\"").ToArray();
+
+        var names = string.Join(",\n        ", methodNames);
 
         var theCode = $$"""
-        namespace ClassListGenerator;
+        namespace ClassesList;
 
-        public static class ClassNames
+        public static class ClassesNamesList
         {
             public static List<string> Names = new ()
             {
@@ -72,5 +112,12 @@ public class FeatureSliceGen : IIncrementalGenerator
         """;
 
         context.AddSource("YourClassList.g.cs", theCode);
+        context.AddSource("extensions.g.cs", extensionsClass);
     }
+
+    // public static IExampleMethod.Response Send<T>(this IDispatcher<T> dispatcher, IExampleMethod.Request request)
+    //     where T : IExampleMethod
+    // {
+    //     return IExampleMethod.Send(dispatcher, request);
+    // }
 }
