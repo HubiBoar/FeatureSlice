@@ -50,7 +50,6 @@ internal sealed class ExampleMessageConsumer : IExampleMessageConsumer
     }
 }
 
-
 public sealed class Dependncy
 {
     public static void Register(IServiceCollection services)

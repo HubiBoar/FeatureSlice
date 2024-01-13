@@ -80,12 +80,24 @@ public class FeatureSliceGen : IIncrementalGenerator
 
             extensionsList.Add(code);
         }
+        //Method
+        AddExtensions("FeatureSlice.New.Generation.Method", extensionsList, context);
+        AddMethodNames(methods, context);
+    }
 
+    // public static IExampleMethod.Response Send<T>(this IDispatcher<T> dispatcher, IExampleMethod.Request request)
+    //     where T : IExampleMethod
+    // {
+    //     return IExampleMethod.Send(dispatcher, request);
+    // }
+
+    private static void AddExtensions(string extensionNameSpace, IReadOnlyCollection<string> extensionsList, SourceProductionContext context)
+    {
         var extensions = string.Join("\n\n", extensionsList);
 
         //set namespace to be the same as class implementing it
         var extensionsClass = $$"""
-        using FeatureSlice.New.Generation;
+        using {{extensionNameSpace}};
 
         namespace ServicesExtensions;
 
@@ -94,6 +106,13 @@ public class FeatureSliceGen : IIncrementalGenerator
         {{extensions}}
         }
         """;
+
+        context.AddSource("extensionNameSpace.extensions.g.cs", extensionsClass);
+        
+    }
+
+    private static void AddMethodNames(IReadOnlyCollection<string> methods, SourceProductionContext context)
+    {
 
         var methodNames = methods.Select(x => $"\"{x}\"").ToArray();
 
@@ -111,13 +130,9 @@ public class FeatureSliceGen : IIncrementalGenerator
         }
         """;
 
-        context.AddSource("YourClassList.g.cs", theCode);
-        context.AddSource("extensions.g.cs", extensionsClass);
-    }
 
-    // public static IExampleMethod.Response Send<T>(this IDispatcher<T> dispatcher, IExampleMethod.Request request)
-    //     where T : IExampleMethod
-    // {
-    //     return IExampleMethod.Send(dispatcher, request);
-    // }
+        context.AddSource("MethodNames.g.cs", theCode);
+    }
 }
+
+
