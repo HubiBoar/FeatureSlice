@@ -1,3 +1,4 @@
+using FeatureSliceGenerator;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.FeatureManagement;
 using OneOf;
@@ -6,7 +7,6 @@ using OneOf.Types;
 namespace FeatureSlice.New.Generation;
 
 //------------ Base
-
 public interface IMethodBase
 {
 }
@@ -48,12 +48,12 @@ internal sealed class Dispatcher<T> : IDispatcher<T>
     }
 }
 
-
-
 //------------ Method
 
+[GenerateExtension("IMethod")]
 public interface IMethod<TRequest, TResponse> : IMethodBase<TRequest, TResponse>
 {
+    [GenerateExtensionMethod]
     public static void AddFeature<TService, TImplementation>(IServiceCollection services)
         where TService : class, IMethod<TRequest, TResponse>
         where TImplementation : class, TService
@@ -68,6 +68,7 @@ public interface IMethod<TRequest, TResponse> : IMethodBase<TRequest, TResponse>
         });
     }
 
+    [GenerateExtensionMethod]
     public static TResponse Send<T>(IDispatcher<T> dispatcher, TRequest request)
         where T : IMethod<TRequest, TResponse>
     {
@@ -87,8 +88,10 @@ public interface IExampleMethod : IMethod<IExampleMethod.Request, IExampleMethod
 
 public struct Disabled();
 
+[GenerateExtension("IFeatureSlice")]
 public interface IFeatureSlice<TRequest, TResponse> : IMethodBase<TRequest, Task<TResponse>>, IFeatureName
 {
+    [GenerateExtensionMethod]
     public static void AddFeature<TService, TImplementation>(IServiceCollection services)
         where TService : class, IFeatureSlice<TRequest, TResponse>
         where TImplementation : class, TService
@@ -104,6 +107,7 @@ public interface IFeatureSlice<TRequest, TResponse> : IMethodBase<TRequest, Task
         });
     }
 
+    [GenerateExtensionMethod]
     public static async Task<OneOf<TResponse, Disabled>> Send<T>(IDispatcher<T> dispatcher, TRequest request)
         where T : IFeatureSlice<TRequest, TResponse>
     {
@@ -157,9 +161,11 @@ public interface IMessageConsumerSetup
     internal Task Setup(IMessagingConfiguration configuration);
 }
 
+[GenerateExtension("IMessageConsumer")]
 public interface IMessageConsumer<TMessage> : IMethodBase<TMessage, Task<OneOf<Success, Retry, Error>>>, IMessageConsumerSetup, IFeatureName
     where TMessage : IMessage
 {
+    [GenerateExtensionMethod]
     public static void AddFeature<TService, TImplementation>(IServiceCollection services)
         where TService : class, IMessageConsumer<TMessage>
         where TImplementation : class, TService
@@ -176,6 +182,7 @@ public interface IMessageConsumer<TMessage> : IMethodBase<TMessage, Task<OneOf<S
         });
     }
 
+    [GenerateExtensionMethod]
     public static async Task<OneOf<Success, Disabled>> Send<T>(IDispatcher<T> dispatcher, TMessage request)
         where T : IMessageConsumer<TMessage>
     {

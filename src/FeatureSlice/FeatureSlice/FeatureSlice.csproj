@@ -11,4 +11,8 @@
         <PackageReference Include="Explicit.Utils" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ProjectReference Include="..\Generator\Generator\FeatureSliceGenerator.csproj" />
+    </ItemGroup>
+
 </Project>

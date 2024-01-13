@@ -2,7 +2,6 @@
 using OneOf;
 using OneOf.Types;
 using FeatureSlice.New.Generation;
-using ServicesExtensions;
 
 namespace Samples;
 
