@@ -53,7 +53,7 @@ internal sealed class Dispatcher<T> : IDispatcher<T>
 [GenerateExtension("IMethod")]
 public interface IMethod<TRequest, TResponse> : IMethodBase<TRequest, TResponse>
 {
-    [GenerateExtensionMethod]
+    [GenerateExtensionMethod("Microsoft.Extensions.DependencyInjection")]
     public static void AddFeature<TService, TImplementation>(IServiceCollection services)
         where TService : class, IMethod<TRequest, TResponse>
         where TImplementation : class, TService
@@ -91,7 +91,7 @@ public struct Disabled();
 [GenerateExtension("IFeatureSlice")]
 public interface IFeatureSlice<TRequest, TResponse> : IMethodBase<TRequest, Task<TResponse>>, IFeatureName
 {
-    [GenerateExtensionMethod]
+    [GenerateExtensionMethod("Microsoft.Extensions.DependencyInjection")]
     public static void AddFeature<TService, TImplementation>(IServiceCollection services)
         where TService : class, IFeatureSlice<TRequest, TResponse>
         where TImplementation : class, TService
@@ -165,7 +165,7 @@ public interface IMessageConsumerSetup
 public interface IMessageConsumer<TMessage> : IMethodBase<TMessage, Task<OneOf<Success, Retry, Error>>>, IMessageConsumerSetup, IFeatureName
     where TMessage : IMessage
 {
-    [GenerateExtensionMethod]
+    [GenerateExtensionMethod("Microsoft.Extensions.DependencyInjection")]
     public static void AddFeature<TService, TImplementation>(IServiceCollection services)
         where TService : class, IMessageConsumer<TMessage>
         where TImplementation : class, TService
@@ -243,30 +243,30 @@ public static class DispatcherHelper
 
 
 //------------ Generate Automatically
-internal static class DisaptcherExtensions
-{
-    public static IExampleMethod.Response Send<T>(this IDispatcher<T> dispatcher, IExampleMethod.Request request)
-        where T : IMethod<IExampleMethod.Request, IExampleMethod.Response>
-    {
-        return IMethod<IExampleMethod.Request, IExampleMethod.Response>.Send(dispatcher, request);
-    }
+// internal static class DisaptcherExtensions
+// {
+//     public static IExampleMethod.Response Send<T>(this IDispatcher<T> dispatcher, IExampleMethod.Request request)
+//         where T : IMethod<IExampleMethod.Request, IExampleMethod.Response>
+//     {
+//         return IMethod<IExampleMethod.Request, IExampleMethod.Response>.Send(dispatcher, request);
+//     }
 
-    public static Task<OneOf<IExampleFeatureSlice.Response, Disabled>> Send<T>(this IDispatcher<T> dispatcher, IExampleFeatureSlice.Request request)
-        where T : IExampleFeatureSlice
-    {
-        return IExampleFeatureSlice.Send(dispatcher, request);
-    }
+//     public static Task<OneOf<IExampleFeatureSlice.Response, Disabled>> Send<T>(this IDispatcher<T> dispatcher, IExampleFeatureSlice.Request request)
+//         where T : IExampleFeatureSlice
+//     {
+//         return IExampleFeatureSlice.Send(dispatcher, request);
+//     }
 
-    public static Task<OneOf<Success, Disabled>> Send<T>(this IDispatcher<T> dispatcher, IExampleMessageConsumer.Message message)
-        where T : IExampleMessageConsumer
-    {
-        return IExampleMessageConsumer.Send(dispatcher, message);
-    }
+//     public static Task<OneOf<Success, Disabled>> Send<T>(this IDispatcher<T> dispatcher, IExampleMessageConsumer.Message message)
+//         where T : IExampleMessageConsumer
+//     {
+//         return IExampleMessageConsumer.Send(dispatcher, message);
+//     }
 
-    public static void AddFeature<TService, TImplementation>(this IServiceCollection services)
-        where TService : class, IExampleMessageConsumer
-        where TImplementation : class, TService
-    {
-        IExampleMessageConsumer.AddFeature<TService, TImplementation>(services);
-    }
-}
+//     public static void AddFeature<TService, TImplementation>(this IServiceCollection services)
+//         where TService : class, IExampleMessageConsumer
+//         where TImplementation : class, TService
+//     {
+//         IExampleMessageConsumer.AddFeature<TService, TImplementation>(services);
+//     }
+// }

@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Operations;
 
@@ -44,6 +45,13 @@ public sealed class GenerateExtensionAttribute : Attribute
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class GenerateExtensionMethodAttribute : Attribute
 {
+    public string Namespace { get; }
+
+    public GenerateExtensionMethodAttribute(string Namespace = null)
+    {
+        this.Namespace = Namespace;
+    }
+
 }
 
 [Generator]
@@ -130,28 +138,50 @@ public class FeatureSliceGen : IIncrementalGenerator
 
     private static string ExtensionMethodBody(IMethodSymbol method, int index)
     {
-        var methodName = method.ToDisplayString();
-        var parameters = method.Parameters.Select(x => x.ToDisplayString()).ToArray();
-        var arguments = method.TypeParameters.Select(x => x.ToDisplayString()).ToArray();
-        var constraints = method.TypeParameters.Select(GetTypeParameterName).ToArray();
+        var attributeProperty = method.GetAttributes()
+            .First(x => x.AttributeClass.ToDisplayString() == ExtensionMethodAttribute)
+            .ConstructorArguments[0].Value;
 
-        var returns = method.ReturnsVoid ? "" : "return ";
-        var body = $"{method.ToDisplayString().Split('(')[0]}({string.Join(",", method.Parameters.Select(x => x.Name))})";
+        var methodNamespace = attributeProperty is null ? method.ContainingNamespace.ToDisplayString() : attributeProperty;
+
+        var genericParameters = $"<{string.Join(", ", method
+            .TypeParameters
+            .Select(x => x.ToDisplayString())
+            .ToArray())}>";
+
+        var genericConstraints = $"{string.Join("\n\t", method
+            .TypeParameters
+            .Select(GetTypeParameterName)
+            .ToArray())}";
+
+        var arguments = string.Join(", ", method
+            .Parameters
+            .Select(x => x.ToDisplayString())
+            .ToArray());
+
+        var returnType = method.ReturnType.ToDisplayString();
+        var methodName = method.Name;
+
+        var returnBody = $"{method.ToDisplayString().Split('(')[0]}({string.Join(",", method.Parameters.Select(x => x.Name))})";
+        var returns = method.ReturnsVoid ? returnBody : $"return {returnBody}";
 
         var methodBody = new StringBuilder()
-            .AppendLine($"public static class Extensions{index}")
+            .AppendLine($"namespace {methodNamespace}")
             .AppendLine("{")
-            .Append("\tpublic static ")
-            .Append(method.ReturnType.ToDisplayString())
-            .Append($" {method.Name}")
-            .Append($"<{string.Join(", ", arguments)}>")
+            .AppendLine($"\tpublic static class Extensions{index}")
+            .AppendLine("\t{")
+            .Append("\t\tpublic static ")
+            .Append(returnType)
+            .Append($" {methodName}")
+            .Append(genericParameters)
             .Append("(this ")
-            .Append(string.Join(", ", parameters))
+            .Append(arguments)
             .Append(")")
             .AppendLine()
-            .AppendLine(string.Join("\n", constraints))
-            .AppendLine("\t{")
-            .AppendLine($"\t\t{returns}{body};")
+            .AppendLine($"\t{genericConstraints}")
+            .AppendLine("\t\t{")
+            .AppendLine($"\t\t\t{returns};")
+            .AppendLine("\t\t}")
             .AppendLine("\t}")
             .AppendLine("}");
 
@@ -171,18 +201,8 @@ public class FeatureSliceGen : IIncrementalGenerator
         //set namespace to be the same as class implementing it
         context.AddSource(
             hintName: "extensionNameSpace.extensions.g.cs",
-            source: $$"""
-            namespace Microsoft.Extensions.DependencyInjection;
-
-            {{string.Join("\n", extensions)}}
-            """);
+            source: string.Join("\n", extensions));
     }
-
-    private static string AddTabsForEachNewLine(string value, int tabsCount)
-    {
-        var tabs = Enumerable.Range(0, tabsCount).Select(x => "\t");
-        return $"{tabs}{string.Join($"\n{tabs}", value.Split('\n'))}";
-    } 
 
     private static void AddMethodNames(
         IReadOnlyCollection<(INamedTypeSymbol symbol, IReadOnlyCollection<IMethodSymbol> methods)> allTypes, 
@@ -199,6 +219,16 @@ public class FeatureSliceGen : IIncrementalGenerator
                 methods.Add($"\t method --> {method.ToDisplayString()}");
                 methods.Add($"\t returnType --> {method.ReturnType.ToDisplayString()}");
                 methods.Add($"\t name --> {method.Name}");
+
+                var attribute = method.GetAttributes()
+                    .First(x => x.AttributeClass.ToDisplayString() == ExtensionMethodAttribute);
+
+                methods.Add($"\t attributeArguments --> {attribute.ConstructorArguments.Count()}");
+
+                foreach(var attributeArgument in attribute.ConstructorArguments)
+                {
+                    methods.Add($"\t\t attribute --> {attributeArgument.Value}");
+                }
 
                 foreach(var argument in method.TypeArguments)
                 {
