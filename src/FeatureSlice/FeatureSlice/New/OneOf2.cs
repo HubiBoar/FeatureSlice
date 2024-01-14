@@ -1,18 +1,6 @@
 namespace OneOf2Example;
 
-public interface IOneOfT0<T0>
-{
-}
-
-public interface IOneOfT1<T1>
-{
-}
-
-public interface IOneOfT2<T2>
-{
-}
-
-public partial record T1Example()
+public sealed partial record T1Example()
 {
     public Task<ExampleReturn> Handle()
     {
@@ -20,7 +8,7 @@ public partial record T1Example()
     }
 }
 
-public partial record T2Example()
+public sealed partial record T2Example()
 {
     public Task<ExampleReturn> Handle()
     {
@@ -28,7 +16,7 @@ public partial record T2Example()
     }
 }
 
-public partial record T3Example()
+public sealed partial record T3Example()
 {
     public Task<ExampleReturn> Handle()
     {
@@ -37,6 +25,16 @@ public partial record T3Example()
 }
 
 public sealed record ExampleReturn();
+
+public interface IOneOfT0<T0>
+{
+}
+public interface IOneOfT1<T1>
+{
+}
+public interface IOneOfT2<T2>
+{
+}
 
 public interface IOneOf<T0, T1> : IOneOfT0<T0>, IOneOfT1<T1>
 {
@@ -89,8 +87,9 @@ public sealed class Dependncy
         };
     }
 
-    public Task<ExampleReturn> HandleAsync(IOneOf<T1Example, T2Example, T3Example> oneOf)
+    public Task<ExampleReturn> HandleAsync(IOneOf<T2Example, T2Example, T3Example> oneOf)
     {
+        //Does not work
         return oneOf switch
         {
             T1Example t => t.Handle(),
@@ -103,16 +102,16 @@ public sealed class Dependncy
 
 
 //Auto Generated
-public partial record T1Example : IOneOfT0<T1Example>, IOneOfT1<T1Example>, IOneOfT2<T1Example>
+public partial record T1Example : IOneOf<T1Example, T2Example, T3Example>, IOneOf<T1Example, T1Example, T3Example>
 {
 }
 
 //Auto Generated
-public partial record T2Example : IOneOfT0<T2Example>, IOneOfT1<T2Example>, IOneOfT2<T2Example>
+public partial record T2Example : IOneOf<T1Example, T2Example, T3Example>, IOneOf<T2Example, T2Example, T3Example>
 {
 }
 
 //Auto Generated
-public partial record T3Example : IOneOfT0<T3Example>, IOneOfT1<T3Example>, IOneOfT2<T3Example>
+public partial record T3Example : IOneOf<T1Example, T2Example, T3Example>, IOneOf<T2Example, T2Example, T3Example>
 {
 }
