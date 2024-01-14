@@ -1,59 +1,29 @@
+using OneOfGen;
+
 namespace OneOfExample;
 
-public record T1Example()
+public interface IOneOfT0<T>
+    where T : IOneOfElement
 {
-    public Task Handle()
-    {
-        return Task.CompletedTask;
-    }
 }
-public record T2Example()
+public interface IOneOfT1<T>
+    where T : IOneOfElement
 {
-    public Task Handle()
-    {
-        return Task.CompletedTask;
-    }
 }
-public record T3Example()
-{
-    public Task Handle()
-    {
-        return Task.CompletedTask;
-    }
-}
-
-public interface IOneOf<T1, T2, T3>
+public interface IOneOfT2<T>
+    where T : IOneOfElement
 {
 }
 
-public sealed record Is<T>(T Value) : IOneOf<T, T2Example, T3Example>, IOneOf<T1Example, T, T3Example>, IOneOf<T1Example, T2Example, T>
+public interface IOneOf<T0, T1> : IOneOfT0<T0>, IOneOfT1<T1>
+    where T0 : IOneOfElement
+    where T1 : IOneOfElement
 {
-    public static explicit operator Is<T>(T value)
-    {
-        return new Is<T>(value);
-    }
 }
 
-public static class OneOfExtensions
+public interface IOneOf<T0, T1, T2> : IOneOfT0<T0>, IOneOfT1<T1>, IOneOfT2<T2>
+    where T0 : IOneOfElement
+    where T1 : IOneOfElement
+    where T2 : IOneOfElement
 {
-    public static IOneOf<T1Example, T2Example, T3Example> ToReturn(T1Example t1)
-    {
-        return (Is<T1Example>)t1;
-    }
-}
-
-public sealed class Dependncy
-{
-    public async Task Handle(IOneOf<T1Example, T2Example, T3Example> oneOf)
-    {
-        var task = oneOf switch
-        {
-            Is<T1Example> t => t.Value.Handle(),
-            Is<T2Example> t => t.Value.Handle(),
-            Is<T3Example> t => t.Value.Handle(),
-            _ => Task.CompletedTask
-        };
-
-        await task;
-    }
 }
