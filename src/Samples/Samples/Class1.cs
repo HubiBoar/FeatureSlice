@@ -75,7 +75,7 @@ public sealed class Dependncy
     {
         var methodResult = _method.Send(new IExampleMethod.Request());
         var method2Result = _method2.Send(new IExampleMethod2.Request());
-        // var featureResult = await _featureSlice.Send(new IExampleFeatureSlice.Request());
-        // var consumerResult = await _consumer.Send(new IExampleMessageConsumer.Message());
+        var featureResult = await _featureSlice.Send(new IExampleFeatureSlice.Request());
+        var consumerResult = await _consumer.Send(new IExampleMessageConsumer.Message());
     }
 }

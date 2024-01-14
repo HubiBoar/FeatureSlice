@@ -32,26 +32,26 @@ namespace FeatureSliceGenerator;
 
 
 
-[AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class)]
+[AttributeUsage(AttributeTargets.Interface)]
 public sealed class GenerateExtensionAttribute : Attribute
 {
+    public string FileName { get; }
+
     public GenerateExtensionAttribute(string fileName)
     {
-        
+        FileName = fileName;
     }
 }
-
 
 [AttributeUsage(AttributeTargets.Method)]
 public sealed class GenerateExtensionMethodAttribute : Attribute
 {
     public string Namespace { get; }
 
-    public GenerateExtensionMethodAttribute(string Namespace = null)
+    public GenerateExtensionMethodAttribute(string methodNamespace = null)
     {
-        this.Namespace = Namespace;
+        Namespace = methodNamespace;
     }
-
 }
 
 [Generator]
@@ -195,58 +195,73 @@ public class FeatureSliceGen : IIncrementalGenerator
         int i = 0;
 
         var extensions = allTypes
-            .SelectMany(type => type.methods
-                .Select(method => ExtensionMethodBody(method, i++)));
+            .Select(type => (
+                FileName: GetFileName(type.symbol),
+                Methods: type.methods.Select(method => ExtensionMethodBody(method, i++))))
+            .GroupBy(x => x.FileName)
+            .Select(x => (FileName: x.Key, Methods: x.ToArray().SelectMany(y => y.Methods).ToArray()))
+            .ToArray();
 
-        //set namespace to be the same as class implementing it
-        context.AddSource(
-            hintName: "extensionNameSpace.extensions.g.cs",
-            source: string.Join("\n", extensions));
+        foreach(var extension in extensions)
+        {
+            context.AddSource(
+                hintName: extension.FileName,
+                source: string.Join("\n", extension.Methods));
+        }
+    }
+
+    private static string GetFileName(INamedTypeSymbol symbol)
+    {
+        var attributeProperty = symbol.GetAttributes()
+            .First(x => x.AttributeClass.ToDisplayString() == ExtensionAttribute)
+            .ConstructorArguments[0].Value;
+
+        return $"{symbol.ContainingNamespace}.extensions.{attributeProperty}.g.cs";
     }
 
     private static void AddMethodNames(
         IReadOnlyCollection<(INamedTypeSymbol symbol, IReadOnlyCollection<IMethodSymbol> methods)> allTypes, 
         SourceProductionContext context)
     {
-        var methods = new List<string>();
+        var lines = new List<string>();
 
-        foreach(var type in allTypes)
+        foreach(var (symbol, methods) in allTypes)
         {
-            methods.Add($"type --> {type.symbol.ToDisplayString()}");
+            lines.Add($"type --> {symbol.ToDisplayString()}");
 
-            foreach(var method in type.methods)
+            foreach(var method in methods)
             {
-                methods.Add($"\t method --> {method.ToDisplayString()}");
-                methods.Add($"\t returnType --> {method.ReturnType.ToDisplayString()}");
-                methods.Add($"\t name --> {method.Name}");
+                lines.Add($"\t method --> {method.ToDisplayString()}");
+                lines.Add($"\t returnType --> {method.ReturnType.ToDisplayString()}");
+                lines.Add($"\t name --> {method.Name}");
 
                 var attribute = method.GetAttributes()
                     .First(x => x.AttributeClass.ToDisplayString() == ExtensionMethodAttribute);
 
-                methods.Add($"\t attributeArguments --> {attribute.ConstructorArguments.Count()}");
+                lines.Add($"\t attributeArguments --> {attribute.ConstructorArguments.Count()}");
 
                 foreach(var attributeArgument in attribute.ConstructorArguments)
                 {
-                    methods.Add($"\t\t attribute --> {attributeArgument.Value}");
+                    lines.Add($"\t\t attribute --> {attributeArgument.Value}");
                 }
 
                 foreach(var argument in method.TypeArguments)
                 {
-                    methods.Add($"\t\t typeArguments --> {argument.ToDisplayString()}");
+                    lines.Add($"\t\t typeArguments --> {argument.ToDisplayString()}");
                 }
 
                 foreach(var parameter in method.Parameters)
                 {
-                    methods.Add($"\t\t parameter --> {parameter.ToDisplayString()}");
+                    lines.Add($"\t\t parameter --> {parameter.ToDisplayString()}");
                 }
 
                 foreach(var typeParameter in method.TypeParameters)
                 {
-                    methods.Add($"\t\t typeParameter --> {typeParameter.ToDisplayString()}");
+                    lines.Add($"\t\t typeParameter --> {typeParameter.ToDisplayString()}");
 
                     foreach(var constraintParameter in typeParameter.ConstraintTypes)
                     {
-                        methods.Add($"\t\t\t constraintParameter --> {constraintParameter.ToDisplayString()}");
+                        lines.Add($"\t\t\t constraintParameter --> {constraintParameter.ToDisplayString()}");
                     }
                 }
             }
@@ -261,7 +276,7 @@ public class FeatureSliceGen : IIncrementalGenerator
             {
                 public static List<string> Names = new ()
                 {
-                    {{string.Join(",\n        ", methods.Select(x => $"\"{x}\""))}}
+                    {{string.Join(",\n        ", lines.Select(x => $"\"{x}\""))}}
                 };
             }
             """);
