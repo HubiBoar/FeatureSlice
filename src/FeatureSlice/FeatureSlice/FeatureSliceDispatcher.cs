@@ -3,7 +3,7 @@ using OneOf;
 
 namespace FeatureSlice;
 
-public sealed record Disabled;
+public struct Disabled;
 
 public interface IDispatcher<TRequest, TResponse>
 {
