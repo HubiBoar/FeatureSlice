@@ -44,7 +44,7 @@ public struct Retry();
 
 public interface IConsumerSetup
 {
-    public Task Setup(IMessagingConfiguration configuration);
+    public delegate Task Setup();
 }
 
 public interface IMessageConsumer<TMessage> : IMethod<MessageContext<TMessage>, Task<OneOf<Success, Retry, Error>>>
@@ -58,56 +58,66 @@ public abstract class MessageConsumer<TSelf, TMessage> : IMessageConsumer<TMessa
 {
     public abstract Task<OneOf<Success, Retry, Error>> Handle(MessageContext<TMessage> context);
 
-    public interface IDispatcher
+    public delegate Task<OneOf<Success, Disabled>> Dispatcher(TMessage request);
+
+    public static async Task<OneOf<Success, Disabled>> Send(
+        TMessage request,
+        IMessagingConfiguration configuration,
+        IFeatureManager featureManager)
     {
-        public Task Send(TMessage request);
+        if(await featureManager.IsEnabledAsync<TSelf>())
+        {
+            return new Disabled();
+        }
+
+        await configuration.Send(request, TSelf.FeatureName);
+
+        return new Success();
     }
 
-    private sealed class Dispatcher : IDispatcher, IConsumerSetup
+    public static Task Setup(
+        IMessagingConfiguration configuration,
+        TSelf self,
+        IFeatureManager featureManager,
+        IReadOnlyList<IMessageConsumer<TMessage>.IPipeline> pipelines)
     {
-        private readonly TSelf _self;
-        private readonly IFeatureManager _featureManager;
-        private readonly IReadOnlyList<IMessageConsumer<TMessage>.IPipeline> _pipelines;
-        private readonly IMessagingConfiguration _configuration;
-
-        public Dispatcher(TSelf self, IFeatureManager featureManager, IEnumerable<IMessageConsumer<TMessage>.IPipeline> pipelines, IMessagingConfiguration configuration)
-        {
-            _self = self;
-            _featureManager = featureManager;
-            _pipelines = pipelines.ToList();
-            _configuration = configuration;
-        }
-
-        public Task Send(TMessage request)
-        {
-            return _configuration.Send(request, TSelf.FeatureName);
-        }
-
-        public Task Setup(IMessagingConfiguration configuration)
-        {
-            return configuration.Register<TMessage>(Receive, TSelf.FeatureName);
-        }
-
-        private async Task<OneOf<Success, Disabled, Retry, Error>> Receive(MessageContext<TMessage> context)
-        {
-            if(await _featureManager.IsEnabledAsync<TSelf>())
-            {
-                return new Disabled();
-            }
-
-            var result = await _pipelines.RunPipeline(context, _self.Handle);
-
-            return result.Match<OneOf<Success, Disabled, Retry, Error>>(success => success, retry => retry, error => error);
-        }
+        return configuration.Register<TMessage>(context => Receive(context, self, featureManager, pipelines), TSelf.FeatureName);
     }
 
-    public static void Register(IServiceCollection services)
+    public static async Task<OneOf<Success, Disabled, Retry, Error>> Receive(
+        MessageContext<TMessage> context,
+        TSelf self,
+        IFeatureManager featureManager,
+        IReadOnlyList<IMessageConsumer<TMessage>.IPipeline> pipelines)
+    {
+        if(await featureManager.IsEnabledAsync<TSelf>())
+        {
+            return new Disabled();
+        }
+
+        var result = await pipelines.RunPipeline(context, self.Handle);
+
+        return result.Match<OneOf<Success, Disabled, Retry, Error>>(success => success, retry => retry, error => error);
+    }
+
+    public static void Register(IApplicationSetup setup)
     {
         //Add IMessagingConfiguration
-        services.AddFeatureManagement();
-        services.AddSingleton<TSelf>();
-        services.AddSingleton<IConsumerSetup, Dispatcher>();
-        services.AddSingleton<IDispatcher, Dispatcher>();
+        setup.Services.AddFeatureManagement();
+        setup.Services.AddSingleton<TSelf>();
+
+        setup.Services.AddSingleton<IConsumerSetup.Setup>(provider => () => Setup(
+            provider.GetRequiredService<IMessagingConfiguration>(),
+            provider.GetRequiredService<TSelf>(),
+            provider.GetRequiredService<IFeatureManager>(),
+            provider.GetServices<IMessageConsumer<TMessage>.IPipeline>().ToList())
+        );
+
+        setup.Services.AddSingleton<Dispatcher>(provider => request => Send(
+            request,
+            provider.GetRequiredService<IMessagingConfiguration>(),
+            provider.GetRequiredService<IFeatureManager>())
+        );
     }
 }
 

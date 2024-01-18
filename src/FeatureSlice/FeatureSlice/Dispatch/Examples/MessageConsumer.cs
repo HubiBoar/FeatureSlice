@@ -1,13 +1,12 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
 
 namespace FeatureSlice.Dispatch.Examples.Consumer;
 
-public partial class Example : IRegistrable
+public partial class Example : IRegistrable.IWeb
 {
     public record Message() : IMessage
     {
@@ -37,29 +36,29 @@ public partial class Example : IRegistrable
         }
     }
 
-    public static void Register(IServiceCollection services)
+    public static void Register(IApplicationSetup<WebApplication> setup)
     {
-        services.Register<Consumer>();
-        services.Map<Endpoint>();
+        setup.Register<Consumer>();
+        setup.Map<Endpoint>();
     }
 }
 
 public class ExampleUsage
 {
-    private readonly Example.Consumer.IDispatcher _dispatcher;
+    private readonly Example.Consumer.Dispatcher _dispatcher;
 
-    public ExampleUsage(Example.Consumer.IDispatcher dispatcher)
+    public ExampleUsage(Example.Consumer.Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
     }
 
-    public static void Register(IServiceCollection services)
+    public static void Register(IApplicationSetup<WebApplication> setup)
     {
-        services.Register<Example>();
+        setup.Register<Example>();
     }
 
     public async Task Invoke()
     {
-        await _dispatcher.Send(new Example.Message());
+        await _dispatcher(new Example.Message());
     }
 }

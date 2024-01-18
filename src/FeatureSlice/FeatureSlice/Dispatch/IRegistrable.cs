@@ -1,20 +1,24 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Builder;
 
 namespace FeatureSlice.Dispatch;
 
-public interface IRegistrable
+public partial interface IRegistrable<TSetup>
+    where TSetup : IApplicationSetup
 {
-    public static abstract void Register(IServiceCollection services);
+    public static abstract void Register(TSetup setup);
 }
 
-public static class RegistrableExtensions
+public partial interface IRegistrable : IRegistrable<IApplicationSetup>
 {
-    public static IServiceCollection Register<T>(this IServiceCollection services)
-        where T : IRegistrable
+    public interface IWebApp : IRegistrable<IApplicationSetup<WebApplication>>
     {
-        T.Register(services);
+    }
 
-        return services;
+    public interface IWebHost : IRegistrable<IApplicationSetup<WebHost>>
+    {
+    }
+
+    public interface IHost : IRegistrable<IApplicationSetup<Microsoft.Extensions.Hosting.IHost>>
+    {
     }
 }

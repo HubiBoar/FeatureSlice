@@ -64,9 +64,9 @@ public static class EndpointExtensions
         return T.Setup.Map(endpoint);
     }
 
-    public static void Map<T>(this IServiceCollection services)
+    public static void Map<T>(this IApplicationSetup<WebApplication> services)
         where T : IEndpoint
     {
-        services.AddHostExtension<WebApplication>(endpoint => T.Setup.Map(endpoint));
+        services.AddHostExtension(endpoint => T.Setup.Map(endpoint));
     }
 }

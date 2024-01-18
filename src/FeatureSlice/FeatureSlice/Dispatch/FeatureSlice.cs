@@ -1,7 +1,3 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.AspNetCore.Routing.Patterns;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.FeatureManagement;
 using OneOf;
@@ -17,39 +13,27 @@ public abstract class FeatureSlice<TSelf, TRequest, TResponse> : IFeatureSlice<T
 {
     public abstract Task<TResponse> Handle(TRequest request);
 
-    public interface IDispatcher
-    {
-        public Task<OneOf<TResponse, Disabled>> Send(TRequest request);
-    }
+    public delegate Task<OneOf<TResponse, Disabled>> Dispatcher(TRequest request);
 
-    private sealed class Dispatcher : IDispatcher
+    public static async Task<OneOf<TResponse, Disabled>> Dispatch(TRequest request, TSelf self, IFeatureManager featureManager, IReadOnlyList<IFeatureSlice<TRequest, TResponse>.IPipeline> pipelines)
     {
-        private readonly TSelf _self;
-        private readonly IFeatureManager _featureManager;
-        private readonly IReadOnlyList<IFeatureSlice<TRequest, TResponse>.IPipeline> _pipelines;
-
-        public Dispatcher(TSelf self, IFeatureManager featureManager, IEnumerable<IFeatureSlice<TRequest, TResponse>.IPipeline> pipelines)
+        if(await featureManager.IsEnabledAsync<TSelf>())
         {
-            _self = self;
-            _featureManager = featureManager;
-            _pipelines = pipelines.ToList();
+            return new Disabled();    
         }
 
-        public async Task<OneOf<TResponse, Disabled>> Send(TRequest request)
-        {
-            if(await _featureManager.IsEnabledAsync<TSelf>())
-            {
-                return new Disabled();    
-            }
-
-            return await _pipelines.RunPipeline(request, _self.Handle);
-        }
+        return await pipelines.RunPipeline(request, self.Handle);
     }
 
-    public static void Register(IServiceCollection services)
+    public static void Register(IApplicationSetup setup)
     {
-        services.AddFeatureManagement();
-        services.AddSingleton<TSelf>();
-        services.AddSingleton<IDispatcher, Dispatcher>();
+        setup.Services.AddFeatureManagement();
+        setup.Services.AddSingleton<TSelf>();
+        setup.Services.AddSingleton<Dispatcher>(provider => request => Dispatch(
+            request,
+            provider.GetRequiredService<TSelf>(),
+            provider.GetRequiredService<IFeatureManager>(),
+            provider.GetServices<IFeatureSlice<TRequest, TResponse>.IPipeline>().ToList())
+        );
     }
 }

@@ -12,18 +12,14 @@ public interface IApplicationSetup
     public IServiceCollection Services { get; }
 
     public IConfigurationManager Configuration { get; }
-}
 
-public record ModuleSetup<THost>(IServiceCollection Services, IConfigurationManager Configuration) : IApplicationSetup
-    where THost : IHost
-{
-    public void AddHostExtension(HostExtension<THost> extension)
+    public void AddHostExtension(HostExtension<IHost> extension)
     {
-        Services.AddHostExtension(extension);
+        Services.AddSingleton(extension);
     }
 }
 
-public interface IHostExtender<THost> : IApplicationSetup
+public interface IApplicationSetup<THost> : IApplicationSetup
     where THost : IHost
 {
     public void AddHostExtension(HostExtension<THost> extension)
@@ -32,7 +28,12 @@ public interface IHostExtender<THost> : IApplicationSetup
     }
 }
 
-public abstract class Module<THost> : IHostExtender<THost>
+public sealed record ModuleSetup<THost>(IServiceCollection Services, IConfigurationManager Configuration) : IApplicationSetup<THost>
+    where THost : IHost
+{
+}
+
+public abstract class Module<THost> : IApplicationSetup<THost>
     where THost : IHost
 {
     public ModuleSetup<THost> Setup { get; }
@@ -57,12 +58,28 @@ public static class ServiceCollectionExtensions
         return setup(new ModuleSetup<WebApplication>(builder.Services, builder.Configuration));
     }
 
-    public static IServiceCollection AddHostExtension<THost>(this IServiceCollection services, HostExtension<THost> extension)
-        where THost : IHost
+    public static IApplicationSetup Register<T>(this IApplicationSetup setup)
+        where T : IRegistrable<IApplicationSetup>
     {
-        services.AddSingleton(extension);
+        T.Register(setup);
 
-        return services;
+        return setup;
+    }
+
+    public static IApplicationSetup<IHost> Register<T>(this IApplicationSetup<IHost> setup)
+        where T : IRegistrable<IApplicationSetup<IHost>>
+    {
+        T.Register(setup);
+
+        return setup;
+    }
+
+    public static IApplicationSetup<WebApplication> Register<T>(this IApplicationSetup<WebApplication> setup)
+        where T : IRegistrable<IApplicationSetup<WebApplication>>
+    {
+        T.Register(setup);
+
+        return setup;
     }
 
     public static T Extend<T>(this T host)
@@ -175,6 +192,14 @@ public static class HostExtensions
         var configurationManager = new InternalConfigurationManager(_configurationBuilder);
 
         return setup(new ModuleSetup<WebHost>(_services, configurationManager));
+    }
+
+    public static IApplicationSetup<WebHost> Register<T>(this IApplicationSetup<WebHost> setup)
+        where T : IRegistrable<IApplicationSetup<WebHost>>
+    {
+        T.Register(setup);
+
+        return setup;
     }
 
     public static T Extend<T>(this T host)

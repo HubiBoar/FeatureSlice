@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice.Dispatch.Examples.Slice;
 
-public partial class Example : IRegistrable
+public partial class Example : IRegistrable.IWeb
 {
     public record Request();
 
@@ -34,29 +34,29 @@ public partial class Example : IRegistrable
         }
     }
 
-    public static void Register(IServiceCollection services)
+    public static void Register(IApplicationSetup<WebApplication> setup)
     {
-        services.Register<Feature>();
-        services.Map<Endpoint>();
+        setup.Register<Feature>();
+        setup.Map<Endpoint>();
     }
 }
 
 public class ExampleUsage
 {
-    private readonly Example.Feature.IDispatcher _dispatcher;
+    private readonly Example.Feature.Dispatcher _dispatcher;
 
-    public ExampleUsage(Example.Feature.IDispatcher dispatcher)
+    public ExampleUsage(Example.Feature.Dispatcher dispatcher)
     {
         _dispatcher = dispatcher;
     }
 
-    public static void Register(IServiceCollection services)
+    public static void Register(IApplicationSetup<WebApplication> setup)
     {
-        services.Register<Example>();
+        setup.Register<Example>();
     }
 
     public async Task Invoke()
     {
-        await _dispatcher.Send(new Example.Request());
+        await _dispatcher(new Example.Request());
     }
 }
