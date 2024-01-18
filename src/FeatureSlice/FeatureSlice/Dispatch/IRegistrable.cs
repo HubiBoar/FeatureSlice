@@ -18,29 +18,3 @@ public static class RegistrableExtensions
         return services;
     }
 }
-
-public delegate void HostExtesnion<THost>(THost extension)
-    where THost : IHost;
-
-public static class ServiceCollectionExtensions
-{
-    public static void AddHostExtension<THost>(this IServiceCollection services, HostExtesnion<THost> extension)
-        where THost : IHost
-    {
-        services.AddSingleton(extension);
-    }
-
-    public static void Extend<THost>(this THost host)
-        where THost : IHost
-    {
-        foreach(var extension in host.Services.GetServices<HostExtesnion<THost>>())
-        {
-            extension.Invoke(host);
-        }
-
-        foreach(var extension in host.Services.GetServices<HostExtesnion<IHost>>())
-        {
-            extension.Invoke(host);
-        }
-    }
-}
