@@ -8,12 +8,6 @@ public interface IRegistrable
     public static abstract void Register(IServiceCollection services);
 }
 
-public interface IRegistrable<T>
-{
-    public static abstract void Register<TDep>(IServiceCollection services)
-        where TDep : class, T;
-}
-
 public static class RegistrableExtensions
 {
     public static IServiceCollection Register<T>(this IServiceCollection services)

@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FeatureSlice.Dispatch.Examples;
+namespace FeatureSlice.Dispatch.Examples.Slice;
 
 public partial class Example : IRegistrable
 {
@@ -13,7 +13,7 @@ public partial class Example : IRegistrable
 
     public sealed class Feature : FeatureSlice<Feature, Request, Response>, IFeatureName
     {
-        public static string FeatureName => "Feature";
+        public static string FeatureName => "ExampleFeature";
 
         public override Task<Response> Handle(Request request)
         {

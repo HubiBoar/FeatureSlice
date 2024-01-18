@@ -11,7 +11,7 @@ namespace FeatureSlice.Dispatch;
 
 public interface IMessage
 {
-    public static abstract string MessageName { get; }
+    public static abstract string Name { get; }
 }
 
 public class MessageContext<T>
@@ -52,7 +52,7 @@ public interface IMessageConsumer<TMessage> : IMethod<MessageContext<TMessage>, 
 {
 }
 
-public abstract class MessageConsumer<TSelf, TMessage> : IMessageConsumer<TMessage>, IRegistrable<IMessagingConfiguration>
+public abstract class MessageConsumer<TSelf, TMessage> : IMessageConsumer<TMessage>, IRegistrable
     where TSelf : MessageConsumer<TSelf, TMessage>, IFeatureName
     where TMessage : IMessage
 {
@@ -101,13 +101,23 @@ public abstract class MessageConsumer<TSelf, TMessage> : IMessageConsumer<TMessa
         }
     }
 
-    public static void Register<T>(IServiceCollection services)
-        where T : class, IMessagingConfiguration
+    public static void Register(IServiceCollection services)
     {
+        //Add IMessagingConfiguration
         services.AddFeatureManagement();
         services.AddSingleton<TSelf>();
-        services.AddSingleton<T>();
         services.AddSingleton<IConsumerSetup, Dispatcher>();
         services.AddSingleton<IDispatcher, Dispatcher>();
+    }
+}
+
+public static class MessageConsumerExtensions
+{
+    public static Task<OneOf<Success, Retry, Error>> HandleInMemory<TMessage>(this IMessageConsumer<TMessage> consumer, TMessage message)
+        where TMessage : class, IMessage
+    {
+        var guid = Guid.NewGuid();
+        var id = $"HandleInMemory_{guid}";
+        return consumer.Handle(new MessageContext<TMessage>(id, message));
     }
 }
