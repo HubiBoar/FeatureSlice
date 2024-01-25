@@ -10,7 +10,7 @@ public partial interface IRegistrable<TSetup>
 
 public partial interface IRegistrable : IRegistrable<IApplicationSetup>
 {
-    public interface IWebApp : IRegistrable<IApplicationSetup<WebApplication>>
+    public interface IWeb : IRegistrable<IApplicationSetup<WebApplication>>
     {
     }
 
