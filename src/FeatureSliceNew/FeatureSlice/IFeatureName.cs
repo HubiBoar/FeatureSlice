@@ -14,4 +14,10 @@ public static class FeatureExtensions
     {
         return featureManager.IsEnabledAsync(T.FeatureName);
     }
+
+    public static Task<bool> IsEnabledAsync<T>(this IFeatureManager featureManager, T featureName)
+        where T : IFeatureName
+    {
+        return featureManager.IsEnabledAsync(T.FeatureName);
+    }
 }

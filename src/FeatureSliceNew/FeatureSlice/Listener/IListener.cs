@@ -21,6 +21,9 @@ public partial interface IListener<TRequest> : IMethod<TRequest, Task>
                 foreach(var listener in listeners)
                 {
                     if(listener is IFeatureName li)
+                    {
+                        
+                    }
 
                     await listener.HandleListener(r, manager);
                 }

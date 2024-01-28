@@ -10,7 +10,7 @@ public partial interface IFeatureSlice<TRequest, TResponse>
 {
     public interface WithToggle : IMethod<TRequest, Task<TResponse>>, IFeatureName
     {
-        public static class Config<TSelf>
+        public static class Runner<TSelf>
             where TSelf : class, WithToggle
         {
             public static async Task<OneOf<TResponse, Disabled>> Dispatch(TRequest request, TSelf self, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
