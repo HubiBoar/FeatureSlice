@@ -4,7 +4,7 @@ namespace FeatureSlice;
 
 public partial interface IFeatureSlice<TRequest, TResponse> : IMethod<TRequest, Task<TResponse>>
 {
-    public static class Runner<TSelf>
+    public static class Setup<TSelf>
         where TSelf : class, IFeatureSlice<TRequest, TResponse>
     {
         public static Task<TResponse> Dispatch(TRequest request, TSelf self, IReadOnlyList<IPipeline> pipelines)

@@ -12,7 +12,7 @@ public partial interface IListener<TRequest> : IMethod<TRequest, Task>
         return Handle(request);
     }
 
-    public static class Runner<TSelf>
+    public static class Setup<TSelf>
         where TSelf : class, IListener<TRequest>
     {
         public static Task Dispatch(TRequest request, IReadOnlyCollection<IListener<TRequest>> listeners, IFeatureManager manager, IReadOnlyList<IPipeline> pipelines)

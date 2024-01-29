@@ -56,9 +56,9 @@ internal static partial class ExampleFeature
 
         public static void Register(IServiceCollection services)
         {
-            IFeatureSlice<Request, Response>.Runner<FeatureSlice1>.Register<Dispatch>(
+            IFeatureSlice<Request, Response>.Setup<FeatureSlice1>.Register<Dispatch>(
                 services,
-                provider => request => IFeatureSlice<Request, Response>.Runner<FeatureSlice1>.Factory(provider).Invoke(request));
+                provider => request => IFeatureSlice<Request, Response>.Setup<FeatureSlice1>.Factory(provider).Invoke(request));
         }
     }
 
@@ -68,9 +68,9 @@ internal static partial class ExampleFeature
 
         public static void Register(IServiceCollection services)
         {
-            IFeatureSlice<Request, Response>.WithToggle.Runner<FeatureSlice2>.Register<Dispatch>(
+            IFeatureSlice<Request, Response>.WithToggle.Setup<FeatureSlice2>.Register<Dispatch>(
                 services,
-                provider => request => IFeatureSlice<Request, Response>.WithToggle.Runner<FeatureSlice2>.Factory(provider).Invoke(request));
+                provider => request => IFeatureSlice<Request, Response>.WithToggle.Setup<FeatureSlice2>.Factory(provider).Invoke(request));
         }
     }
 }

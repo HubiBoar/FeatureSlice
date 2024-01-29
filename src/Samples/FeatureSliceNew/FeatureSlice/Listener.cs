@@ -48,7 +48,7 @@ internal static partial class ExampleListener
     {
         public static void Register(IServiceCollection services)
         {
-            IListener<Request>.Runner<Listener2>.Register(services);
+            IListener<Request>.Setup<Listener2>.Register(services);
         }
     }
 
@@ -56,7 +56,7 @@ internal static partial class ExampleListener
     {
         public static void Register(IServiceCollection services)
         {
-            IListener<Request>.Runner<Listener2>.Register(services);
+            IListener<Request>.Setup<Listener2>.Register(services);
         }
 
         public Task<bool> IsEnabled(IFeatureManager featureManager)
