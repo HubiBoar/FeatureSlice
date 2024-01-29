@@ -24,7 +24,6 @@ public partial interface IFeatureSlice<TRequest, TResponse> : IMethod<TRequest, 
             where TDispatcher : Delegate
         {
             services.AddSingleton<TSelf>();
-            services.AddSingleton(factory);
         }
     }
 }

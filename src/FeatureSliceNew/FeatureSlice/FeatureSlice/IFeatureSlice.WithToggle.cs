@@ -32,12 +32,12 @@ public partial interface IFeatureSlice<TRequest, TResponse>
                     provider.GetServices<IPipeline>().ToList());
             }
 
-            public static void Register<TDispatcher>(IServiceCollection services, Func<IServiceProvider, TDispatcher> factory)
+            public static void Register<TDispatcher>(IServiceCollection services, Func<IServiceProvider, TDispatcher> dispatcherFactory)
                 where TDispatcher : Delegate
             {
                 services.AddFeatureManagement();
                 services.AddSingleton<TSelf>();
-                services.AddSingleton(factory);
+                services.AddSingleton<TDispatcher>(dispatcherFactory);
             }
         }
     }
