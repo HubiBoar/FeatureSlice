@@ -1,6 +1,7 @@
 ﻿using FeatureSlice;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
+using OneOf.Types;
 
 namespace Samples;
 
@@ -9,21 +10,23 @@ internal static partial class ExampleFeature
     public sealed record Request();
     public sealed record Response();
 
-    public sealed partial class FeatureSlice1 : IFeatureSlice<Request, Response>, IRegistrable
+    public sealed partial class FeatureSlice1 : FeatureSlice<Request>.IHandler<Response>, IRegistrable
     {
-        public Task<Response> Handle(Request request)
+        public static string FeatureName => "FeatureSlice1";
+
+        public Task<OneOf<Response, Error>> Handle(Request request)
         {
-            return Task.FromResult(new Response());
+            throw new Exception();
         }
     }
 
-    public sealed partial class FeatureSlice2 : IFeatureSlice<Request, Response>.WithToggle, IRegistrable
+    public sealed partial class FeatureSlice2 : FeatureSlice<Request>.IHandler<Response>, IRegistrable
     {
         public static string FeatureName => "FeatureSlice2";
 
-        public Task<Response> Handle(Request request)
+        public Task<OneOf<Response, Error>> Handle(Request request)
         {
-            return Task.FromResult(new Response());
+            throw new Exception();
         }
     }
 }
@@ -36,14 +39,16 @@ internal static partial class ExampleFeature
         services.Register<FeatureSlice2>();
     }
 
-    public static async Task Run(FeatureSlice1.Dispatch slice1, FeatureSlice2.Dispatch slice2)
+    public static async Task Run(FeatureSlice1.Dispatch slice1, FeatureSlice2.Dispatch slice2, FeatureSlice<Request>.Dispatch dispatch)
     {
         var result1 = await slice1(new Request());
         var result2 = await slice2(new Request());
+        var result3 = await dispatch(new Request());
 
         result2.Switch(
             resposnse => {},
-            disabled => {});
+            disabled => {},
+            error => {});
     }
 }
 
@@ -52,25 +57,25 @@ internal static partial class ExampleFeature
 {
     public sealed partial class FeatureSlice1
     {
-        public delegate Task<Response> Dispatch(Request request);
+        public delegate Task<OneOf<Response, Disabled, Error>> Dispatch(Request request);
 
         public static void Register(IServiceCollection services)
         {
-            IFeatureSlice<Request, Response>.Setup<FeatureSlice1>.Register<Dispatch>(
+            FeatureSlice<Request>.IHandler<Response>.Setup<FeatureSlice1>.Register<Dispatch>(
                 services,
-                provider => request => IFeatureSlice<Request, Response>.Setup<FeatureSlice1>.Factory(provider).Invoke(request));
+                provider => request => FeatureSlice<Request>.IHandler<Response>.Setup<FeatureSlice1>.Factory(provider).Invoke(request));
         }
     }
 
     public sealed partial class FeatureSlice2
     {
-        public delegate Task<OneOf<Response, Disabled>> Dispatch(Request request);
+        public delegate Task<OneOf<Response, Disabled, Error>> Dispatch(Request request);
 
         public static void Register(IServiceCollection services)
         {
-            IFeatureSlice<Request, Response>.WithToggle.Setup<FeatureSlice2>.Register<Dispatch>(
+            FeatureSlice<Request>.IHandler<Response>.Setup<FeatureSlice2>.Register<Dispatch>(
                 services,
-                provider => request => IFeatureSlice<Request, Response>.WithToggle.Setup<FeatureSlice2>.Factory(provider).Invoke(request));
+                provider => request => FeatureSlice<Request>.IHandler<Response>.Setup<FeatureSlice2>.Factory(provider).Invoke(request));
         }
     }
 }

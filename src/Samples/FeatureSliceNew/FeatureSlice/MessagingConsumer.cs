@@ -23,7 +23,7 @@ internal static partial class ExampleMessagingConsumer
         }
     }
 
-    public sealed partial class Consumer2 : Messaging<Message>.IConsumer.WithToggle, IRegistrable
+    public sealed partial class Consumer2 : Messaging<Message>.IConsumer, IRegistrable
     {
         public static string ConsumerName => "Consumer2";
         public static string FeatureName => ConsumerName;
