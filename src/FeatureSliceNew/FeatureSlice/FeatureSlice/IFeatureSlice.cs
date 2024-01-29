@@ -7,14 +7,14 @@ namespace FeatureSlice;
 
 public struct Disabled();
 
-public sealed partial class FeatureSlice<TRequest>
+public sealed partial class FeatureSlice<TRequest, TResponse>
 {
-    public partial interface IHandler<TResponse> : IMethod<TRequest, Task<OneOf<TResponse, Error>>>, IListener
+    public partial interface IHandler : IMethod<TRequest, Task<OneOf<TResponse, Error>>>, FeatureSlice<TRequest>.IListener
     {
         public abstract static string FeatureName { get; }
 
         public static class Setup<TSelf>
-            where TSelf : class, IHandler<TResponse>
+            where TSelf : class, IHandler
         {
             public static async Task<OneOf<TResponse, Disabled, Error>> Dispatch(TRequest request, TSelf self, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
             {
@@ -39,7 +39,7 @@ public sealed partial class FeatureSlice<TRequest>
                 where TDispatcher : Delegate
             {
                 //Listener
-                services.AddSingleton<IListener, TSelf>();
+                services.AddSingleton<FeatureSlice<TRequest>.IListener, TSelf>();
                 services.Register<FeatureSlice<TRequest>>();
 
                 //Handler
@@ -49,7 +49,7 @@ public sealed partial class FeatureSlice<TRequest>
             }
         }
 
-        async Task<OneOf<Success, Error>> IListener.Listen(TRequest request)
+        async Task<OneOf<Success, Error>> FeatureSlice<TRequest>.IListener.Listen(TRequest request)
         {
             return (await Handle(request)).Match<OneOf<Success, Error>>(_ => new Success(), e => e);
         }

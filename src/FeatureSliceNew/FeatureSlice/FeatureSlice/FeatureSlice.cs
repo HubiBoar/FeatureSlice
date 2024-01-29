@@ -44,11 +44,14 @@ public sealed partial class FeatureSlice<TRequest> : IRegistrable
 
             return new Success();
         }
-    
     }
 
     public interface IListener
     {
         Task<OneOf<Success, Error>> Listen(TRequest request);
     }
+}
+
+public sealed partial class FeatureSlice<TRequest, TResponse>
+{
 }

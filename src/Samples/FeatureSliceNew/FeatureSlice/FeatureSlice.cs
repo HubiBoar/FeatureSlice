@@ -10,7 +10,7 @@ internal static partial class ExampleFeature
     public sealed record Request();
     public sealed record Response();
 
-    public sealed partial class FeatureSlice1 : FeatureSlice<Request>.IHandler<Response>, IRegistrable
+    public sealed partial class FeatureSlice1 : FeatureSlice<Request, Response>.IHandler, IRegistrable
     {
         public static string FeatureName => "FeatureSlice1";
 
@@ -20,7 +20,7 @@ internal static partial class ExampleFeature
         }
     }
 
-    public sealed partial class FeatureSlice2 : FeatureSlice<Request>.IHandler<Response>, IRegistrable
+    public sealed partial class FeatureSlice2 : FeatureSlice<Request, Response>.IHandler, IRegistrable
     {
         public static string FeatureName => "FeatureSlice2";
 
@@ -61,9 +61,9 @@ internal static partial class ExampleFeature
 
         public static void Register(IServiceCollection services)
         {
-            FeatureSlice<Request>.IHandler<Response>.Setup<FeatureSlice1>.Register<Dispatch>(
+            FeatureSlice<Request, Response>.IHandler.Setup<FeatureSlice1>.Register<Dispatch>(
                 services,
-                provider => request => FeatureSlice<Request>.IHandler<Response>.Setup<FeatureSlice1>.Factory(provider).Invoke(request));
+                provider => request => FeatureSlice<Request, Response>.IHandler.Setup<FeatureSlice1>.Factory(provider).Invoke(request));
         }
     }
 
@@ -73,9 +73,9 @@ internal static partial class ExampleFeature
 
         public static void Register(IServiceCollection services)
         {
-            FeatureSlice<Request>.IHandler<Response>.Setup<FeatureSlice2>.Register<Dispatch>(
+            FeatureSlice<Request, Response>.IHandler.Setup<FeatureSlice2>.Register<Dispatch>(
                 services,
-                provider => request => FeatureSlice<Request>.IHandler<Response>.Setup<FeatureSlice2>.Factory(provider).Invoke(request));
+                provider => request => FeatureSlice<Request, Response>.IHandler.Setup<FeatureSlice2>.Factory(provider).Invoke(request));
         }
     }
 }
