@@ -13,22 +13,22 @@ internal static partial class ExampleMessagingConsumer
         public static string MessageName => "Message";
     }
 
-    public sealed partial class Consumer1 : Messaging<Message>.IConsumer, IRegistrable
+    public sealed partial class Consumer1 : Messaging.IConsumer<Message>, IRegistrable
     {
         public static string ConsumerName => "Consumer1";
 
-        public Task<OneOf<Success, Messaging.Retry, Error>> Handle(Messaging<Message>.Context request)
+        public Task<OneOf<Success, Messaging.Retry, Error>> Handle(Messaging.Context<Message> request)
         {
             throw new NotImplementedException();
         }
     }
 
-    public sealed partial class Consumer2 : Messaging<Message>.IConsumer, IRegistrable
+    public sealed partial class Consumer2 : Messaging.IConsumer<Message>, IRegistrable
     {
         public static string ConsumerName => "Consumer2";
         public static string FeatureName => ConsumerName;
 
-        public Task<OneOf<Success, Messaging.Retry, Error>> Handle(Messaging<Message>.Context request)
+        public Task<OneOf<Success, Messaging.Retry, Error>> Handle(Messaging.Context<Message> request)
         {
             throw new NotImplementedException();
         }
@@ -43,7 +43,7 @@ internal static partial class ExampleMessagingConsumer
         services.Register<Consumer2>();
     }
 
-    public static async Task Run(Consumer1.Dispatch consumer1, Consumer2.Dispatch consumer2, Messaging<Message>.Dispatch dispatch)
+    public static async Task Run(Consumer1.Dispatch consumer1, Consumer2.Dispatch consumer2, Publisher<Message>.Dispatch dispatch)
     {
         await consumer1(new Message());
         await consumer2(new Message());
@@ -60,9 +60,9 @@ internal static partial class ExampleMessagingConsumer
 
         public static void Register(IServiceCollection services)
         {
-            Messaging<Message>.IConsumer.Setup<Consumer1>.Register<Dispatch>(
+            Messaging.IConsumer<Message>.Setup<Consumer1>.Register<Dispatch>(
                 services,
-                provider => request => Messaging<Message>.IConsumer.Setup<Consumer1>.Factory(provider).Invoke(request));
+                provider => request => Messaging.IConsumer<Message>.Setup<Consumer1>.DispatchFactory(provider).Invoke(request));
         }
     }
 
@@ -72,9 +72,9 @@ internal static partial class ExampleMessagingConsumer
 
         public static void Register(IServiceCollection services)
         {
-            Messaging<Message>.IConsumer.Setup<Consumer1>.Register<Dispatch>(
+            Messaging.IConsumer<Message>.Setup<Consumer1>.Register<Dispatch>(
                 services,
-                provider => request => Messaging<Message>.IConsumer.Setup<Consumer1>.Factory(provider).Invoke(request));
+                provider => request => Messaging.IConsumer<Message>.Setup<Consumer1>.DispatchFactory(provider).Invoke(request));
         }
     }
 }

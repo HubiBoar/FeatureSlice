@@ -7,51 +7,45 @@ namespace FeatureSlice;
 
 public struct Disabled();
 
-public sealed partial class FeatureSlice<TRequest, TResponse>
+public partial interface IFeatureSlice<TRequest, TResponse> : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
 {
-    public partial interface IHandler : IMethod<TRequest, Task<OneOf<TResponse, Error>>>, FeatureSlice<TRequest>.IListener
+    public abstract static string FeatureName { get; }
+
+    public static class Setup<TSelf>
+        where TSelf : class, IFeatureSlice<TRequest, TResponse>
     {
-        public abstract static string FeatureName { get; }
-
-        public static class Setup<TSelf>
-            where TSelf : class, IHandler
+        public static async Task<OneOf<TResponse, Disabled, Error>> Dispatch(TRequest request, TSelf self, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
         {
-            public static async Task<OneOf<TResponse, Disabled, Error>> Dispatch(TRequest request, TSelf self, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
+            if(await featureManager.IsEnabledAsync(TSelf.FeatureName))
             {
-                if(await featureManager.IsEnabledAsync(TSelf.FeatureName))
-                {
-                    return new Disabled();    
-                }
-
-                return (await pipelines.RunPipeline(request, self.Handle)).Match<OneOf<TResponse, Disabled, Error>>(r => r, e => e);
+                return new Disabled();    
             }
 
-            public static Func<TRequest, Task<OneOf<TResponse, Disabled, Error>>> Factory(IServiceProvider provider)
-            {
-                return request => Dispatch(
-                    request,
-                    provider.GetRequiredService<TSelf>(),
-                    provider.GetRequiredService<IFeatureManager>(),
-                    provider.GetServices<IPipeline>().ToList());
-            }
-
-            public static void Register<TDispatcher>(IServiceCollection services, Func<IServiceProvider, TDispatcher> dispatcherFactory)
-                where TDispatcher : Delegate
-            {
-                //Listener
-                services.AddSingleton<FeatureSlice<TRequest>.IListener, TSelf>();
-                services.Register<FeatureSlice<TRequest>>();
-
-                //Handler
-                services.AddFeatureManagement();
-                services.AddSingleton<TSelf>();
-                services.AddSingleton<TDispatcher>(dispatcherFactory);
-            }
+            return (await pipelines.RunPipeline(request, self.Handle)).Match<OneOf<TResponse, Disabled, Error>>(r => r, e => e);
         }
 
-        async Task<OneOf<Success, Error>> FeatureSlice<TRequest>.IListener.Listen(TRequest request)
+        public static Func<TRequest, Task<OneOf<TResponse, Disabled, Error>>> DispatchFactory(IServiceProvider provider)
         {
-            return (await Handle(request)).Match<OneOf<Success, Error>>(_ => new Success(), e => e);
+            return request => Dispatch(
+                request,
+                provider.GetRequiredService<TSelf>(),
+                provider.GetRequiredService<IFeatureManager>(),
+                provider.GetServices<IPipeline>().ToList());
+        }
+
+        public static void Register<TDispatcher>(IServiceCollection services, Func<IServiceProvider, TDispatcher> dispatcherFactory)
+            where TDispatcher : Delegate
+        {
+            //Handler
+            services.AddFeatureManagement();
+            services.AddSingleton<TSelf>();
+            services.AddSingleton<TDispatcher>(dispatcherFactory);
+            services.AddSingleton(RegisterListener);
+
+            static Publisher<TRequest>.Listen RegisterListener(IServiceProvider provider)
+            {
+                return async request => (await DispatchFactory(provider)(request)).Match<OneOf<Success, Error>>(s => new Success(), r => new Success(), e => e);
+            }
         }
     }
 }
