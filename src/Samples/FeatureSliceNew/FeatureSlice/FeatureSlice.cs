@@ -1,18 +1,22 @@
-﻿using FeatureSlice;
+using FeatureSlice;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
 
 namespace Samples;
 
-internal static partial class ExampleFeature
+internal sealed partial class ExampleFeatureSlice : IRegistrable<HostExtender<WebApplication>>
 {
     public sealed record Request();
     public sealed record Response();
 
-    public sealed partial class FeatureSlice1 : IFeatureSlice<Request, Response>, IRegistrable
+    public sealed partial class Handler : Feature.IHandler<Request, Response>
     {
-        public static string FeatureName => "FeatureSlice1";
+        public static string Name => "Handler";
 
         public Task<OneOf<Response, Error>> Handle(Request request)
         {
@@ -20,62 +24,52 @@ internal static partial class ExampleFeature
         }
     }
 
-    public sealed partial class FeatureSlice2 : IFeatureSlice<Request, Response>, IRegistrable
+    public sealed partial class Endpoint : Feature.IEndpoint
     {
-        public static string FeatureName => "FeatureSlice2";
+        public static Feature.EndpointSetup Setup => Feature.EndpointSetup
+            .MapGet("/test", TestMethod)
+            .WithName("name");
 
-        public Task<OneOf<Response, Error>> Handle(Request request)
+        private static IResult TestMethod(string param, [FromServices] Handler feature)
         {
-            throw new Exception();
+            feature.Handle(new Request());
+            return Results.Ok();
         }
+    }
+
+    public static void Register(IServiceCollection services, HostExtender<WebApplication> host)
+    {
+        host.Map<Endpoint>();
+        Handler.Register(services);
     }
 }
 
-internal static partial class ExampleFeature
+internal static class ExampleFeatureSliceRunner
 {
-    public static void Register(IServiceCollection services)
+    public static void Register(IServiceCollection services, HostExtender<WebApplication> host)
     {
-        services.Register<FeatureSlice1>();
-        services.Register<FeatureSlice2>();
+        ExampleFeatureSlice.Register(services, host);
     }
 
-    public static async Task Run(FeatureSlice1.Dispatch slice1, FeatureSlice2.Dispatch slice2, Publisher<Request>.Dispatch dispatch)
+    public static async Task Run(ExampleFeatureSlice.Handler.Dispatch slice1, Publisher<ExampleFeatureSlice.Request>.Dispatch dispatch)
     {
-        var result1 = await slice1(new Request());
-        var result2 = await slice2(new Request());
-        var result3 = await dispatch(new Request());
-
-        result2.Switch(
-            resposnse => {},
-            disabled => {},
-            error => {});
+        var result1 = await slice1(new ExampleFeatureSlice.Request());
+        var result3 = await dispatch(new ExampleFeatureSlice.Request());
     }
 }
 
 //Autogeneratoed
-internal static partial class ExampleFeature
+internal sealed partial class ExampleFeatureSlice
 {
-    public sealed partial class FeatureSlice1
+    public sealed partial class Handler
     {
         public delegate Task<OneOf<Response, Disabled, Error>> Dispatch(Request request);
 
         public static void Register(IServiceCollection services)
         {
-            IFeatureSlice<Request, Response>.Setup<FeatureSlice1>.Register<Dispatch>(
+            Feature.IHandler<Request, Response>.Setup<Handler>.Register<Dispatch>(
                 services,
-                provider => request => IFeatureSlice<Request, Response>.Setup<FeatureSlice1>.DispatchFactory(provider).Invoke(request));
-        }
-    }
-
-    public sealed partial class FeatureSlice2
-    {
-        public delegate Task<OneOf<Response, Disabled, Error>> Dispatch(Request request);
-
-        public static void Register(IServiceCollection services)
-        {
-            IFeatureSlice<Request, Response>.Setup<FeatureSlice2>.Register<Dispatch>(
-                services,
-                provider => request => IFeatureSlice<Request, Response>.Setup<FeatureSlice2>.DispatchFactory(provider).Invoke(request));
+                provider => request => Feature.IHandler<Request, Response>.Setup<Handler>.DispatchFactory(provider).Invoke(request));
         }
     }
 }

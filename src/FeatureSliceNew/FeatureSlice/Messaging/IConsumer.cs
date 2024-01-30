@@ -10,19 +10,19 @@ public static partial class Messaging
     public partial interface IConsumer<TMessage> : IMethod<Context<TMessage>, Task<OneOf<Success, Retry, Error>>>
         where TMessage : IMessage
     {
-        public abstract static string ConsumerName { get; }
+        public abstract static string Name { get; }
 
         public static class Setup<TSelf>
             where TSelf : class, IConsumer<TMessage>
         {
             public static Task<OneOf<Success, Error>> Dispatch(TMessage request, TSelf self, ISetup setup, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
             {
-                return setup.Send(request, TSelf.ConsumerName, context => Receive(context, self, featureManager, pipelines));
+                return setup.Send(request, TSelf.Name, context => Receive(context, self, featureManager, pipelines));
             }
 
             public static async Task<OneOf<Success, Disabled, Retry, Error>> Receive(Context<TMessage> context, TSelf self, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
             {
-                if(await featureManager.IsEnabledAsync(TSelf.ConsumerName) == false)
+                if(await featureManager.IsEnabledAsync(TSelf.Name) == false)
                 {
                     return new Disabled();
                 }
@@ -32,7 +32,7 @@ public static partial class Messaging
 
             public static Task RegisterInSetup(TSelf self, ISetup setup, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
             {
-                return setup.Register<TMessage>(TSelf.ConsumerName, context => Receive(context, self, featureManager, pipelines));
+                return setup.Register<TMessage>(TSelf.Name, context => Receive(context, self, featureManager, pipelines));
             }
 
             public static Func<TMessage, Task<OneOf<Success, Error>>> DispatchFactory(IServiceProvider provider)

@@ -15,7 +15,7 @@ internal static partial class ExampleMessagingConsumer
 
     public sealed partial class Consumer1 : Messaging.IConsumer<Message>, IRegistrable
     {
-        public static string ConsumerName => "Consumer1";
+        public static string Name => "Consumer1";
 
         public Task<OneOf<Success, Messaging.Retry, Error>> Handle(Messaging.Context<Message> request)
         {
@@ -25,8 +25,8 @@ internal static partial class ExampleMessagingConsumer
 
     public sealed partial class Consumer2 : Messaging.IConsumer<Message>, IRegistrable
     {
-        public static string ConsumerName => "Consumer2";
-        public static string FeatureName => ConsumerName;
+        public static string Name => "Consumer2";
+        public static string FeatureName => Name;
 
         public Task<OneOf<Success, Messaging.Retry, Error>> Handle(Messaging.Context<Message> request)
         {
