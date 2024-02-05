@@ -9,6 +9,24 @@ namespace FeatureSlice;
 
 public struct Disabled();
 
+public interface IRegistrator<TSelf>
+    where TSelf : IRegistrator<TSelf>
+{
+    public void Register<T>()
+        where T : IRegistrableFeature<TSelf>
+    {
+        T.Register((TSelf)this);
+    }
+}
+
+public interface IRegistrableFeature<TRegistrator>
+    where TRegistrator : IRegistrator<TRegistrator>
+{
+    public static abstract void Register(TRegistrator registrator);
+}
+
+public delegate void Register<TRequest, TResponse, THandler>();
+
 public static partial class Feature
 {
     public delegate Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse, THandler>(TRequest request, IServiceProvider provider)
@@ -18,22 +36,30 @@ public static partial class Feature
     {
         public abstract static string Name { get; }
 
-        public interface IRegistrable<THandler> : IHandler<TRequest, TResponse>
+        public interface IRegistrable<THandler> : IHandler<TRequest, TResponse>, IRegistrableFeature<IDispatcherModule>
             where THandler : class, IRegistrable<THandler>
         {
-            public static abstract void Register(IServiceCollection services, IConfiguration configuration, ServiceLifetime serviceLifetime, Dispatch<TRequest, TResponse, THandler> dispatcher);
-
-            public static void Register(IServiceCollection services, IConfiguration configuration, ServiceLifetime serviceLifetime)
+            static void IRegistrableFeature<IDispatcherModule>.Register(IDispatcherModule registrator)
             {
-                THandler.Register(services, configuration, serviceLifetime, (request, provider) => provider.GetRequiredService<Dispatch<TRequest, TResponse, THandler>>()(request, provider));
+                registrator.Register<TRequest, TResponse, THandler>();
             }
+
+            public static abstract void Register(
+                IServiceCollection services,
+                IConfiguration configuration,
+                ServiceLifetime serviceLifetime,
+                Dispatch<TRequest, TResponse, THandler> dispatcher);
         }
 
         public interface IRegistrable<THandler, TDelegate> : IRegistrable<THandler>
             where THandler : class, IRegistrable<THandler, TDelegate>
             where TDelegate : Delegate
         {
-            static void IRegistrable<THandler>.Register(IServiceCollection services, IConfiguration configuration, ServiceLifetime serviceLifetime, Dispatch<TRequest, TResponse, THandler> dispatcher)
+            static void IRegistrable<THandler>.Register(
+                IServiceCollection services,
+                IConfiguration configuration,
+                ServiceLifetime serviceLifetime,
+                Dispatch<TRequest, TResponse, THandler> dispatcher)
             {
                 services.Add(new ServiceDescriptor(typeof(THandler), typeof(THandler), serviceLifetime));
                 services.Add(new ServiceDescriptor(typeof(TDelegate), provider => THandler.Convert(provider, dispatcher), serviceLifetime));
@@ -69,9 +95,25 @@ public sealed class InMemoryDispatcher<TRequest, TResponse, THandler> : Feature.
     }
 }
 
-public sealed class InMemoryDispatcher
+public interface IDispatcherModule : IRegistrator<IDispatcherModule>
 {
-    public static Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse, THandler>(
+    public void Register<TRequest, TResponse, THandler>()
+        where THandler : class, Feature.IHandler<TRequest, TResponse>.IRegistrable<THandler>;
+}
+
+public sealed class InMemoryDispatcher : IDispatcherModule
+{
+    private readonly IServiceCollection _services;
+
+    private readonly IConfiguration _configuration;
+
+    public InMemoryDispatcher(IServiceCollection services, IConfiguration configuration)
+    {
+        _services = services;
+        _configuration = configuration;
+    }
+
+    internal static Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse, THandler>(
         TRequest request,
         IServiceProvider provider)
         where THandler : Feature.IHandler<TRequest, TResponse>
@@ -83,7 +125,7 @@ public sealed class InMemoryDispatcher
             provider.GetServices<Feature.IHandler<TRequest, TResponse>.IPipeline>().ToList());
     }
 
-    public static async Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse, THandler>(
+    internal static async Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse, THandler>(
         TRequest request,
         THandler handler,
         IFeatureManager featureManager,
@@ -100,39 +142,92 @@ public sealed class InMemoryDispatcher
         return pipelinesResult.Match<OneOf<TResponse, Disabled, Error>>(response => response, error => error);
     }
 
-    public static void Register<TRequest, TResponse, THandler>(IServiceCollection services, IConfiguration configuration)
+    public void Register<TRequest, TResponse, THandler>()
+        where THandler : class, Feature.IHandler<TRequest, TResponse>.IRegistrable<THandler>
+    {
+        Register<TRequest, TResponse, THandler>(_services, _configuration);
+    }
+
+    internal static void Register<TRequest, TResponse, THandler>(IServiceCollection services, IConfiguration configuration)
         where THandler : class, Feature.IHandler<TRequest, TResponse>.IRegistrable<THandler>
     {
         THandler.Register(services, configuration, ServiceLifetime.Singleton, Dispatch<TRequest, TResponse, THandler>);
     }
 }
 
-public static class MessagingDispatcher
+
+public interface IMessagingModule : IRegistrator<IMessagingModule>
 {
-    public interface ISetup
+    public void Register<TRequest, THandler>()
+        where THandler : class, Feature.IHandler<TRequest, Success>.IRegistrable<THandler>;
+}
+
+public interface IMessagingDispatcher
+{
+    public delegate Task<OneOf<Success, Disabled, Error>> Receive<TRequest>(TRequest request);
+
+    public Task<OneOf<Success, Error>> Send<TRequest>(TRequest request, string consumerName);
+
+    public Task<OneOf<Success, Error>> Register<TRequest>(string consumerName, Receive<TRequest> receiver);
+}
+
+public sealed class MessagingModule<TDispatcher> : IMessagingModule
+    where TDispatcher : IMessagingDispatcher
+{
+    private readonly IServiceCollection _services;
+
+    private readonly IConfiguration _configuration;
+
+    public MessagingModule(IServiceCollection services, IConfiguration configuration)
     {
-        public delegate Task<OneOf<Success, Disabled, Error>> Receive<TRequest>(TRequest request);
-
-        public Task<OneOf<Success, Error>> Send<TRequest>(TRequest request, string consumerName);
-
-        public Task<OneOf<Success, Error>> Register<TRequest>(string consumerName, Receive<TRequest> receiver);
+        _services = services;
+        _configuration = configuration;
     }
 
-    public static Task<OneOf<Success, Disabled, Error>> Dispatch<TRequest, THandler>(
+    public void Register<TRequest, THandler>()
+        where THandler : class, Feature.IHandler<TRequest, Success>.IRegistrable<THandler>
+    {
+        THandler.Register(_services, _configuration, ServiceLifetime.Singleton, Dispatch<TRequest, THandler>);
+
+        _services.AddHostedService<Registerer>();
+        _services.AddSingleton<Registered>(provider => () => Register(
+            provider.GetRequiredService<THandler>(),
+            provider.GetRequiredService<IFeatureManager>(),
+            provider.GetRequiredService<TDispatcher>(),
+            provider.GetServices<Feature.IHandler<TRequest, Success>.IPipeline>().ToList()));
+    }
+
+    public void Register<TRequest, TResponse, THandler>()
+        where THandler : class, Feature.IHandler<TRequest, TResponse>.IRegistrable<THandler>
+    {
+        InMemoryDispatcher.Register<TRequest, TResponse, THandler>(_services, _configuration);
+    }
+
+    internal static Task<OneOf<Success, Error>> Register<TRequest, THandler>(
+        THandler handler,
+        IFeatureManager featureManager,
+        TDispatcher dispatcher,
+        IReadOnlyList<Feature.IHandler<TRequest, Success>.IPipeline> pipelines)
+        where THandler : Feature.IHandler<TRequest, Success>
+    {
+        return dispatcher.Register<TRequest>(THandler.Name, request => Receive(request, handler, featureManager, pipelines));
+    }
+
+    internal static Task<OneOf<Success, Disabled, Error>> Dispatch<TRequest, THandler>(
         TRequest request,
         IServiceProvider provider)
         where THandler : Feature.IHandler<TRequest, Success>
     {
         return Dispatch<TRequest, THandler>(
             request,
-            provider.GetRequiredService<IFeatureManager>(),
-            provider.GetRequiredService<ISetup>());
+            provider.GetRequiredService<TDispatcher>(),
+            provider.GetRequiredService<IFeatureManager>());
     }
 
-    public static async Task<OneOf<Success, Disabled, Error>> Dispatch<TRequest, THandler>(
+    internal static async Task<OneOf<Success, Disabled, Error>> Dispatch<TRequest, THandler>(
         TRequest request,
-        IFeatureManager featureManager,
-        ISetup setup)
+        TDispatcher dispatcher,
+        IFeatureManager featureManager)
         where THandler : Feature.IHandler<TRequest, Success>
     {
         var isEnabled = await featureManager.IsEnabledAsync($"{THandler.Name}-Dispatch");
@@ -141,32 +236,12 @@ public static class MessagingDispatcher
             return new Disabled();
         }
 
-        var result = await setup.Send(request, THandler.Name);
+        var result = await dispatcher.Send(request, THandler.Name);
 
         return result.Match<OneOf<Success, Disabled, Error>>(success => success, error => error);
     }
 
-    public delegate Task<OneOf<Success, Error>> Registered();
-
-    public sealed class Registerer : BackgroundService
-    {
-        private readonly IReadOnlyCollection<Registered> _registerers;
-
-        public Registerer(IEnumerable<Registered> registerers)
-        {
-            _registerers = registerers.ToArray();
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            foreach(var registerer in _registerers)
-            {
-                await registerer();
-            }
-        }
-    }
-
-    public static async Task<OneOf<Success, Disabled, Error>> Receive<TRequest, THandler>(
+    internal static async Task<OneOf<Success, Disabled, Error>> Receive<TRequest, THandler>(
         TRequest request,
         THandler handler,
         IFeatureManager featureManager,
@@ -183,29 +258,25 @@ public static class MessagingDispatcher
         return pipelinesResult.Match<OneOf<Success, Disabled, Error>>(success => success, error => error);
     }
 
-    public static void Register<TRequest, THandler>(IServiceCollection services, IConfiguration configuration)
-        where THandler : class, Feature.IHandler<TRequest, Success>.IRegistrable<THandler>
+    internal delegate Task<OneOf<Success, Error>> Registered();
+
+    internal sealed class Registerer : BackgroundService
     {
-        THandler.Register(services, configuration, ServiceLifetime.Singleton, Dispatch<TRequest, THandler>);
+        private readonly IReadOnlyCollection<Registered> _registerers;
 
-        services.AddHostedService<Registerer>();
-        services.AddSingleton<Registered>(provider => () => Register(
-            provider.GetRequiredService<ISetup>(),
-            provider.GetRequiredService<THandler>(),
-            provider.GetRequiredService<IFeatureManager>(),
-            provider.GetServices<Feature.IHandler<TRequest, Success>.IPipeline>().ToList()));
+        public Registerer(IEnumerable<Registered> registerers)
+        {
+            _registerers = registerers.ToArray();
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            foreach(var registerer in _registerers)
+            {
+                await registerer();
+            }
+        }
     }
-
-    public static Task<OneOf<Success, Error>> Register<TRequest, THandler>(
-        ISetup setup,
-        THandler handler,
-        IFeatureManager featureManager,
-        IReadOnlyList<Feature.IHandler<TRequest, Success>.IPipeline> pipelines)
-        where THandler : Feature.IHandler<TRequest, Success>
-    {
-        return setup.Register<TRequest>(THandler.Name, request => Receive(request, handler, featureManager, pipelines));
-    }
-
 }
 
 

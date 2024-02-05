@@ -35,10 +35,10 @@ public sealed partial class Example
     }
 
 
-    public static void Register(IServiceCollection services, IConfiguration configuration)
+    public static void Register(IDispatcherModule dispatcherModule, IMessagingModule module)
     {
-        InMemoryDispatcher.Register<Request, Response, ExampleFeature>(services, configuration);
-        MessagingDispatcher.Register<Request, ExampleConsumer>(services, configuration);
+        dispatcherModule.Register<ExampleFeature>();
+        module.Register<Request, ExampleConsumer>();
     }
 
     public static void Use(ExampleFeature.Dispatch dispatcher)
