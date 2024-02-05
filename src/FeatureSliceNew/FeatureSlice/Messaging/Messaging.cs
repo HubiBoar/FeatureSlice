@@ -5,27 +5,14 @@ namespace FeatureSlice;
 
 public static partial class Messaging
 {
-    public struct Retry();
-
-    public interface IMessage
-    {
-        public static abstract string MessageName { get; }
-    }
-
     public delegate Task Registration();
 
     public interface ISetup
     {
-        public delegate Task<OneOf<Success, Disabled, Retry, Error>> Receive<TMessage>(Context<TMessage> context)
-            where TMessage : IMessage;
+        public delegate Task<OneOf<Success, Disabled, Error>> Receive<TMessage>(TMessage request);
 
-        public Task<OneOf<Success, Error>> Send<TMessage>(TMessage message, string consumerName, Receive<TMessage> receive)
-            where TMessage : IMessage;
+        public Task<OneOf<Success, Disabled, Error>> Send<TRequest>(TRequest request, string consumerName, Receive<TRequest> receive);
 
-        public Task<OneOf<Success, Error>> Register<TMessage>(string consumerName, Receive<TMessage> receiver)
-            where TMessage : IMessage;
+        public Task<OneOf<Success, Error>> Register<TRequest>(string consumerName, Receive<TRequest> receiver);
     }
-
-    public sealed record Context<TMessage>(TMessage Request)
-        where TMessage : IMessage;
 }

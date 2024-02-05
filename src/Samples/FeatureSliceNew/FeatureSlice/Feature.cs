@@ -10,7 +10,7 @@ internal static partial class ExampleFeature
     public sealed record Request();
     public sealed record Response();
 
-    public sealed partial class FeatureSlice1 : Feature.IHandler<Request, Response>, IRegistrable
+    public sealed partial class FeatureSlice1 : Feature.IHandler<Request, Response>
     {
         public static string Name => "FeatureSlice1";
 
@@ -20,7 +20,7 @@ internal static partial class ExampleFeature
         }
     }
 
-    public sealed partial class FeatureSlice2 : Feature.IHandler<Request, Response>, IRegistrable
+    public sealed partial class FeatureSlice2 : Feature.IHandler<Request, Response>
     {
         public static string Name => "FeatureSlice2";
 
@@ -35,8 +35,8 @@ internal static partial class ExampleFeature
 {
     public static void Register(IServiceCollection services)
     {
-        services.Register<FeatureSlice1>();
-        services.Register<FeatureSlice2>();
+        FeatureSlice1.Register(services);
+        FeatureSlice2.Register(services);
     }
 
     public static async Task Run(FeatureSlice1.Dispatch slice1, FeatureSlice2.Dispatch slice2, Publisher<Request>.Dispatch dispatch)

@@ -4,8 +4,6 @@ public interface IMethod<TRequest, TResponse>
 {
     public TResponse Handle(TRequest request);
 
-    public delegate Task<TResponse> Method(TRequest request);
-
     public interface IPipeline
     {
         public delegate TResponse Next(TRequest request);
@@ -14,7 +12,7 @@ public interface IMethod<TRequest, TResponse>
 
         public static TResponse RunPipeline(
             TRequest request,
-            Func<TRequest, TResponse> featureMethod,
+            Next featureMethod,
             IReadOnlyList<IPipeline> pipelines)
         {
             return RunPipeline(request, featureMethod, 0, pipelines);
@@ -22,7 +20,7 @@ public interface IMethod<TRequest, TResponse>
 
         private static TResponse RunPipeline(
             TRequest request,
-            Func<TRequest, TResponse> lastMethod,
+            Next lastMethod,
             int index,
             IReadOnlyList<IPipeline> pipelines)
         {
@@ -40,7 +38,7 @@ public interface IMethod<TRequest, TResponse>
 
 public static class PipelineExtensions
 {
-    public static TResponse RunPipeline<TRequest, TResponse>(this IReadOnlyList<IMethod<TRequest, TResponse>.IPipeline> pipelines, TRequest request, Func<TRequest, TResponse> featureMethod)
+    public static TResponse RunPipeline<TRequest, TResponse>(this IReadOnlyList<IMethod<TRequest, TResponse>.IPipeline> pipelines, TRequest request, IMethod<TRequest, TResponse>.IPipeline.Next featureMethod)
     {
         return IMethod<TRequest, TResponse>.IPipeline.RunPipeline(request, featureMethod, pipelines);
     }

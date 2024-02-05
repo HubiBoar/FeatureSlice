@@ -7,35 +7,42 @@ namespace FeatureSlice;
 
 public static partial class Messaging
 {
-    public partial interface IConsumer<TMessage> : IMethod<Context<TMessage>, Task<OneOf<Success, Retry, Error>>>
-        where TMessage : IMessage
+    public partial interface IConsumer<TRequest> : IMethod<TRequest, Task<OneOf<Success, Error>>>
     {
         public abstract static string Name { get; }
 
         public static class Setup<TSelf>
-            where TSelf : class, IConsumer<TMessage>
+            where TSelf : class, IConsumer<TRequest>
         {
-            public static Task<OneOf<Success, Error>> Dispatch(TMessage request, TSelf self, ISetup setup, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
+            public static async Task<OneOf<Success, Disabled, Error>> Dispatch(TRequest request, TSelf self, ISetup setup, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
             {
-                return setup.Send(request, TSelf.Name, context => Receive(context, self, featureManager, pipelines));
-            }
-
-            public static async Task<OneOf<Success, Disabled, Retry, Error>> Receive(Context<TMessage> context, TSelf self, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
-            {
-                if(await featureManager.IsEnabledAsync(TSelf.Name) == false)
+                var isEnabled = await featureManager.IsEnabledAsync($"{TSelf.Name}-Dispatch");
+                if(isEnabled == false)
                 {
                     return new Disabled();
                 }
 
-                return (await pipelines.RunPipeline(context, self.Handle)).Match<OneOf<Success, Disabled, Retry, Error>>(s => s, r => r, e => e);
+                return await setup.Send(request, TSelf.Name, r => Receive(r, self, featureManager, pipelines));
+            }
+
+            public static async Task<OneOf<Success, Disabled, Error>> Receive(TRequest request, TSelf self, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
+            {
+                var isEnabled = await featureManager.IsEnabledAsync($"{TSelf.Name}-Receive");
+                if(isEnabled == false)
+                {
+                    return new Disabled();
+                }
+
+                var pipelinesResult = await pipelines.RunPipeline(request, self.Handle);
+                return pipelinesResult.Match<OneOf<Success, Disabled, Error>>(success => success, error => error);
             }
 
             public static Task RegisterInSetup(TSelf self, ISetup setup, IFeatureManager featureManager, IReadOnlyList<IPipeline> pipelines)
             {
-                return setup.Register<TMessage>(TSelf.Name, context => Receive(context, self, featureManager, pipelines));
+                return setup.Register<TRequest>(TSelf.Name, r => Receive(r, self, featureManager, pipelines));
             }
 
-            public static Func<TMessage, Task<OneOf<Success, Error>>> DispatchFactory(IServiceProvider provider)
+            public static Func<TRequest, Task<OneOf<Success, Disabled, Error>>> DispatchFactory(IServiceProvider provider)
             {
                 return request => Dispatch(
                     request,
@@ -48,7 +55,6 @@ public static partial class Messaging
             public static void Register<TDispatcher>(IServiceCollection services, Func<IServiceProvider, TDispatcher> factory)
                 where TDispatcher : Delegate
             {
-
                 services.AddSingleton<TSelf>();
                 services.AddSingleton(factory);
                 services.AddSingleton(RegisterToRegistration);
@@ -63,11 +69,46 @@ public static partial class Messaging
                         provider.GetServices<IPipeline>().ToList());
                 }
 
-                static Publisher<TMessage>.Listen RegisterListener(IServiceProvider provider)
+                static Publisher<TRequest>.Listen RegisterListener(IServiceProvider provider)
                 {
-                    return (request) => DispatchFactory(provider)(request);
+                    return async request => {
+                        var result = await DispatchFactory(provider)(request);
+                        return result.Match<OneOf<Success, Error>>(success => success, disabled => new Success(), errror => errror);
+                    };
                 }
             }
         }
+    }
+}
+
+public sealed class ServiceBusDispatcher
+{
+    public static Task<OneOf<Success, Disabled, Error>> Dispatch<TRequest, THandler>(
+        TRequest request,
+        IServiceProvider provider)
+        where THandler : Feature.IHandler<TRequest, Success>
+    {
+        return Dispatch(
+            request,
+            provider.GetRequiredService<THandler>(),
+            provider.GetRequiredService<IFeatureManager>(),
+            provider.GetServices<Feature.IHandler<TRequest, Success>.IPipeline>().ToList());
+    }
+
+    public static async Task<OneOf<Success, Disabled, Error>> Dispatch<TRequest, THandler>(
+        TRequest request,
+        THandler handler,
+        IFeatureManager featureManager,
+        IReadOnlyList<Feature.IHandler<TRequest, Success>.IPipeline> pipelines)
+        where THandler : Feature.IHandler<TRequest, Success>
+    {
+        var isEnabled = await featureManager.IsEnabledAsync(THandler.Name);
+        if(isEnabled == false)
+        {
+            return new Disabled();
+        }
+
+        var pipelinesResult = await pipelines.RunPipeline(request, handler.Handle);
+        return pipelinesResult.Match<OneOf<Success, Disabled, Error>>(success => success, error => error);
     }
 }

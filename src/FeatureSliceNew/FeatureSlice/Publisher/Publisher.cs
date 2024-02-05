@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.FeatureManagement;
 using OneOf;
 using OneOf.Else;
 using OneOf.Types;
