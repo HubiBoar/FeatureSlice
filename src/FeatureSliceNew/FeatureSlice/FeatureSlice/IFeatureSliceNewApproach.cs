@@ -5,7 +5,7 @@ using Microsoft.FeatureManagement;
 using OneOf;
 using OneOf.Types;
 
-namespace FeatureSlice;
+namespace FeatureSlice5;
 
 public struct Disabled();
 
