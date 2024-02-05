@@ -16,47 +16,72 @@ public interface IHandler<TRequest, TResponse>
     public Task<OneOf<TResponse, Error>> Handle(TRequest request);
 }
 
-public class FeatureSliceBuilder<TRequest, TResponse>
+public interface IArguments
+{
+    public IServiceCollection Services { get; }
+}
+
+public class Arguments : IArguments
 {
     public IServiceCollection Services { get; }
 
-    public FeatureSliceBuilder(IServiceCollection services)
+    public Arguments(IServiceCollection services)
     {
         Services = services;
     }
+}
 
-    public FeatureSliceBuilder<TRequest, TResponse> Endoint<TEndpoint>(HostExtender<WebApplication> hostExtender)
+public interface IFeatureSliceBuilder
+{
+}
+
+public interface IFeatureSliceBuilder<TSelf> : IFeatureSliceBuilder
+    where TSelf : IFeatureSliceBuilder<TSelf>
+{
+}
+
+public static class SliceBuilderExtensions
+{
+    public static void Endoint<TEndpoint>(this IFeatureSliceBuilder featureSlice, HostExtender<WebApplication> hostExtender)
         where TEndpoint : Feature.IEndpoint
     {
         hostExtender.Map<TEndpoint>();
-
-        return this;
     }
+}
 
-    public Dispatch<TRequest, TResponse> Handler<THandler>()
+public sealed class FeatureSliceOptions<TRequest, TResponse> : IFeatureSliceBuilder<FeatureSliceOptions<TRequest, TResponse>>
+{
+    public Dispatch<TRequest, TResponse> Handler<THandler>(IServiceCollection services)
         where THandler : class, IHandler<TRequest, TResponse>
     {
-        Services.AddSingleton<THandler>();
+        services.AddSingleton<THandler>();
 
         return (provider, request) => provider.GetRequiredService<THandler>().Handle(request);
     }
 }
 
-public interface IFeatureSlice<TRequest, TResponse, TArgs>
+
+
+public interface IFeatureSlice<TRequest, TResponse> : IFeatureSlice<TRequest, TResponse, Arguments>
 {
-    public static abstract Dispatch<TRequest, TResponse> Build(FeatureSliceBuilder<TRequest, TResponse> builder, TArgs args);
+}
+
+public interface IFeatureSlice<TRequest, TResponse, TArgs>
+    where TArgs : IArguments
+{
+    public static abstract Dispatch<TRequest, TResponse> Build(FeatureSliceOptions<TRequest, TResponse> builder, TArgs args);
 
     public interface IRegistrable<TSelf, TDispatch> : IFeatureSlice<TRequest, TResponse, TArgs>
         where TSelf : class, IRegistrable<TSelf, TDispatch>
         where TDispatch : Delegate
     {
-        public static void RegisterInternal(IServiceCollection services, TArgs args)
+        public static void RegisterInternal(TArgs args)
         {
-            var dispatch = TSelf.Build(new FeatureSliceBuilder<TRequest, TResponse>(services), args);
-            services.AddSingleton<TDispatch>(provider => TSelf.Convert(provider, dispatch));
+            var dispatch = TSelf.Build(new FeatureSliceOptions<TRequest, TResponse>(), args);
+            args.Services.AddSingleton<TDispatch>(provider => TSelf.Convert(provider, dispatch));
         }
 
-        public abstract static void Register(IServiceCollection services, TArgs args);
+        public abstract static void Register(TArgs args);
 
         public static abstract TDispatch Convert(IServiceProvider provider, Dispatch<TRequest, TResponse> dispatch);
     }
@@ -64,16 +89,16 @@ public interface IFeatureSlice<TRequest, TResponse, TArgs>
 
 public partial class Example : IFeatureSlice<Example.Request, Example.Response, Example.Arguments>
 {
-    public record Arguments(HostExtender<WebApplication> HostExtender);
+    public record Arguments(IServiceCollection Services, HostExtender<WebApplication> HostExtender) : IArguments;
 
     public record Request();
     public record Response();
 
-    public static Dispatch<Request, Response> Build(FeatureSliceBuilder<Request, Response> builder, Arguments arguments)
+    public static Dispatch<Request, Response> Build(FeatureSliceOptions<Request, Response> options, Arguments arguments)
     {
-        return builder
-            .Endoint<Endpoint>(arguments.HostExtender)
-            .Handler<Handler>();
+        options.Endoint<Endpoint>(arguments.HostExtender);
+
+        return options.Handler<Handler>(arguments.Services);
     }
 
     private class Handler : IHandler<Request, Response>
@@ -99,7 +124,7 @@ public class ExampleUsage
 
     public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
     {
-        Example.Register(services, new Example.Arguments(hostExtender));
+        Example.Register(new Example.Arguments(services, hostExtender));
     }
 }
 
@@ -115,9 +140,9 @@ public partial class Example : IFeatureSlice<Example.Request, Example.Response, 
         return (request) => dispatch(provider, request); 
     }
 
-    public static void Register(IServiceCollection services, Arguments arguments)
+    public static void Register(Arguments arguments)
     {
-        IFeatureSlice<Request, Response, Arguments>.IRegistrable<Example, Dispatch>.RegisterInternal(services, arguments);
+        IFeatureSlice<Request, Response, Arguments>.IRegistrable<Example, Dispatch>.RegisterInternal(arguments);
     }
 
 }
