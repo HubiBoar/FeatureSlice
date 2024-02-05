@@ -9,7 +9,7 @@ public interface IRegistrable
 
 public interface IRegistrable<TArgs>
 {
-    public abstract static void Register(IServiceCollection services, TArgs args);
+    public abstract static void Register(TArgs args);
 }
 
 public static class RegistrableExtensions
@@ -20,9 +20,9 @@ public static class RegistrableExtensions
         T.Register(services);
     }
 
-    public static void Register<T, TArgs>(this IServiceCollection services, TArgs args)
+    public static void Register<T, TArgs>(this TArgs args)
         where T : IRegistrable<TArgs>
     {
-        T.Register(services, args);
+        T.Register(args);
     }
 }
