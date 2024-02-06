@@ -6,6 +6,7 @@ using OneOf.Types;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Hosting;
 using FeatureSlice;
+using Microsoft.AspNetCore.Http;
 
 namespace FeatureSliceApproach;
 
@@ -16,12 +17,48 @@ public interface IHandler<TRequest, TResponse>
     public Task<OneOf<TRequest, Error>> Handle(TResponse response);
 }
 
-public partial interface IForwardFacingFeatureSlice<TRequest, TResponse>
+public interface IFeatureFlag
+{
+    public abstract static string FeatureName { get; }
+}
+
+
+//IEndpointConventionBuilder Map<T>(this IEndpointRouteBuilder endpoint)
+
+public abstract class EndpointHelper
+{
+    public static EndpointInfo Get(string pattern, Delegate handler) => IEndpoint.Get(pattern, handler);
+}
+
+public sealed record EndpointInfo(HttpMethod Method, string Pattern, Delegate Handler);
+
+public interface IEndpoint
+{
+    public static abstract EndpointInfo Map { get; }
+
+    public static EndpointInfo Get(string pattern, Delegate handler)
+    {
+        return new EndpointInfo(HttpMethod.Get, pattern, handler);
+    }
+}
+
+public static class EndpointExtensions
+{
+    public static HostExtender<WebApplication> Map<T>(this HostExtender<WebApplication> extender)
+        where T : IEndpoint
+    {
+        var endpointInfo = T.Map;
+        extender.AddExtension(host => host.MapMethods(endpointInfo.Pattern, [ endpointInfo.Method.ToString() ], endpointInfo.Handler));
+
+        return extender;
+    }
+}
+
+public partial interface IForwardFacingFeatureSlice
 {
     public static class Delegate
     {
-
-        public abstract partial class Default : IForwardFacingFeatureSlice<TRequest, TResponse>
+        public abstract partial class Default<TRequest, TResponse> : IForwardFacingFeatureSlice
         {
             public delegate Task<OneOf<TRequest, Error>> Dispatch(TResponse request);
 
@@ -31,11 +68,10 @@ public partial interface IForwardFacingFeatureSlice<TRequest, TResponse>
             }
         }
 
-        public abstract partial class Toggle : IForwardFacingFeatureSlice<TRequest, TResponse>
+        public abstract partial class Flag<TFeatureFlag, TRequest, TResponse> : IForwardFacingFeatureSlice
+            where TFeatureFlag : IFeatureFlag
         {
             public delegate Task<OneOf<TRequest, Disabled, Error>> Dispatch(TResponse request);
-
-            public abstract string Name { get; }
 
             protected static void RegisterInternal(IServiceCollection services, Func<IServiceProvider, Dispatch> dispatcher)
             {
@@ -46,7 +82,7 @@ public partial interface IForwardFacingFeatureSlice<TRequest, TResponse>
 
     public static class Handler
     {
-        public abstract partial class Default<THandler> : Delegate.Default
+        public abstract partial class Default<TRequest, TResponse, THandler> : Delegate.Default<TRequest, TResponse>
             where THandler : class, IHandler<TRequest, TResponse>
         {
             protected static void RegisterInternal(IServiceCollection services)
@@ -56,7 +92,8 @@ public partial interface IForwardFacingFeatureSlice<TRequest, TResponse>
             }
         }
 
-        public abstract partial class Toggle<THandler> : Delegate.Toggle
+        public abstract partial class Flag<TFeatureFlag, TRequest, TResponse, THandler> : Delegate.Flag<TFeatureFlag, TRequest, TResponse>
+            where TFeatureFlag : IFeatureFlag
             where THandler : class, IHandler<TRequest, TResponse>
         {
             protected static void RegisterInternal(IServiceCollection services)
@@ -70,8 +107,8 @@ public partial interface IForwardFacingFeatureSlice<TRequest, TResponse>
 
     public static class Endpoint
     {
-        public abstract partial class Default<TEndpoint> : IForwardFacingFeatureSlice<TRequest, TResponse>
-            where TEndpoint : Feature.IEndpoint
+        public abstract partial class Default<TEndpoint> : IForwardFacingFeatureSlice
+            where TEndpoint : IEndpoint
         {
             protected static void RegisterInternal(HostExtender<WebApplication> hostExtender)
             {
@@ -79,11 +116,10 @@ public partial interface IForwardFacingFeatureSlice<TRequest, TResponse>
             }
         }
 
-        public abstract partial class Toggle<TEndpoint> : IForwardFacingFeatureSlice<TRequest, TResponse>
-            where TEndpoint : Feature.IEndpoint
+        public abstract partial class Flag<TFeatureFlag, TEndpoint> : IForwardFacingFeatureSlice
+            where TFeatureFlag : IFeatureFlag
+            where TEndpoint : IEndpoint
         {
-            public abstract string Name { get; }
-
             protected static void RegisterInternal(HostExtender<WebApplication> hostExtender)
             {
                 hostExtender.Map<TEndpoint>();
@@ -92,20 +128,21 @@ public partial interface IForwardFacingFeatureSlice<TRequest, TResponse>
     }
 }
 
-public static partial class FeatureSlice<TSelf, TRequest, TResponse>
-    where TSelf : IForwardFacingFeatureSlice<TRequest, TResponse>
+public static partial class FeatureSlice<TSelf>
+    where TSelf : IForwardFacingFeatureSlice
 {
-    public static partial class WithToggle
+    public static partial class WithFlag<TFeatureFlag>
+        where TFeatureFlag : IFeatureFlag
     {
-        public abstract partial class WithEndpoint<TEndpoint> : IForwardFacingFeatureSlice<TRequest, TResponse>.Endpoint.Toggle<TEndpoint>
-            where TEndpoint : Feature.IEndpoint
+        public abstract partial class WithEndpoint<TEndpoint> : IForwardFacingFeatureSlice.Endpoint.Flag<TFeatureFlag, TEndpoint>
+            where TEndpoint : IEndpoint
         {
             public static void Register(HostExtender<WebApplication> hostExtender)
             {
                 RegisterInternal(hostExtender);
             }
 
-            public abstract partial class WithHandler<THandler> : IForwardFacingFeatureSlice<TRequest, TResponse>.Handler.Toggle<THandler>
+            public abstract partial class WithHandler<TRequest, TResponse, THandler> : IForwardFacingFeatureSlice.Handler.Flag<TFeatureFlag, TRequest, TResponse, THandler>
                 where THandler : class, IHandler<TRequest, TResponse>
             {
                 public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
@@ -116,7 +153,7 @@ public static partial class FeatureSlice<TSelf, TRequest, TResponse>
             }
         }
 
-        public abstract partial class WithHandler<THandler> : IForwardFacingFeatureSlice<TRequest, TResponse>.Handler.Toggle<THandler>
+        public abstract partial class WithHandler<TRequest, TResponse, THandler> : IForwardFacingFeatureSlice.Handler.Flag<TFeatureFlag, TRequest, TResponse, THandler>
             where THandler : class, IHandler<TRequest, TResponse>
         {
             public static void Register(IServiceCollection services)
@@ -126,16 +163,26 @@ public static partial class FeatureSlice<TSelf, TRequest, TResponse>
         }
     }
 
-    public abstract partial class WithEndpoint<TEndpoint> :  IForwardFacingFeatureSlice<TRequest, TResponse>.Endpoint.Default<TEndpoint>
-        where TEndpoint : Feature.IEndpoint
+    public abstract partial class WithEndpoint<TEndpoint> : IForwardFacingFeatureSlice.Endpoint.Default<TEndpoint>
+        where TEndpoint : IEndpoint
     {
         public static void Register(HostExtender<WebApplication> hostExtender)
         {
             RegisterInternal(hostExtender);
         }
+
+        public abstract partial class WithHandler<TRequest, TResponse, THandler> : IForwardFacingFeatureSlice.Handler.Default<TRequest, TResponse, THandler>
+            where THandler : class, IHandler<TRequest, TResponse>
+        {
+            public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
+            {
+                WithEndpoint<TEndpoint>.Register(hostExtender);
+                RegisterInternal(services);
+            }
+        }
     }
 
-    public abstract partial class WithHandler<THandler> : IForwardFacingFeatureSlice<TRequest, TResponse>.Handler.Default<THandler>
+    public abstract partial class WithHandler<TRequest, TResponse, THandler> : IForwardFacingFeatureSlice.Handler.Default<TRequest, TResponse, THandler>
         where THandler : class, IHandler<TRequest, TResponse>
     {
         public static void Register(IServiceCollection services)
@@ -145,18 +192,17 @@ public static partial class FeatureSlice<TSelf, TRequest, TResponse>
     }
 }
 
-public sealed class ExampleFeature : FeatureSlice<
-    ExampleFeature,
-    ExampleFeature.Request,
-    ExampleFeature.Response>
-    .WithToggle
-    .WithEndpoint<ExampleFeature.Endpoint>
-    .WithHandler<ExampleFeature.Handler>
+public sealed class ExampleFeature : 
+    FeatureSlice<ExampleFeature>
+        .WithFlag<ExampleFeature>
+        .WithEndpoint<ExampleFeature.Endpoint>
+        .WithHandler<ExampleFeature.Request, ExampleFeature.Response, ExampleFeature.Handler>,
+        IFeatureFlag
 {
     public record Request();
     public record Response();
 
-    public override string Name => "ExampleFeature";
+    public static string FeatureName => "ExampleFeature";
 
     public class Handler : IHandler<Request, Response>
     {
@@ -166,10 +212,12 @@ public sealed class ExampleFeature : FeatureSlice<
         }
     }
 
-    public class Endpoint : Feature.IEndpoint
+    public class Endpoint : EndpointHelper, IEndpoint
     {
-        public static Feature.EndpointSetup Setup =>
-            Feature.EndpointSetup.MapPut("test", () => {});
+        public static EndpointInfo Map => Get("test", (int age) => 
+        {
+            return Results.Ok();
+        });
     }
 }
 
