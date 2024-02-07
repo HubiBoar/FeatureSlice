@@ -1,73 +1,46 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using OneOf.Types;
 
 namespace FeatureSlice.FluentGenerics.Interfaces2;
 
-public interface FeatureSliceWithConsumers
+public static class FeatureSlice
 {
-    public interface WithHandler<TRequest, TResponse, THandler>
+    public interface WithHandler<TRequest, TResponse, THandler> : HandlerFeatureSlice.Default<TRequest, TResponse>
         where THandler : class, IHandler<TRequest, TResponse>
     {
         public static abstract void Register(IServiceCollection services);
 
-        protected static void RegisterBase<TDispatch>(IServiceCollection services, DelegateFeatureSlice.Default<TRequest, TResponse>.DispatchConverter<TDispatch> converter)
+        protected static void RegisterBase<TDispatch>(IServiceCollection services, DispatchConverter<TDispatch> converter)
             where TDispatch : Delegate
         {
-            HandlerFeatureSlice.Default<TRequest, TResponse>.Register<TDispatch, THandler>(services, converter);
+            RegisterBase<TDispatch, THandler>(services, converter);
         }
     }
 
-    public interface WithConsumer<TRequest, TConsumer>
+    public interface WithConsumer<TRequest, TConsumer> : ConsumerFeatureSlice.Default<TRequest>
         where TConsumer : class, IConsumer<TRequest>
     {
         public static abstract void Register(IServiceCollection services);
 
-        protected static void RegisterBase<TDispatch>(IServiceCollection services, DelegateFeatureSlice.Default<TRequest, Success>.DispatchConverter<TDispatch> converter)
+        protected static void RegisterBase<TDispatch>(IServiceCollection services, DispatchConverter<TDispatch> converter)
             where TDispatch : Delegate
         {
-            ConsumerFeatureSlice.Default<TRequest>.Register<TDispatch, TConsumer>(services, converter);
-        }
-    }
-}
-
-public sealed class FeatureSlice
-{
-    public interface WithHandler<TRequest, TResponse, THandler>
-        where THandler : class, IHandler<TRequest, TResponse>
-    {
-        public static abstract void Register(IServiceCollection services);
-
-        protected static void RegisterBase<TDispatch>(IServiceCollection services, DelegateFeatureSlice.Default<TRequest, TResponse>.DispatchConverter<TDispatch> converter)
-            where TDispatch : Delegate
-        {
-            HandlerFeatureSlice.Default<TRequest, TResponse>.Register<TDispatch, THandler>(services, converter);
+            RegisterBase<TDispatch, TConsumer>(services, converter);
         }
     }
 
-    public interface WithConsumer<TRequest, TConsumer>
-        where TConsumer : class, IConsumer<TRequest>
-    {
-        public static abstract void Register(IServiceCollection services);
-
-        protected static void RegisterBase<TDispatch>(IServiceCollection services, DelegateFeatureSlice.Default<TRequest, Success>.DispatchConverter<TDispatch> converter)
-            where TDispatch : Delegate
-        {
-            ConsumerFeatureSlice.Default<TRequest>.Register<TDispatch, TConsumer>(services, converter);
-        }
-    }
-
-    public interface WithEndpoint<TEndpoint>
+    public interface WithEndpoint<TEndpoint> : EndpointFeatureSlice.Default
         where TEndpoint : IEndpoint
     {
         public static abstract void Register(HostExtender<WebApplication> hostExtender);
 
-        protected static void RegisterBase(HostExtender<WebApplication> hostExtender)
+        protected static new void RegisterBase<TDispatch>(HostExtender<WebApplication> hostExtender)
+            where TDispatch : Delegate
         {
-            EndpointFeatureSlice.Default.Register<TEndpoint>(hostExtender);
+            EndpointFeatureSlice.Default.RegisterBase<TDispatch, TEndpoint>(hostExtender);
         }
 
-        public interface WithHandler<TRequest, TResponse, THandler>
+        public static class WithHandler<TRequest, TResponse, THandler>
             where THandler : class, IHandler<TRequest, TResponse>
         {
             public abstract class Build<TSelf> : HandlerFeatureSlice.Default<TRequest, TResponse, THandler>, EndpointFeatureSlice.Default<TEndpoint>

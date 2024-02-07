@@ -11,26 +11,26 @@ public interface IHandler<TRequest, TResponse> : IMethod<TRequest, Task<OneOf<TR
 
 public static class HandlerFeatureSlice
 {
-    public static class Default<TRequest, TResponse>
+    public interface Default<TRequest, TResponse> : DelegateFeatureSlice.Default<TRequest, TResponse>
     {
-        public static void Register<TDispatch, THandler>(IServiceCollection services, DelegateFeatureSlice.Default<TRequest, TResponse>.DispatchConverter<TDispatch> converter)
+        protected static void RegisterBase<TDispatch, THandler>(IServiceCollection services, DispatchConverter<TDispatch> converter)
             where TDispatch : Delegate
             where THandler : class, IHandler<TRequest, TResponse>
         {
             services.AddSingleton<THandler>();
-            DelegateFeatureSlice.Default<TRequest, TResponse>.Register(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, TResponse, THandler>(request, provider), converter);
+            RegisterBase(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, TResponse, THandler>(request, provider), converter);
         }
     }
 
-    public static class Flag<TRequest, TResponse>
+    public interface Flag<TRequest, TResponse> : DelegateFeatureSlice.Flag<TRequest, TResponse>
     {
-        public static void Register<TFeatureFlag, TDispatch, THandler>(IServiceCollection services, DelegateFeatureSlice.Flag<TRequest, TResponse>.DispatchConverter<TDispatch> converter)
+        protected static void RegisterBase<TFeatureFlag, TDispatch, THandler>(IServiceCollection services, DispatchConverter<TDispatch> converter)
             where TFeatureFlag : IFeatureFlag
             where TDispatch : Delegate
             where THandler : class, IHandler<TRequest, TResponse>
         {
             services.AddSingleton<THandler>();
-            DelegateFeatureSlice.Flag<TRequest, TResponse>.Register<TFeatureFlag, TDispatch>(services, provider => request => InMemoryDispatcher.WithFlag<TFeatureFlag>.Dispatch<TRequest, TResponse, THandler>(request, provider), converter);
+            RegisterBase<TFeatureFlag, TDispatch>(services, provider => request => InMemoryDispatcher.WithFlag<TFeatureFlag>.Dispatch<TRequest, TResponse, THandler>(request, provider), converter);
         }
     }
 }

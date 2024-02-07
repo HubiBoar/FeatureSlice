@@ -10,26 +10,26 @@ public interface IConsumer<TRequest> : IMethod<TRequest, Task<OneOf<Success, Err
 
 public static class ConsumerFeatureSlice
 {
-    public static class Default<TRequest>
+    public interface Default<TRequest> : DelegateFeatureSlice.Default<TRequest, Success>
     {
-        public static void Register<TDispatch, TConsumer>(IServiceCollection services, DelegateFeatureSlice.Default<TRequest, Success>.DispatchConverter<TDispatch> converter)
+        protected static void RegisterBase<TDispatch, TConsumer>(IServiceCollection services, DispatchConverter<TDispatch> converter)
             where TConsumer : class, IConsumer<TRequest>
             where TDispatch : Delegate
         {
             services.AddSingleton<TConsumer>();
-            DelegateFeatureSlice.Default<TRequest, Success>.Register(services, null, converter);
+            RegisterBase(services, null, converter);
         }
     }
 
-    public static class Flag<TRequest>
+    public interface Flag<TRequest> : DelegateFeatureSlice.Flag<TRequest, Success>
     {
-        public static void Register<TFlag, TDispatch, TConsumer>(IServiceCollection services, DelegateFeatureSlice.Flag<TRequest, Success>.DispatchConverter<TDispatch> converter)
+        protected static void RegisterBase<TFlag, TDispatch, TConsumer>(IServiceCollection services, DispatchConverter<TDispatch> converter)
             where TConsumer : class, IConsumer<TRequest>
             where TDispatch : Delegate
             where TFlag : IFeatureFlag
         {
             services.AddSingleton<TConsumer>();
-            DelegateFeatureSlice.Flag<TRequest, Success>.Register<TFlag, TDispatch>(services, null, converter);
+            RegisterBase<TFlag, TDispatch>(services, null, converter);
         }
     }
 }

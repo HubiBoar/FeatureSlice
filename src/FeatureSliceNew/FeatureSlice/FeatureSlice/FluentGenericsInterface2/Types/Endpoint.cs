@@ -33,18 +33,18 @@ public static class EndpointExtensions
 
 public static class EndpointFeatureSlice
 {
-    public static class Default
+    public interface Default : IFeatureSlice
     {
-        public static void Register<TEndpoint>(HostExtender<WebApplication> hostExtender)
+        protected static void RegisterBase<TEndpoint>(HostExtender<WebApplication> hostExtender)
             where TEndpoint : IEndpoint
         {
             hostExtender.Map<TEndpoint>();
         }
     }
 
-    public static class Flag
+    public interface Flag : IFeatureSlice
     {
-        public static void Register<TFeatureFlag, TEndpoint>(HostExtender<WebApplication> hostExtender)
+        protected static void RegisterBase<TFeatureFlag, TEndpoint>(HostExtender<WebApplication> hostExtender)
             where TFeatureFlag : IFeatureFlag
             where TEndpoint : IEndpoint
         {
