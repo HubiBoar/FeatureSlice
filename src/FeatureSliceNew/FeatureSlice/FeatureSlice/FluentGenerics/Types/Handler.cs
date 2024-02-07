@@ -14,10 +14,10 @@ public static class HandlerFeatureSlice
     public abstract partial class Default<TRequest, TResponse, THandler> : DelegateFeatureSlice.Default<TRequest, TResponse>
         where THandler : class, IHandler<TRequest, TResponse>
     {
-        protected static void RegisterInternal(IServiceCollection services)
+        protected static void RegisterBase(IServiceCollection services)
         {
             services.AddSingleton<THandler>();
-            RegisterInternal(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, TResponse, THandler>(request, provider));
+            RegisterBase(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, TResponse, THandler>(request, provider));
         }
     }
 
@@ -25,10 +25,10 @@ public static class HandlerFeatureSlice
         where TFeatureFlag : IFeatureFlag
         where THandler : class, IHandler<TRequest, TResponse>
     {
-        protected static void RegisterInternal(IServiceCollection services)
+        protected static void RegisterBase(IServiceCollection services)
         {
             services.AddSingleton<THandler>();
-            RegisterInternal(services, provider => request => InMemoryDispatcher.WithFlag<TFeatureFlag>.Dispatch<TRequest, TResponse, THandler>(request, provider));
+            RegisterBase(services, provider => request => InMemoryDispatcher.WithFlag<TFeatureFlag>.Dispatch<TRequest, TResponse, THandler>(request, provider));
         }
     }
 }

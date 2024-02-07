@@ -11,7 +11,7 @@ public static class DelegateFeatureSlice
     {
         public delegate Task<OneOf<TResponse, Error>> Dispatch(TRequest request);
 
-        protected static void RegisterInternal(IServiceCollection services, Func<IServiceProvider, Dispatch> dispatcher)
+        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Dispatch> dispatcher)
         {
             services.AddSingleton<Dispatch>(provider => dispatcher(provider));
             services.AddSingleton<Publisher<TRequest>.Listen>(RegisterListener);
@@ -30,7 +30,7 @@ public static class DelegateFeatureSlice
     {
         public delegate Task<OneOf<TResponse, Disabled, Error>> Dispatch(TRequest request);
 
-        protected static void RegisterInternal(IServiceCollection services, Func<IServiceProvider, Dispatch> dispatcher)
+        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Dispatch> dispatcher)
         {
             services.AddSingleton<Dispatch>(provider => dispatcher(provider));
             services.AddSingleton<Publisher<TRequest>.Listen>(RegisterListener);

@@ -7,10 +7,11 @@ using Microsoft.AspNetCore.Http;
 namespace FeatureSlice.FluentGenerics;
 
 public sealed class ExampleFeature : 
-    FeatureSlice<ExampleFeature>
-        .WithFlag<ExampleFeature>
+    FeatureSlice
+        .AsFlag
         .WithEndpoint<ExampleFeature.Endpoint>
-        .WithHandler<ExampleFeature.Request, ExampleFeature.Response, ExampleFeature.Handler>,
+        .WithHandler<ExampleFeature.Request, ExampleFeature.Response, ExampleFeature.Handler>
+        .Build<ExampleFeature>,
         IFeatureFlag
 {
     public record Request();
@@ -28,19 +29,74 @@ public sealed class ExampleFeature :
 
     public class Endpoint : EndpointHelper, IEndpoint
     {
-        public static EndpointInfo Map => MapGet("test", (int age) => 
+        public static EndpointInfo Info => MapGet("test", (int age) => 
         {
             return Results.Ok();
         });
     }
 }
 
+public sealed class ExampleAsEndpoint : 
+    FeatureSlice
+        .AsFlag
+        .AsEndpoint
+        .WithHandler<ExampleAsEndpoint.Request, ExampleAsEndpoint.Response, ExampleAsEndpoint.Handler>
+        .Build<ExampleAsEndpoint>,
+        IEndpoint,
+        IFeatureFlag
+{
+    public record Request();
+    public record Response();
+
+    public static string FeatureName => "ExampleFeature";
+
+    public static EndpointInfo Info => IEndpoint.MapGet("test", (int age) => 
+    {
+        return Results.Ok();
+    });
+
+    public class Handler : IHandler<Request, Response>
+    {
+        public Task<OneOf<Response, Error>> Handle(Request response)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
+
+public sealed class ExampleAsEndpointAndHandler : 
+    FeatureSlice
+        .AsFlag
+        .AsEndpoint
+        .AsHandler<ExampleAsEndpointAndHandler.Request, ExampleAsEndpointAndHandler.Response>
+        .Build<ExampleAsEndpointAndHandler>,
+        IEndpoint,
+        IFeatureFlag,
+        IHandler<ExampleAsEndpointAndHandler.Request, ExampleAsEndpointAndHandler.Response>
+{
+    public record Request();
+    public record Response();
+
+    public static string FeatureName => "ExampleFeature";
+
+    public static EndpointInfo Info => IEndpoint.MapGet("test", (int age) => 
+    {
+        return Results.Ok();
+    });
+
+    public Task<OneOf<Response, Error>> Handle(Request response)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 
 public sealed class ExampleConsumer : 
-    FeatureSlice<ExampleConsumer>
-        .WithFlag<ExampleConsumer>
+    FeatureSlice
+        .AsFlag
         .WithEndpoint<ExampleConsumer.Endpoint>
-        .WithConsumer<ExampleConsumer.Request, ExampleConsumer.Consumer>,
+        .WithConsumer<ExampleConsumer.Request, ExampleConsumer.Consumer>
+        .Build<ExampleConsumer>,
         IFeatureFlag
 {
     public record Request();
@@ -57,7 +113,7 @@ public sealed class ExampleConsumer :
 
     public class Endpoint : EndpointHelper, IEndpoint
     {
-        public static EndpointInfo Map => MapGet("test", (int age) => 
+        public static EndpointInfo Info => MapGet("test", (int age) => 
         {
             return Results.Ok();
         });

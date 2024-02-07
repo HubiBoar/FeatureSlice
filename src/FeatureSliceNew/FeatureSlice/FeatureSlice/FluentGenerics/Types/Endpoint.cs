@@ -6,7 +6,7 @@ public sealed record EndpointInfo(HttpMethod Method, string Pattern, Delegate Ha
 
 public interface IEndpoint
 {
-    public static abstract EndpointInfo Map { get; }
+    public static abstract EndpointInfo Info { get; }
 
     public static EndpointInfo MapGet(string pattern, Delegate handler)
     {
@@ -24,7 +24,7 @@ public static class EndpointExtensions
     public static HostExtender<WebApplication> Map<T>(this HostExtender<WebApplication> extender)
         where T : IEndpoint
     {
-        var endpointInfo = T.Map;
+        var endpointInfo = T.Info;
         extender.AddExtension(host => host.MapMethods(endpointInfo.Pattern, [ endpointInfo.Method.ToString() ], endpointInfo.Handler));
 
         return extender;
@@ -33,29 +33,20 @@ public static class EndpointExtensions
 
 public static class EndpointFeatureSlice
 {
-    public abstract partial class WithEndpointBase<TEndpoint> : Default<TEndpoint>
+    public interface Default<TEndpoint> : IFeatureSlice
         where TEndpoint : IEndpoint
     {
-        protected static new void RegisterInternal(HostExtender<WebApplication> hostExtender)
-        {
-            Default<TEndpoint>.RegisterInternal(hostExtender);
-        }
-    }
-
-    public abstract partial class Default<TEndpoint> : IFeatureSlice
-        where TEndpoint : IEndpoint
-    {
-        protected static void RegisterInternal(HostExtender<WebApplication> hostExtender)
+        public static void Register(HostExtender<WebApplication> hostExtender)
         {
             hostExtender.Map<TEndpoint>();
         }
     }
 
-    public abstract partial class Flag<TFeatureFlag, TEndpoint> : IFeatureSlice
+    public interface Flag<TFeatureFlag, TEndpoint> : IFeatureSlice
         where TFeatureFlag : IFeatureFlag
         where TEndpoint : IEndpoint
     {
-        protected static void RegisterInternal(HostExtender<WebApplication> hostExtender)
+        public static void Register(HostExtender<WebApplication> hostExtender)
         {
             hostExtender.Map<TEndpoint>();
         }
