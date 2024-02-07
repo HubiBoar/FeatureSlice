@@ -1,15 +1,13 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Hosting;
-using FeatureSlice;
-using Microsoft.AspNetCore.Http;
 using Microsoft.FeatureManagement;
 
 namespace FeatureSlice.FluentGenerics;
+
+public interface IHandler<TRequest, TResponse> : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
+{
+}
 
 public static class InMemoryDispatcher
 {
