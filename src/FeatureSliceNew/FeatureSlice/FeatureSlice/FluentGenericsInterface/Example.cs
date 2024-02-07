@@ -23,6 +23,7 @@ public sealed partial class ExampleHandler :
     FeatureSlice
         .WithFlag
         .AsEndpoint
+        .AsHandler
 {
     public static string FeatureName => "ExampleHandler";
 
