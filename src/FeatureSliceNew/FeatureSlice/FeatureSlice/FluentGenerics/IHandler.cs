@@ -9,6 +9,30 @@ public interface IHandler<TRequest, TResponse> : IMethod<TRequest, Task<OneOf<TR
 {
 }
 
+public static class HandlerFeatureSlice
+{
+    public abstract partial class Default<TRequest, TResponse, THandler> : DelegateFeatureSlice.Default<TRequest, TResponse>
+        where THandler : class, IHandler<TRequest, TResponse>
+    {
+        protected static void RegisterInternal(IServiceCollection services)
+        {
+            services.AddSingleton<THandler>();
+            RegisterInternal(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, TResponse, THandler>(request, provider));
+        }
+    }
+
+    public abstract partial class Flag<TFeatureFlag, TRequest, TResponse, THandler> : DelegateFeatureSlice.Flag<TFeatureFlag, TRequest, TResponse>
+        where TFeatureFlag : IFeatureFlag
+        where THandler : class, IHandler<TRequest, TResponse>
+    {
+        protected static void RegisterInternal(IServiceCollection services)
+        {
+            services.AddSingleton<THandler>();
+            RegisterInternal(services, provider => request => InMemoryDispatcher.WithFlag<TFeatureFlag>.Dispatch<TRequest, TResponse, THandler>(request, provider));
+        }
+    }
+}
+
 public static class InMemoryDispatcher
 {
     public static Task<OneOf<TResponse, Error>> Dispatch<TRequest, TResponse, THandler>(
@@ -64,4 +88,3 @@ public static class InMemoryDispatcher
         }
     }
 }
-

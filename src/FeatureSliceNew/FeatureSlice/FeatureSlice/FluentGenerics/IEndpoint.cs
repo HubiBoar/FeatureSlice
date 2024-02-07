@@ -30,3 +30,34 @@ public static class EndpointExtensions
         return extender;
     }
 }
+
+public static class EndpointFeatureSlice
+{
+    public abstract partial class WithEndpointBase<TEndpoint> : Default<TEndpoint>
+        where TEndpoint : IEndpoint
+    {
+        protected static new void RegisterInternal(HostExtender<WebApplication> hostExtender)
+        {
+            Default<TEndpoint>.RegisterInternal(hostExtender);
+        }
+    }
+
+    public abstract partial class Default<TEndpoint> : IFeatureSlice
+        where TEndpoint : IEndpoint
+    {
+        protected static void RegisterInternal(HostExtender<WebApplication> hostExtender)
+        {
+            hostExtender.Map<TEndpoint>();
+        }
+    }
+
+    public abstract partial class Flag<TFeatureFlag, TEndpoint> : IFeatureSlice
+        where TFeatureFlag : IFeatureFlag
+        where TEndpoint : IEndpoint
+    {
+        protected static void RegisterInternal(HostExtender<WebApplication> hostExtender)
+        {
+            hostExtender.Map<TEndpoint>();
+        }
+    }
+}
