@@ -6,17 +6,18 @@ namespace FeatureSlice;
 
 public interface IStaticHandler<TRequest, TResponse>
 {
-    public static Task<OneOf<TResponse, Error>> Dispatch<THandler, TDependencies>(TRequest request, IServiceProvider provider)
-        where THandler : IStaticHandler<TRequest, TResponse, TDependencies>
-        where TDependencies : class, IFromServices<TDependencies>
-    {
-        return THandler.Handle(request, TDependencies.Create(provider));
-    }
+    public abstract static Task<OneOf<TResponse, Error>> Dispatch(TRequest request, IServiceProvider provider);
 }
 
-public interface IStaticHandler<TRequest, TResponse, TDependencies> : IStaticHandler<TRequest, TResponse>
+public interface IStaticHandler<TSelf, TRequest, TResponse, TDependencies> : IStaticHandler<TRequest, TResponse>
+    where TSelf : class, IStaticHandler<TSelf, TRequest, TResponse, TDependencies>
     where TDependencies : class, IFromServices<TDependencies>
 {
+    static Task<OneOf<TResponse, Error>> IStaticHandler<TRequest, TResponse>.Dispatch(TRequest request, IServiceProvider provider)
+    {
+        return TSelf.Handle(request, TDependencies.Create(provider));
+    }
+
     public static abstract Task<OneOf<TResponse, Error>> Handle(TRequest request, TDependencies dependencies);
 }
 

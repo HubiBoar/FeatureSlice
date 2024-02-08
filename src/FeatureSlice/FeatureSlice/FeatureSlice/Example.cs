@@ -34,19 +34,6 @@ public sealed class ExampleFeature :
     }
 }
 
-public class Usage
-{
-    public static void Use(ExampleFeature.Dispatch dispatch)
-    {
-        dispatch.Invoke(new ExampleFeature.Request());
-    }
-
-    public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
-    {
-        ExampleFeature.Register(services, hostExtender);
-    }
-}
-
 public sealed record Dependency1();
 public sealed record Dependency2();
 
@@ -56,7 +43,7 @@ public sealed class ExampleStaticHandler :
         .AsEndpoint
         .AsFlag
         .Build<ExampleStaticHandler>,
-        IStaticHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>,
+        IStaticHandler<ExampleStaticHandler, ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>,
         IEndpoint,
         IFeatureFlag
 {
