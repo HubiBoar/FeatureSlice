@@ -4,8 +4,9 @@ using OneOf.Types;
 
 namespace FeatureSlice;
 
-public interface IConsumer<TRequest> : IMethod<TRequest, Task<OneOf<Success, Error>>>
+public interface IConsumer<TRequest>
 {
+    public Task<OneOf<Success, Error>> Consume(TRequest request);
 }
 
 public static class ConsumerFeatureSlice

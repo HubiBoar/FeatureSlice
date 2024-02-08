@@ -4,8 +4,9 @@ using OneOf.Types;
 
 namespace FeatureSlice;
 
-public interface IHandler<TRequest, TResponse> : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
+public interface IHandler<TRequest, TResponse>
 {
+    public Task<OneOf<TResponse, Error>> Handle(TRequest request);
 }
 
 public static class HandlerFeatureSlice
@@ -16,7 +17,7 @@ public static class HandlerFeatureSlice
         protected static void RegisterBase(IServiceCollection services)
         {
             services.AddSingleton<THandler>();
-            RegisterBase(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, TResponse, THandler>(request, provider));
+            RegisterBase(services, provider => request => InMemoryDispatcher.Dispatch(request, provider, provider.GetRequiredService<THandler>().Handle));
         }
     }
 
@@ -27,7 +28,7 @@ public static class HandlerFeatureSlice
         protected static void RegisterBase(IServiceCollection services)
         {
             services.AddSingleton<THandler>();
-            RegisterBase(services, provider => request => InMemoryDispatcher.WithFlag.Dispatch<TRequest, TResponse, THandler>(request, provider, TFeatureFlag.FeatureName));
+            RegisterBase(services, provider => request => InMemoryDispatcher.WithFlag.Dispatch(request, provider, provider.GetRequiredService<THandler>().Handle, TFeatureFlag.FeatureName));
         }
     }
 }

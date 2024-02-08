@@ -9,8 +9,8 @@ namespace FeatureSlice;
 public sealed class ExampleFeature : 
     FeatureSlice
         .WithHandler<ExampleFeature.Request, ExampleFeature.Response, ExampleFeature.Handler>
-        .WithEndpoint
-        .WithFlag
+        .AsEndpoint
+        .AsFlag
         .Build<ExampleFeature>,
         IEndpoint,
         IFeatureFlag
@@ -47,3 +47,45 @@ public class Usage
     }
 }
 
+public sealed record Dependency1();
+public sealed record Dependency2();
+
+public sealed class ExampleStaticHandler : 
+    FeatureSlice
+        .AsHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response>
+        .AsEndpoint
+        .AsFlag
+        .Build<ExampleStaticHandler>,
+        IStaticHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>,
+        IEndpoint,
+        IFeatureFlag
+{
+    public record Request();
+    public record Response();
+
+    public static string FeatureName => "ExampleFeature";
+
+    public static IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    {
+        return Results.Ok();
+    });
+
+    public static Task<OneOf<Response, Error>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    {
+        var (dep1, dep2) = dependencies;
+        throw new NotImplementedException();
+    }
+}
+
+public class Usage
+{
+    public static void Use(ExampleFeature.Dispatch dispatch)
+    {
+        dispatch.Invoke(new ExampleFeature.Request());
+    }
+
+    public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
+    {
+        ExampleFeature.Register(services, hostExtender);
+    }
+}

@@ -4,15 +4,19 @@ using OneOf.Types;
 
 namespace FeatureSlice;
 
-public interface IStaticHandler<TRequest, TResponse, TDependencies>
+public interface IStaticHandler<TRequest, TResponse>
+{
+    public static Task<OneOf<TResponse, Error>> Dispatch<THandler, TDependencies>(TRequest request, IServiceProvider provider)
+        where THandler : IStaticHandler<TRequest, TResponse, TDependencies>
+        where TDependencies : class, IFromServices<TDependencies>
+    {
+        return THandler.Handle(request, TDependencies.Create(provider));
+    }
+}
+
+public interface IStaticHandler<TRequest, TResponse, TDependencies> : IStaticHandler<TRequest, TResponse>
     where TDependencies : class, IFromServices<TDependencies>
 {
-    public static Task<OneOf<TResponse, Error>> Dispatch<THanlder>(IServiceProvider provider, TRequest request)
-        where THanlder : IStaticHandler<TRequest, TResponse, TDependencies>
-    {
-        return THanlder.Handle(request, TDependencies.Create(provider));
-    }
-
     public static abstract Task<OneOf<TResponse, Error>> Handle(TRequest request, TDependencies dependencies);
 }
 

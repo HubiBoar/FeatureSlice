@@ -7,49 +7,49 @@ namespace FeatureSlice;
 
 public static class InMemoryDispatcher
 {
-    public static Task<OneOf<TResponse, Error>> Dispatch<TRequest, TResponse, THandler>(
+    public delegate Task<OneOf<TResponse, Error>> Handle<TRequest, TResponse>(TRequest request);
+
+    public static Task<OneOf<TResponse, Error>> Dispatch<TRequest, TResponse>(
         TRequest request,
-        IServiceProvider provider)
-        where THandler : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
+        IServiceProvider provider,
+        Handle<TRequest, TResponse> handler)
     {
         return Dispatch(
             request,
-            provider.GetRequiredService<THandler>(),
-            provider.GetServices<IMethod<TRequest, Task<OneOf<TResponse, Error>>>.IPipeline>().ToList());
+            handler,
+            provider.GetServices<IPipeline<TRequest, Task<OneOf<TResponse, Error>>>>().ToList());
     }
 
-    public static async Task<OneOf<TResponse, Error>> Dispatch<TRequest, TResponse, THandler>(
+    public static async Task<OneOf<TResponse, Error>> Dispatch<TRequest, TResponse>(
         TRequest request,
-        THandler self,
-        IReadOnlyList<IMethod<TRequest, Task<OneOf<TResponse, Error>>>.IPipeline> pipelines)
-        where THandler : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
+        Handle<TRequest, TResponse> handler,
+        IReadOnlyList<IPipeline<TRequest, Task<OneOf<TResponse, Error>>>> pipelines)
     {
-        return await pipelines.RunPipeline(request, self.Handle);
+        return await pipelines.RunPipeline(request, r => handler(r));
     }
 
     public static class WithFlag
     {
-        public static Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse, THandler>(
+        public static Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse>(
             TRequest request,
             IServiceProvider provider,
+            Handle<TRequest, TResponse> handler,
             string featureName)
-            where THandler : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
         {
             return Dispatch(
                 request,
-                provider.GetRequiredService<THandler>(),
+                handler,
                 provider.GetRequiredService<IFeatureManager>(),
                 featureName,
-                provider.GetServices<IMethod<TRequest, Task<OneOf<TResponse, Error>>>.IPipeline>().ToList());
+                provider.GetServices<IPipeline<TRequest, Task<OneOf<TResponse, Error>>>>().ToList());
         }
 
-        public static async Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse, THandler>(
+        public static async Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse>(
             TRequest request,
-            THandler self,
+            Handle<TRequest, TResponse> handler,
             IFeatureManager featureManager,
             string featureName,
-            IReadOnlyList<IMethod<TRequest, Task<OneOf<TResponse, Error>>>.IPipeline> pipelines)
-            where THandler : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
+            IReadOnlyList<IPipeline<TRequest, Task<OneOf<TResponse, Error>>>> pipelines)
         {
             var isEnabled = await featureManager.IsEnabledAsync(featureName);
             if(isEnabled == false)
@@ -57,7 +57,7 @@ public static class InMemoryDispatcher
                 return new Disabled();
             }
 
-            var result = await InMemoryDispatcher.Dispatch<TRequest, TResponse, THandler>(request, self, pipelines);
+            var result = await InMemoryDispatcher.Dispatch<TRequest, TResponse>(request, handler, pipelines);
             return result.Match<OneOf<TResponse, Disabled, Error>>(success => success, error => error);
         }
     }

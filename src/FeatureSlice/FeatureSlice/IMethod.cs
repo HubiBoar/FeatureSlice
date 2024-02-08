@@ -2,46 +2,41 @@
 
 namespace FeatureSlice;
 
-public interface IMethod<TRequest, TResponse>
+public interface IPipeline<TRequest, TResponse>
 {
-    public TResponse Handle(TRequest request);
+    public delegate TResponse Next(TRequest request);
 
-    public interface IPipeline
+    public TResponse Handle(TRequest request, Next next);
+
+    public static TResponse RunPipeline(
+        TRequest request,
+        Next featureMethod,
+        IReadOnlyList<IPipeline<TRequest, TResponse>> pipelines)
     {
-        public delegate TResponse Next(TRequest request);
+        return RunPipeline(request, featureMethod, 0, pipelines);
+    }
 
-        public TResponse Handle(TRequest request, Next next);
-
-        public static TResponse RunPipeline(
-            TRequest request,
-            Next featureMethod,
-            IReadOnlyList<IPipeline> pipelines)
+    private static TResponse RunPipeline(
+        TRequest request,
+        Next lastMethod,
+        int index,
+        IReadOnlyList<IPipeline<TRequest, TResponse>> pipelines)
+    {
+        if (index < pipelines.Count)
         {
-            return RunPipeline(request, featureMethod, 0, pipelines);
+            return pipelines[index].Handle(request, r => RunPipeline(r, lastMethod, index++, pipelines));
         }
-
-        private static TResponse RunPipeline(
-            TRequest request,
-            Next lastMethod,
-            int index,
-            IReadOnlyList<IPipeline> pipelines)
+        else
         {
-            if (index < pipelines.Count)
-            {
-                return pipelines[index].Handle(request, r => RunPipeline(r, lastMethod, index++, pipelines));
-            }
-            else
-            {
-                return lastMethod.Invoke(request);
-            }
+            return lastMethod.Invoke(request);
         }
     }
 }
 
 public static class PipelineExtensions
 {
-    public static TResponse RunPipeline<TRequest, TResponse>(this IReadOnlyList<IMethod<TRequest, TResponse>.IPipeline> pipelines, TRequest request, IMethod<TRequest, TResponse>.IPipeline.Next featureMethod)
+    public static TResponse RunPipeline<TRequest, TResponse>(this IReadOnlyList<IPipeline<TRequest, TResponse>> pipelines, TRequest request, IPipeline<TRequest, TResponse>.Next featureMethod)
     {
-        return IMethod<TRequest, TResponse>.IPipeline.RunPipeline(request, featureMethod, pipelines);
+        return IPipeline<TRequest, TResponse>.RunPipeline(request, featureMethod, pipelines);
     }
 }
