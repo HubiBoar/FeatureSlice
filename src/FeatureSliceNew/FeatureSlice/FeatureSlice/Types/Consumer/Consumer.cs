@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
 
-namespace FeatureSlice.FluentGenerics;
+namespace FeatureSlice;
 
 public interface IConsumer<TRequest> : IMethod<TRequest, Task<OneOf<Success, Error>>>
 {
@@ -16,18 +16,18 @@ public static class ConsumerFeatureSlice
         protected static void RegisterBase(IServiceCollection services)
         {
             services.AddSingleton<TConsumer>();
-            RegisterBase(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, TResponse, TConsumer>(request, provider));
+            RegisterBase(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, Success, TConsumer>(request, provider));
         }
     }
 
-    public abstract partial class Flag<TFeatureFlag, TRequest, TConsumer> : DelegateFeatureSlice.Flag<TFeatureFlag, TRequest, Success>
+    public abstract partial class Flag<TFeatureFlag, TRequest, TConsumer> : DelegateFeatureSlice.Flag<TRequest, Success>
         where TFeatureFlag : IFeatureFlag
         where TConsumer : class, IConsumer<TRequest>
     {
         protected static void RegisterBase(IServiceCollection services)
         {
             services.AddSingleton<TConsumer>();
-            RegisterBase(services, provider => request => InMemoryDispatcher.WithFlag<TFeatureFlag>.Dispatch<TRequest, TResponse, TConsumer>(request, provider));
+            RegisterBase(services, provider => request => InMemoryDispatcher.WithFlag.Dispatch<TRequest, Success, TConsumer>(request, provider, TFeatureFlag.FeatureName));
         }
     }
 }

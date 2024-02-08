@@ -3,34 +3,7 @@ using OneOf;
 using OneOf.Types;
 using Microsoft.FeatureManagement;
 
-namespace FeatureSlice.FluentGenerics.Interfaces;
-
-public interface IHandler<TRequest, TResponse> : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
-{
-}
-
-public static class HandlerFeatureSlice
-{
-    public interface Default<TRequest, TResponse, THandler> : DelegateFeatureSlice.Default<TRequest, TResponse>
-        where THandler : class, IHandler<TRequest, TResponse>
-    {
-        protected static void RegisterInternal(IServiceCollection services)
-        {
-            services.AddSingleton<THandler>();
-            RegisterInternal(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, TResponse, THandler>(request, provider));
-        }
-    }
-
-    public interface Flag<TRequest, TResponse, THandler> : DelegateFeatureSlice.Flag<TRequest, TResponse>
-        where THandler : class, IHandler<TRequest, TResponse>
-    {
-        protected static void RegisterInternal(IServiceCollection services)
-        {
-            services.AddSingleton<THandler>();
-            RegisterInternal(services, provider => request => InMemoryDispatcher.WithFlag<TFeatureFlag>.Dispatch<TRequest, TResponse, THandler>(request, provider));
-        }
-    }
-}
+namespace FeatureSlice;
 
 public static class InMemoryDispatcher
 {
@@ -54,18 +27,19 @@ public static class InMemoryDispatcher
         return await pipelines.RunPipeline(request, self.Handle);
     }
 
-    public static class WithFlag<TFeatureFlag>
-        where TFeatureFlag : IFeatureFlag
+    public static class WithFlag
     {
         public static Task<OneOf<TResponse, Disabled, Error>> Dispatch<TRequest, TResponse, THandler>(
             TRequest request,
-            IServiceProvider provider)
+            IServiceProvider provider,
+            string featureName)
             where THandler : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
         {
             return Dispatch(
                 request,
                 provider.GetRequiredService<THandler>(),
                 provider.GetRequiredService<IFeatureManager>(),
+                featureName,
                 provider.GetServices<IMethod<TRequest, Task<OneOf<TResponse, Error>>>.IPipeline>().ToList());
         }
 
@@ -73,10 +47,11 @@ public static class InMemoryDispatcher
             TRequest request,
             THandler self,
             IFeatureManager featureManager,
+            string featureName,
             IReadOnlyList<IMethod<TRequest, Task<OneOf<TResponse, Error>>>.IPipeline> pipelines)
             where THandler : IMethod<TRequest, Task<OneOf<TResponse, Error>>>
         {
-            var isEnabled = await featureManager.IsEnabledAsync(TFeatureFlag.FeatureName);
+            var isEnabled = await featureManager.IsEnabledAsync(featureName);
             if(isEnabled == false)
             {
                 return new Disabled();

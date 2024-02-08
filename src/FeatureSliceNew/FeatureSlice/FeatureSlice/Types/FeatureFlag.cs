@@ -1,4 +1,4 @@
-namespace FeatureSlice.FluentGenerics.Interfaces;
+namespace FeatureSlice;
 
 public struct Disabled;
 

@@ -36,24 +36,6 @@ public interface IMethod<TRequest, TResponse>
             }
         }
     }
-
-    // public interface IRegistrable<TSelf, TDispatcherType, TDispatcherInstance> : IMethod<TRequest, TResponse>
-    //     where TSelf : class, IRegistrable<TSelf, TDispatcherType, TDispatcherInstance>
-    //     where TDispatcherType : Delegate
-    //     where TDispatcherInstance : Delegate
-    // {
-    //     public static void Register(IServiceCollection services, Func<IServiceProvider, TDispatcherType> dispatch)
-    //     {
-    //         services.AddSingleton<TSelf>();
-    //         services.AddSingleton<TDispatcherInstance>(provider => TSelf.Convert(dispatch(provider)));
-
-    //         TSelf.OnRegistration(services, dispatch);
-    //     }
-
-    //     protected static abstract void OnRegistration(IServiceCollection services, Func<IServiceProvider, TDispatcherType> dispatch);
-
-    //     public static abstract TDispatcherInstance Convert(TDispatcherType dispatch);
-    // }
 }
 
 public static class PipelineExtensions
