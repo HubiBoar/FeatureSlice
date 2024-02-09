@@ -4,9 +4,11 @@ using OneOf.Types;
 
 namespace FeatureSlice;
 
+public sealed record ConsumerName(string Name);
+
 public interface IConsumer<TRequest>
 {
-    public abstract static string ConsumerName { get; }
+    public abstract static ConsumerName ConsumerName { get; }
 
     public Task<OneOf<Success, Error>> Consume(TRequest request);
 }
