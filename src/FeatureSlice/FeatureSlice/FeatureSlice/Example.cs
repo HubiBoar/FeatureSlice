@@ -39,11 +39,11 @@ public sealed record Dependency2();
 
 public sealed class ExampleStaticHandler : 
     FeatureSlice
-        .AsHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response>
+        .AsHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>
         .AsEndpoint
         .AsFlag
-        .Build<ExampleStaticHandler>,
-        IStaticHandler<ExampleStaticHandler, ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>,
+        .BuildBase<ExampleStaticHandler>,
+        IStaticHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>,
         IEndpoint,
         IFeatureFlag
 {
@@ -64,15 +64,76 @@ public sealed class ExampleStaticHandler :
     }
 }
 
+
+public sealed class ExampleFeatureSelf : 
+    FeatureSlice
+        .WithHandler<ExampleFeatureSelf.Request, ExampleFeatureSelf.Response, ExampleFeatureSelf.Handler>
+        .AsEndpoint
+        .AsFlag
+        .Build<ExampleFeatureSelf>
+{
+    public record Request();
+    public record Response();
+
+    protected override string FeatureName => "ExampleFeature";
+
+    protected override IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    {
+        return Results.Ok();
+    });
+
+    public class Handler : IHandler<Request, Response>
+    {
+        public Task<OneOf<Response, Error>> Handle(Request response)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
+
+public sealed class ExampleStaticHandlerSelf : 
+    FeatureSlice
+        .AsHandler<ExampleStaticHandlerSelf.Request, ExampleStaticHandlerSelf.Response, FromServices<Dependency1, Dependency2>>
+        .AsEndpoint
+        .AsFlag
+        .Build<ExampleStaticHandlerSelf>
+{
+    public record Request();
+    public record Response();
+
+    protected override string FeatureName => "ExampleFeature";
+
+    protected override IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    {
+        return Results.Ok();
+    });
+
+    protected override Task<OneOf<Response, Error>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    {
+        var (dep1, dep2) = dependencies;
+        throw new NotImplementedException();
+    }
+}
+
 public class Usage
 {
-    public static void Use(ExampleFeature.Dispatch dispatch)
+    public static void Use(
+        ExampleFeature.Dispatch dispatch1,
+        ExampleStaticHandler.Dispatch dispatch2,
+        ExampleFeatureSelf.Dispatch dispatch3,
+        ExampleStaticHandlerSelf.Dispatch dispatch4)
     {
-        dispatch.Invoke(new ExampleFeature.Request());
+        dispatch1.Invoke(new ExampleFeature.Request());
+        dispatch2.Invoke(new ExampleStaticHandler.Request());
+        dispatch3.Invoke(new ExampleFeatureSelf.Request());
+        dispatch4.Invoke(new ExampleStaticHandlerSelf.Request());
     }
 
     public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
     {
         ExampleFeature.Register(services, hostExtender);
+        ExampleStaticHandler.Register(services, hostExtender);
+        ExampleFeatureSelf.Register(services, hostExtender);
+        ExampleStaticHandlerSelf.Register(services, hostExtender);
     }
 }

@@ -6,8 +6,9 @@ namespace FeatureSlice;
 
 public static class StaticHandlerFeatureSlice
 {
-    public abstract partial class Default<TRequest, TResponse, THandler> : DelegateFeatureSlice.Default<TRequest, TResponse>
-        where THandler : class, IStaticHandler<TRequest, TResponse>
+    public abstract partial class Default<TRequest, TResponse, THandler, TDependencies> : DelegateFeatureSlice.Default<TRequest, TResponse>
+        where THandler : class, IStaticHandler<TRequest, TResponse, TDependencies>
+        where TDependencies : class, IFromServices<TDependencies>
     {
         protected static void RegisterBase(IServiceCollection services)
         {
@@ -16,9 +17,10 @@ public static class StaticHandlerFeatureSlice
         }
     }
 
-    public abstract partial class Flag<TFeatureFlag, TRequest, TResponse, THandler> : DelegateFeatureSlice.Flag<TRequest, TResponse>
+    public abstract partial class Flag<TFeatureFlag, TRequest, TResponse, THandler, TDependencies> : DelegateFeatureSlice.Flag<TRequest, TResponse>
         where TFeatureFlag : IFeatureFlag
-        where THandler : class, IStaticHandler<TRequest, TResponse>
+        where THandler : class, IStaticHandler<TRequest, TResponse, TDependencies>
+        where TDependencies : class, IFromServices<TDependencies>
     {
         protected static void RegisterBase(IServiceCollection services)
         {
