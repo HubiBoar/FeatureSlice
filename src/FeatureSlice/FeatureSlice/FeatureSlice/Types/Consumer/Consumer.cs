@@ -6,6 +6,8 @@ namespace FeatureSlice;
 
 public interface IConsumer<TRequest>
 {
+    public abstract static string ConsumerName { get; }
+
     public Task<OneOf<Success, Error>> Consume(TRequest request);
 }
 
@@ -14,10 +16,16 @@ public static class ConsumerFeatureSlice
     public abstract partial class Default<TRequest, TConsumer> : DelegateFeatureSlice.Default<TRequest, Success>
         where TConsumer : class, IConsumer<TRequest>
     {
-        protected static void RegisterBase(IServiceCollection services)
+        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Messaging.ISetup> getSetup)
         {
             services.AddSingleton<TConsumer>();
-            RegisterBase(services, provider => request => InMemoryDispatcher.Dispatch<TRequest, Success, TConsumer>(request, provider));
+            RegisterBase(
+                services,
+                Messaging.Dispatcher<TRequest>.Default.Register(
+                    services,
+                    TConsumer.ConsumerName,
+                    provider => provider.GetRequiredService<TConsumer>().Consume,
+                    getSetup));
         }
     }
 
@@ -25,10 +33,17 @@ public static class ConsumerFeatureSlice
         where TFeatureFlag : IFeatureFlag
         where TConsumer : class, IConsumer<TRequest>
     {
-        protected static void RegisterBase(IServiceCollection services)
+        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Messaging.ISetup> getSetup)
         {
             services.AddSingleton<TConsumer>();
-            RegisterBase(services, provider => request => InMemoryDispatcher.WithFlag.Dispatch<TRequest, Success, TConsumer>(request, provider, TFeatureFlag.FeatureName));
+            RegisterBase(
+                services,
+                Messaging.Dispatcher<TRequest>.WithFlag.Register(
+                    services,
+                    TConsumer.ConsumerName,
+                    TFeatureFlag.FeatureName,
+                    provider => provider.GetRequiredService<TConsumer>().Consume,
+                    getSetup));
         }
     }
 }

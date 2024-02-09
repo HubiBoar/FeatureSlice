@@ -17,7 +17,7 @@ public static class HandlerFeatureSlice
         protected static void RegisterBase(IServiceCollection services)
         {
             services.AddSingleton<THandler>();
-            RegisterBase(services, provider => request => InMemoryDispatcher.Dispatch(request, provider, provider.GetRequiredService<THandler>().Handle));
+            RegisterBase(services, provider => request => InMemoryDispatcher<TRequest, TResponse>.Default.Dispatch(request, provider, provider.GetRequiredService<THandler>().Handle));
         }
     }
 
@@ -28,7 +28,7 @@ public static class HandlerFeatureSlice
         protected static void RegisterBase(IServiceCollection services)
         {
             services.AddSingleton<THandler>();
-            RegisterBase(services, provider => request => InMemoryDispatcher.WithFlag.Dispatch(request, provider, provider.GetRequiredService<THandler>().Handle, TFeatureFlag.FeatureName));
+            RegisterBase(services, provider => request => InMemoryDispatcher<TRequest, TResponse>.WithFlag.Dispatch(request, provider, provider.GetRequiredService<THandler>().Handle, TFeatureFlag.FeatureName));
         }
     }
 }
