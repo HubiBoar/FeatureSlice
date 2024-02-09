@@ -8,9 +8,9 @@ namespace FeatureSlice;
 
 public sealed class ExampleFeature : 
     FeatureSlice
-        .WithHandler<ExampleFeature.Request, ExampleFeature.Response, ExampleFeature.Handler>
-        .AsEndpoint
         .AsFlag
+        .AsEndpoint
+        .WithHandler<ExampleFeature.Request, ExampleFeature.Response, ExampleFeature.Handler>
         .BuildAs<ExampleFeature>,
         IEndpoint,
         IFeatureFlag
@@ -39,9 +39,9 @@ public sealed record Dependency2();
 
 public sealed class ExampleStaticHandler : 
     FeatureSlice
-        .AsHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>
-        .AsEndpoint
         .AsFlag
+        .AsEndpoint
+        .AsHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>
         .BuildAs<ExampleStaticHandler>,
         IStaticHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>,
         IEndpoint,
@@ -67,9 +67,9 @@ public sealed class ExampleStaticHandler :
 
 public sealed class ExampleFeatureSelf : 
     FeatureSlice
-        .WithHandler<ExampleFeatureSelf.Request, ExampleFeatureSelf.Response, ExampleFeatureSelf.Handler>
-        .AsEndpoint
         .AsFlag
+        .AsEndpoint
+        .WithHandler<ExampleFeatureSelf.Request, ExampleFeatureSelf.Response, ExampleFeatureSelf.Handler>
         .Build<ExampleFeatureSelf>
 {
     public record Request();
@@ -93,9 +93,9 @@ public sealed class ExampleFeatureSelf :
 
 public sealed class ExampleStaticHandlerSelf : 
     FeatureSlice
-        .AsHandler<ExampleStaticHandlerSelf.Request, ExampleStaticHandlerSelf.Response, FromServices<Dependency1, Dependency2>>
-        .AsEndpoint
         .AsFlag
+        .AsEndpoint
+        .AsHandler<ExampleStaticHandlerSelf.Request, ExampleStaticHandlerSelf.Response, FromServices<Dependency1, Dependency2>>
         .Build<ExampleStaticHandlerSelf>
 {
     public record Request();
@@ -117,9 +117,9 @@ public sealed class ExampleStaticHandlerSelf :
 
 public sealed class ExampleStaticConsumerSelf : 
     FeatureSlice
-        .AsConsumer<ExampleStaticConsumerSelf.Request, FromServices<Dependency1, Dependency2>>
-        .AsEndpoint
         .AsFlag
+        .AsEndpoint
+        .AsConsumer<ExampleStaticConsumerSelf.Request, FromServices<Dependency1, Dependency2>>
         .Build<ExampleStaticConsumerSelf>
 {
     public record Request();
