@@ -11,7 +11,7 @@ public sealed class ExampleFeature :
         .WithHandler<ExampleFeature.Request, ExampleFeature.Response, ExampleFeature.Handler>
         .AsEndpoint
         .AsFlag
-        .Build<ExampleFeature>,
+        .BuildAs<ExampleFeature>,
         IEndpoint,
         IFeatureFlag
 {
@@ -42,7 +42,7 @@ public sealed class ExampleStaticHandler :
         .AsHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>
         .AsEndpoint
         .AsFlag
-        .BuildBase<ExampleStaticHandler>,
+        .BuildAs<ExampleStaticHandler>,
         IStaticHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>,
         IEndpoint,
         IFeatureFlag

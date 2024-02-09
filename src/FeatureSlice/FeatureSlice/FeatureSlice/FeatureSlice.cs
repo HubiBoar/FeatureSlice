@@ -13,8 +13,8 @@ public static partial class FeatureSlice
 {
     public static class AsEndpoint
     {
-        public abstract class BuildBase<TSelf> : EndpointFeatureSlice.Default<TSelf>
-            where TSelf : BuildBase<TSelf>, IEndpoint
+        public abstract class BuildAs<TSelf> : EndpointFeatureSlice.Default<TSelf>
+            where TSelf : BuildAs<TSelf>, IEndpoint
         {
             public static void Register(HostExtender<WebApplication> hostExtender)
             {
@@ -22,7 +22,7 @@ public static partial class FeatureSlice
             }
         }
 
-        public abstract class Build<TSelf> : BuildBase<TSelf>, IEndpoint
+        public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint
             where TSelf : Build<TSelf>, new()
         {
             static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
@@ -32,8 +32,8 @@ public static partial class FeatureSlice
 
         public static class AsFlag
         {
-            public abstract class BuildBase<TSelf> : EndpointFeatureSlice.Flag<TSelf, TSelf>
-                where TSelf : BuildBase<TSelf>, IEndpoint, IFeatureFlag
+            public abstract class BuildAs<TSelf> : EndpointFeatureSlice.Flag<TSelf, TSelf>
+                where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureFlag
             {
                 public static void Register(HostExtender<WebApplication> hostExtender)
                 {
@@ -41,7 +41,7 @@ public static partial class FeatureSlice
                 }
             }
 
-            public abstract class Build<TSelf> : BuildBase<TSelf>, IEndpoint, IFeatureFlag
+            public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureFlag
                 where TSelf : Build<TSelf>, new()
             {
                 static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
@@ -58,8 +58,8 @@ public static partial class FeatureSlice
     public static class AsHandler<TRequest, TResponse, TDependencies>
         where TDependencies : class, IFromServices<TDependencies>
     {
-        public abstract class BuildBase<TSelf> : StaticHandlerFeatureSlice.Default<TRequest, TResponse, TSelf, TDependencies>
-            where TSelf : BuildBase<TSelf>, IStaticHandler<TRequest, TResponse, TDependencies>
+        public abstract class BuildAs<TSelf> : StaticHandlerFeatureSlice.Default<TRequest, TResponse, TSelf, TDependencies>
+            where TSelf : BuildAs<TSelf>, IStaticHandler<TRequest, TResponse, TDependencies>
         {
             public static void Register(IServiceCollection services)
             {
@@ -67,7 +67,7 @@ public static partial class FeatureSlice
             }
         }
 
-        public abstract class Build<TSelf> : BuildBase<TSelf>, IStaticHandler<TRequest, TResponse, TDependencies>
+        public abstract class Build<TSelf> : BuildAs<TSelf>, IStaticHandler<TRequest, TResponse, TDependencies>
             where TSelf : Build<TSelf>, new ()
         {
             static Task<OneOf<TResponse, Error>> IStaticHandler<TRequest, TResponse, TDependencies>.Handle(TRequest request, TDependencies dependencies)
@@ -80,8 +80,8 @@ public static partial class FeatureSlice
 
         public static class AsEndpoint
         {
-            public abstract class BuildBase<TSelf> : StaticHandlerFeatureSlice.Default<TRequest, TResponse, TSelf, TDependencies>, EndpointFeatureSlice.Default<TSelf>
-                where TSelf : BuildBase<TSelf>, IEndpoint, IStaticHandler<TRequest, TResponse, TDependencies>
+            public abstract class BuildAs<TSelf> : StaticHandlerFeatureSlice.Default<TRequest, TResponse, TSelf, TDependencies>, EndpointFeatureSlice.Default<TSelf>
+                where TSelf : BuildAs<TSelf>, IEndpoint, IStaticHandler<TRequest, TResponse, TDependencies>
             {
                 public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
                 {
@@ -90,7 +90,7 @@ public static partial class FeatureSlice
                 }
             }
 
-            public abstract class Build<TSelf> : BuildBase<TSelf>, IEndpoint, IStaticHandler<TRequest, TResponse, TDependencies>
+            public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IStaticHandler<TRequest, TResponse, TDependencies>
                 where TSelf : Build<TSelf>, new ()
             {
                 static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
@@ -107,8 +107,8 @@ public static partial class FeatureSlice
 
             public static class AsFlag
             {
-                public abstract class BuildBase<TSelf> : StaticHandlerFeatureSlice.Flag<TSelf, TRequest, TResponse, TSelf, TDependencies>, EndpointFeatureSlice.Flag<TSelf, TSelf>
-                    where TSelf : BuildBase<TSelf>, IEndpoint, IFeatureFlag, IStaticHandler<TRequest, TResponse, TDependencies>
+                public abstract class BuildAs<TSelf> : StaticHandlerFeatureSlice.Flag<TSelf, TRequest, TResponse, TSelf, TDependencies>, EndpointFeatureSlice.Flag<TSelf, TSelf>
+                    where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureFlag, IStaticHandler<TRequest, TResponse, TDependencies>
                 {
                     public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
                     {
@@ -117,7 +117,7 @@ public static partial class FeatureSlice
                     }
                 }
 
-                public abstract class Build<TSelf> : BuildBase<TSelf>, IEndpoint, IFeatureFlag, IStaticHandler<TRequest, TResponse, TDependencies>
+                public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureFlag, IStaticHandler<TRequest, TResponse, TDependencies>
                     where TSelf : Build<TSelf>, new()
                 {
                     static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
@@ -153,8 +153,8 @@ public static partial class FeatureSlice
 
         public static class AsEndpoint
         {
-            public abstract class BuildBase<TSelf> : HandlerFeatureSlice.Default<TRequest, TResponse, THandler>, EndpointFeatureSlice.Default<TSelf>
-                where TSelf : BuildBase<TSelf>, IEndpoint
+            public abstract class BuildAs<TSelf> : HandlerFeatureSlice.Default<TRequest, TResponse, THandler>, EndpointFeatureSlice.Default<TSelf>
+                where TSelf : BuildAs<TSelf>, IEndpoint
             {
                 public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
                 {
@@ -163,7 +163,7 @@ public static partial class FeatureSlice
                 }
             }
 
-            public abstract class Build<TSelf> : BuildBase<TSelf>, IEndpoint
+            public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint
                 where TSelf : Build<TSelf>, new ()
             {
                 static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
@@ -173,8 +173,8 @@ public static partial class FeatureSlice
 
             public static class AsFlag
             {
-                public abstract class BuildBase<TSelf> : HandlerFeatureSlice.Flag<TSelf, TRequest, TResponse, THandler>, EndpointFeatureSlice.Flag<TSelf, TSelf>
-                    where TSelf : BuildBase<TSelf>, IEndpoint, IFeatureFlag
+                public abstract class BuildAs<TSelf> : HandlerFeatureSlice.Flag<TSelf, TRequest, TResponse, THandler>, EndpointFeatureSlice.Flag<TSelf, TSelf>
+                    where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureFlag
                 {
                     public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
                     {
@@ -183,7 +183,7 @@ public static partial class FeatureSlice
                     }
                 }
 
-                public abstract class Build<TSelf> : BuildBase<TSelf>, IEndpoint, IFeatureFlag
+                public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureFlag
                     where TSelf : Build<TSelf>, new ()
                 {
                     static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
@@ -212,8 +212,8 @@ public static partial class FeatureSlice
 
         public static class AsEndpoint
         {
-            public abstract class BuildBase<TSelf> : ConsumerFeatureSlice.Default<TRequest, TConsumer>, EndpointFeatureSlice.Default<TSelf>
-                where TSelf : BuildBase<TSelf>, IEndpoint
+            public abstract class BuildAs<TSelf> : ConsumerFeatureSlice.Default<TRequest, TConsumer>, EndpointFeatureSlice.Default<TSelf>
+                where TSelf : BuildAs<TSelf>, IEndpoint
             {
                 public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
                 {
@@ -222,7 +222,7 @@ public static partial class FeatureSlice
                 }
             }
 
-            public abstract class Build<TSelf> : BuildBase<TSelf>, IEndpoint
+            public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint
                 where TSelf : Build<TSelf>, new()
             {
                 static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
@@ -232,8 +232,8 @@ public static partial class FeatureSlice
 
             public static class AsFlag
             {
-                public abstract class BuildBase<TSelf> : ConsumerFeatureSlice.Flag<TSelf, TRequest, TConsumer>, EndpointFeatureSlice.Flag<TSelf, TSelf>
-                    where TSelf : BuildBase<TSelf>, IEndpoint, IFeatureFlag
+                public abstract class BuildAs<TSelf> : ConsumerFeatureSlice.Flag<TSelf, TRequest, TConsumer>, EndpointFeatureSlice.Flag<TSelf, TSelf>
+                    where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureFlag
                 {
                     public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
                     {
@@ -242,7 +242,7 @@ public static partial class FeatureSlice
                     }
                 }
 
-                public abstract class Build<TSelf> : BuildBase<TSelf>, IEndpoint, IFeatureFlag
+                public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureFlag
                     where TSelf : Build<TSelf>, new()
                 {
                     static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
