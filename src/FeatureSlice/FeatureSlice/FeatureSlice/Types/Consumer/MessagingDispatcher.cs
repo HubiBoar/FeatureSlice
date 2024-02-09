@@ -10,7 +10,7 @@ public static partial class Messaging
 {
     public interface ISetupProvider
     {
-        public abstract static ISetup GetSetup(IServiceProvider provider);
+        public abstract ISetup GetSetup(IServiceProvider provider);
     }
 
     public interface ISetup

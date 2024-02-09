@@ -60,7 +60,7 @@ public static class InMemoryDispatcher<TRequest, TResponse>
                 return new Disabled();
             }
 
-            var result = await InMemoryDispatcher<TRequest, TResponse>.Dispatch(request, handler, pipelines);
+            var result = await InMemoryDispatcher<TRequest, TResponse>.Default.Dispatch(request, handler, pipelines);
             return result.Match<OneOf<TResponse, Disabled, Error>>(success => success, error => error);
         }
     }
