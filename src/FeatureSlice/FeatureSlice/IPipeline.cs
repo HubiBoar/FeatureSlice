@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-
-namespace FeatureSlice;
+﻿namespace FeatureSlice;
 
 public interface IPipeline<TRequest, TResponse>
 {

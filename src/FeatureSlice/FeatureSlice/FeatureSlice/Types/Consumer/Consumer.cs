@@ -4,7 +4,13 @@ using OneOf.Types;
 
 namespace FeatureSlice;
 
-public sealed record ConsumerName(string Name);
+public sealed record ConsumerName(string Name)
+{
+    public static implicit operator ConsumerName(string name)
+    {
+        return new ConsumerName(name);
+    } 
+}
 
 public interface IConsumer<TRequest>
 {

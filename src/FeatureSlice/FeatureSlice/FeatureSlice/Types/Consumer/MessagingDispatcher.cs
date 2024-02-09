@@ -2,16 +2,21 @@ using OneOf.Types;
 using OneOf;
 using Microsoft.FeatureManagement;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace FeatureSlice;
 
 public static partial class Messaging
 {
-    public delegate Task Registration();
-    public delegate Task<OneOf<Success, Disabled, Error>> Receive<TMessage>(TMessage message);
+    public interface ISetupProvider
+    {
+        public abstract static ISetup GetSetup(IServiceProvider provider);
+    }
 
     public interface ISetup
     {
+        public delegate Task<OneOf<Success, Disabled, Error>> Receive<TMessage>(TMessage message);
+
         public Task<OneOf<Success, Disabled, Error>> Send<TMessage>(TMessage message, ConsumerName consumerName, Receive<TMessage> receive);
 
         public Task<OneOf<Success, Error>> Register<TMessage>(ConsumerName consumerName, Receive<TMessage> receiver);
@@ -50,7 +55,8 @@ public static partial class Messaging
                 Func<IServiceProvider, Consume> getConsumer,
                 Func<IServiceProvider, ISetup> getSetup)
             {
-                services.AddSingleton<Registration>(provider => () => GetRegistration(provider));
+                services.AddHostedService<Registerer>();
+                services.AddSingleton<Registerer.Registration>(provider => () => GetRegistration(provider));
 
                 return GetDispatch;
 
@@ -117,7 +123,8 @@ public static partial class Messaging
                 Func<IServiceProvider, Consume> getConsumer,
                 Func<IServiceProvider, ISetup> getSetup)
             {
-                services.AddSingleton<Registration>(provider => () => GetRegistration(provider));
+                services.AddHostedService<Registerer>();
+                services.AddSingleton<Registerer.Registration>(provider => () => GetRegistration(provider));
 
                 return GetDispatch;
 
@@ -139,6 +146,26 @@ public static partial class Messaging
 
                     return message => Dispatch(message, consumerName, featureName, consume, setup, featureManager, pipelines);
                 }
+            }
+        }
+    }
+
+    public sealed class Registerer : BackgroundService
+    {
+        public delegate Task Registration();
+
+        private readonly IReadOnlyCollection<Registration> _registrations;
+
+        public Registerer(IEnumerable<Registration> registrations)
+        {
+            _registrations = registrations.ToArray();
+        }
+
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            foreach(var registration in _registrations)
+            {
+                await registration();
             }
         }
     }
