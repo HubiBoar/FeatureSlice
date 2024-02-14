@@ -1,3 +1,4 @@
+using Explicit.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
@@ -15,7 +16,7 @@ public static partial class FeatureSliceBuilder
                 where TDependencies : class, IFromServices<TDependencies>
             {
                 public abstract class BuildAs<TSelf> : StaticConsumerFeatureSlice.Flag<TSelf, TRequest, TSelf, TDependencies>, EndpointFeatureSlice.Flag<TSelf, TSelf>
-                    where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureFlag, IStaticConsumer<TRequest, TDependencies>
+                    where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureName, IStaticConsumer<TRequest, TDependencies>
                 {
                     public static void Register(IServiceCollection services, Messaging.ISetupProvider setupProvider, HostExtender<WebApplication> hostExtender)
                     {
@@ -24,7 +25,7 @@ public static partial class FeatureSliceBuilder
                     }
                 }
 
-                public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureFlag, IStaticConsumer<TRequest, TDependencies>
+                public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureName, IStaticConsumer<TRequest, TDependencies>
                     where TSelf : Build<TSelf>, new()
                 {
                     protected abstract string FeatureName { get; }
@@ -33,7 +34,7 @@ public static partial class FeatureSliceBuilder
                     protected abstract Task<OneOf<Success, Error>> Consume(TRequest request, TDependencies dependencies);
 
                     static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
-                    static string IFeatureFlag.FeatureName => new TSelf().FeatureName;
+                    static string IFeatureName.FeatureName => new TSelf().FeatureName;
                     static ConsumerName IStaticConsumer<TRequest, TDependencies>.ConsumerName => new TSelf().ConsumerName;
                     static Task<OneOf<Success, Error>> IStaticConsumer<TRequest, TDependencies>.Consume(TRequest request, TDependencies dependencies) => new TSelf().Consume(request, dependencies);
                 }      

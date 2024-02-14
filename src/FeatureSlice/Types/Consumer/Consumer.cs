@@ -1,3 +1,4 @@
+using Explicit.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
@@ -37,8 +38,8 @@ public static class ConsumerFeatureSlice
         }
     }
 
-    public abstract partial class Flag<TFeatureFlag, TRequest, TConsumer> : DelegateFeatureSlice.Flag<TRequest, Success>
-        where TFeatureFlag : IFeatureFlag
+    public abstract partial class Flag<TFeatureName, TRequest, TConsumer> : DelegateFeatureSlice.Flag<TRequest, Success>
+        where TFeatureName : IFeatureName
         where TConsumer : class, IConsumer<TRequest>
     {
         protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Messaging.ISetup> getSetup)
@@ -49,7 +50,7 @@ public static class ConsumerFeatureSlice
                 Messaging.Dispatcher<TRequest>.WithFlag.Register(
                     services,
                     TConsumer.ConsumerName,
-                    TFeatureFlag.FeatureName,
+                    TFeatureName.FeatureName,
                     provider => provider.GetRequiredService<TConsumer>().Consume,
                     getSetup));
         }

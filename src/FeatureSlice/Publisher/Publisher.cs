@@ -8,9 +8,7 @@ namespace FeatureSlice;
 public static class Publisher<TRequest>
 {
     public delegate Task<OneOf<Success, Error>> Dispatch(TRequest request);
-
     public delegate Task<OneOf<Success, Error>> DispatchParallel(TRequest request);
-
     public delegate Task<OneOf<Success, Error>> Listen(TRequest request);
 
     public static void Register(IServiceCollection services)

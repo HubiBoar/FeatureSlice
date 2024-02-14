@@ -1,3 +1,4 @@
+using Explicit.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
@@ -28,14 +29,14 @@ public static class StaticHandlerFeatureSlice
         }
     }
 
-    public abstract partial class Flag<TFeatureFlag, TRequest, TResponse, THandler, TDependencies> : DelegateFeatureSlice.Flag<TRequest, TResponse>
-        where TFeatureFlag : IFeatureFlag
+    public abstract partial class Flag<TFeatureName, TRequest, TResponse, THandler, TDependencies> : DelegateFeatureSlice.Flag<TRequest, TResponse>
+        where TFeatureName : IFeatureName
         where THandler : class, IStaticHandler<TRequest, TResponse, TDependencies>
         where TDependencies : class, IFromServices<TDependencies>
     {
         protected static void RegisterBase(IServiceCollection services)
         {
-            RegisterBase(services, provider => request => InMemoryDispatcher<TRequest, TResponse>.WithFlag.Dispatch(request, provider, r => THandler.Dispatch<THandler>(r, provider), TFeatureFlag.FeatureName));
+            RegisterBase(services, provider => request => InMemoryDispatcher<TRequest, TResponse>.WithFlag.Dispatch(request, provider, r => THandler.Dispatch<THandler>(r, provider), TFeatureName.FeatureName));
         }
     }
 }

@@ -1,3 +1,4 @@
+using Explicit.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +14,7 @@ public static partial class FeatureSliceBuilder
                 where TConsumer : class, IConsumer<TRequest>
             {
                 public abstract class BuildAs<TSelf> : ConsumerFeatureSlice.Flag<TSelf, TRequest, TConsumer>, EndpointFeatureSlice.Flag<TSelf, TSelf>
-                    where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureFlag
+                    where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureName
                 {
                     public static void Register(IServiceCollection services, Messaging.ISetupProvider setupProvider, HostExtender<WebApplication> hostExtender)
                     {
@@ -22,14 +23,14 @@ public static partial class FeatureSliceBuilder
                     }
                 }
 
-                public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureFlag
+                public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureName
                     where TSelf : Build<TSelf>, new()
                 {
                     protected abstract IEndpoint.Setup Endpoint { get; }
                     protected abstract string FeatureName { get; }
 
                     static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
-                    static string IFeatureFlag.FeatureName => new TSelf().FeatureName;
+                    static string IFeatureName.FeatureName => new TSelf().FeatureName;
                 }
             }
         }

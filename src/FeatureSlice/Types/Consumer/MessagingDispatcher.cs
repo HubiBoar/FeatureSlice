@@ -8,20 +8,6 @@ namespace FeatureSlice;
 
 public static partial class Messaging
 {
-    public interface ISetupProvider
-    {
-        public abstract ISetup GetSetup(IServiceProvider provider);
-    }
-
-    public interface ISetup
-    {
-        public delegate Task<OneOf<Success, Disabled, Error>> Receive<TMessage>(TMessage message);
-
-        public Task<OneOf<Success, Disabled, Error>> Send<TMessage>(TMessage message, ConsumerName consumerName, Receive<TMessage> receive);
-
-        public Task<OneOf<Success, Error>> Register<TMessage>(ConsumerName consumerName, Receive<TMessage> receiver);
-    }
-
     public static class Dispatcher<TMessage>
     {
         public delegate Task<OneOf<Success, Error>> Consume(TMessage message);

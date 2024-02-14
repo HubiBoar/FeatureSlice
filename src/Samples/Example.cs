@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
 using Microsoft.AspNetCore.Http;
+using Explicit.Configuration;
 
 namespace FeatureSlice.Samples;
 
@@ -12,7 +13,7 @@ public sealed class ExampleFeature : FeatureSliceBuilder
     .WithHandler<ExampleFeature.Request, ExampleFeature.Response, ExampleFeature.Handler>
     .BuildAs<ExampleFeature>,
     IEndpoint,
-    IFeatureFlag
+    IFeatureName
 {
     public record Request();
     public record Response();
@@ -43,7 +44,7 @@ public sealed class ExampleStaticHandler : FeatureSliceBuilder
     .BuildAs<ExampleStaticHandler>,
     IStaticHandler<ExampleStaticHandler.Request, ExampleStaticHandler.Response, FromServices<Dependency1, Dependency2>>,
     IEndpoint,
-    IFeatureFlag
+    IFeatureName
 {
     public record Request();
     public record Response();
@@ -138,12 +139,14 @@ public sealed class ExampleStaticConsumerSelf : FeatureSliceBuilder
 public class Usage
 {
     public static void Use(
+        Publisher<ExampleFeature.Request>.Dispatch dispatchPublisher,
         ExampleFeature.Dispatch dispatch1,
         ExampleStaticHandler.Dispatch dispatch2,
         ExampleFeatureSelf.Dispatch dispatch3,
         ExampleStaticHandlerSelf.Dispatch dispatch4,
         ExampleStaticConsumerSelf.Dispatch dispatch5)
     {
+        dispatchPublisher.Invoke(new ExampleFeature.Request());
         dispatch1.Invoke(new ExampleFeature.Request());
         dispatch2.Invoke(new ExampleStaticHandler.Request());
         dispatch3.Invoke(new ExampleFeatureSelf.Request());

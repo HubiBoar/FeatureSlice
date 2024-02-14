@@ -13,6 +13,8 @@ public static class DelegateFeatureSlice
         protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Dispatch> dispatcher)
         {
             services.AddSingleton<Dispatch>(provider => dispatcher(provider));
+
+            Publisher<TRequest>.Register(services);
             services.AddSingleton<Publisher<TRequest>.Listen>(RegisterListener);
             Publisher<TRequest>.Listen RegisterListener(IServiceProvider provider)
             {
@@ -31,6 +33,8 @@ public static class DelegateFeatureSlice
         protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Dispatch> dispatcher)
         {
             services.AddSingleton<Dispatch>(provider => dispatcher(provider));
+
+            Publisher<TRequest>.Register(services);
             services.AddSingleton<Publisher<TRequest>.Listen>(RegisterListener);
             Publisher<TRequest>.Listen RegisterListener(IServiceProvider provider)
             {

@@ -16,7 +16,7 @@
     
     <PropertyGroup>
         <Dotnet>net8.0</Dotnet>
-        <ExplicitVersion>1.0.2</ExplicitVersion>
+        <ExplicitVersion>1.0.3</ExplicitVersion>
         <MicrosoftExtensionsVersion>8.0.0</MicrosoftExtensionsVersion>
     </PropertyGroup>
 </Project>

@@ -1,3 +1,4 @@
+using Explicit.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
@@ -13,7 +14,7 @@ public static partial class FeatureSliceBuilder
             where TDependencies : class, IFromServices<TDependencies>
         {
             public abstract class BuildAs<TSelf> : StaticConsumerFeatureSlice.Flag<TSelf, TRequest, TSelf, TDependencies>
-                where TSelf : BuildAs<TSelf>, IFeatureFlag, IStaticConsumer<TRequest, TDependencies>
+                where TSelf : BuildAs<TSelf>, IFeatureName, IStaticConsumer<TRequest, TDependencies>
             {
                 public static void Register(IServiceCollection services, Messaging.ISetupProvider setupProvider)
                 {
@@ -21,14 +22,14 @@ public static partial class FeatureSliceBuilder
                 }
             }
 
-            public abstract class Build<TSelf> : BuildAs<TSelf>, IFeatureFlag, IStaticConsumer<TRequest, TDependencies>
+            public abstract class Build<TSelf> : BuildAs<TSelf>, IFeatureName, IStaticConsumer<TRequest, TDependencies>
                 where TSelf : Build<TSelf>, new()
             {
                 protected abstract string FeatureName { get; }
                 protected abstract ConsumerName ConsumerName { get; }
                 protected abstract Task<OneOf<Success, Error>> Consume(TRequest request, TDependencies dependencies);
 
-                static string IFeatureFlag.FeatureName => new TSelf().FeatureName;
+                static string IFeatureName.FeatureName => new TSelf().FeatureName;
                 static ConsumerName IStaticConsumer<TRequest, TDependencies>.ConsumerName => new TSelf().ConsumerName;
                 static Task<OneOf<Success, Error>> IStaticConsumer<TRequest, TDependencies>.Consume(TRequest request, TDependencies dependencies) => new TSelf().Consume(request, dependencies);
             }      

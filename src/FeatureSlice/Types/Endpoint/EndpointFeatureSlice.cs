@@ -1,6 +1,5 @@
+using Explicit.Configuration;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Hosting;
 
 namespace FeatureSlice;
 
@@ -15,8 +14,8 @@ public static class EndpointFeatureSlice
         }
     }
 
-    public interface Flag<TFeatureFlag, TEndpoint> : IFeatureSlice
-        where TFeatureFlag : IFeatureFlag
+    public interface Flag<TFeatureName, TEndpoint> : IFeatureSlice
+        where TFeatureName : IFeatureName
         where TEndpoint : IEndpoint
     {
         protected static void RegisterBase(HostExtender<WebApplication> hostExtender)

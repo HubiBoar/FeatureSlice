@@ -1,3 +1,4 @@
+using Explicit.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
@@ -36,8 +37,8 @@ public static class StaticConsumerFeatureSlice
         }
     }
 
-    public abstract partial class Flag<TFeatureFlag, TRequest, TConsumer, TDependencies> : DelegateFeatureSlice.Flag<TRequest, Success>
-        where TFeatureFlag : IFeatureFlag
+    public abstract partial class Flag<TFeatureName, TRequest, TConsumer, TDependencies> : DelegateFeatureSlice.Flag<TRequest, Success>
+        where TFeatureName : IFeatureName
         where TConsumer : class, IStaticConsumer<TRequest, TDependencies>
         where TDependencies : class, IFromServices<TDependencies>
     {
@@ -49,7 +50,7 @@ public static class StaticConsumerFeatureSlice
                 Messaging.Dispatcher<TRequest>.WithFlag.Register(
                     services,
                     TConsumer.ConsumerName,
-                    TFeatureFlag.FeatureName,
+                    TFeatureName.FeatureName,
                     provider => message => TConsumer.Dispatch<TConsumer>(message, provider),
                     getSetup));
         }

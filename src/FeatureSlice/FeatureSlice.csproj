@@ -9,6 +9,7 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
       <PackageReference Include="Explicit.Utils" />
+      <PackageReference Include="Explicit.Configuration" />
     </ItemGroup>
 
 </Project>

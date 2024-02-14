@@ -1,3 +1,4 @@
+using Explicit.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
@@ -15,7 +16,7 @@ public static partial class FeatureSliceBuilder
                 where TDependencies : class, IFromServices<TDependencies>
             {
                 public abstract class BuildAs<TSelf> : StaticHandlerFeatureSlice.Flag<TSelf, TRequest, TResponse, TSelf, TDependencies>, EndpointFeatureSlice.Flag<TSelf, TSelf>
-                    where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureFlag, IStaticHandler<TRequest, TResponse, TDependencies>
+                    where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureName, IStaticHandler<TRequest, TResponse, TDependencies>
                 {
                     public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
                     {
@@ -24,7 +25,7 @@ public static partial class FeatureSliceBuilder
                     }
                 }
 
-                public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureFlag, IStaticHandler<TRequest, TResponse, TDependencies>
+                public abstract class Build<TSelf> : BuildAs<TSelf>, IEndpoint, IFeatureName, IStaticHandler<TRequest, TResponse, TDependencies>
                     where TSelf : Build<TSelf>, new()
                 {
                     protected abstract IEndpoint.Setup Endpoint { get; }
@@ -32,7 +33,7 @@ public static partial class FeatureSliceBuilder
                     protected abstract Task<OneOf<TResponse, Error>> Handle(TRequest request, TDependencies dependencies);
 
                     static IEndpoint.Setup IEndpoint.Endpoint => new TSelf().Endpoint;
-                    static string IFeatureFlag.FeatureName => new TSelf().FeatureName;
+                    static string IFeatureName.FeatureName => new TSelf().FeatureName;
                     static Task<OneOf<TResponse, Error>> IStaticHandler<TRequest, TResponse, TDependencies>.Handle(TRequest request, TDependencies dependencies) => new TSelf().Handle(request, dependencies);
                 }    
             }
