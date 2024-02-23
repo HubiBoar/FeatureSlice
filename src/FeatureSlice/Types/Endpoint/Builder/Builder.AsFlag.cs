@@ -1,4 +1,4 @@
-using Explicit.Configuration;
+using Definit.Configuration;
 using Microsoft.AspNetCore.Builder;
 
 namespace FeatureSlice;
@@ -12,7 +12,7 @@ public static partial class FeatureSliceBuilder
             public abstract class BuildAs<TSelf> : EndpointFeatureSlice.Flag<TSelf, TSelf>
                 where TSelf : BuildAs<TSelf>, IEndpoint, IFeatureName
             {
-                public static void Register(HostExtender<WebApplication> hostExtender)
+                public static void Register(WebAppExtender hostExtender)
                 {
                     EndpointFeatureSlice.Flag<TSelf, TSelf>.RegisterBase(hostExtender);
                 }

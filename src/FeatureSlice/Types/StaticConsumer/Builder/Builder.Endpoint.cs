@@ -15,10 +15,10 @@ public static partial class FeatureSliceBuilder
             public abstract class BuildAs<TSelf> : StaticConsumerFeatureSlice.Default<TRequest, TSelf, TDependencies>, EndpointFeatureSlice.Default<TSelf>
                 where TSelf : BuildAs<TSelf>, IEndpoint, IStaticConsumer<TRequest, TDependencies>
             {
-                public static void Register(IServiceCollection services, Messaging.ISetupProvider setupProvider, HostExtender<WebApplication> hostExtender)
+                public static void Register(IServiceCollection services, Messaging.ISetup setup, WebAppExtender hostExtender)
                 {
                     EndpointFeatureSlice.Default<TSelf>.RegisterBase(hostExtender);
-                    RegisterBase(services, setupProvider.GetSetup);
+                    RegisterBase(services, setup);
                 }
             }
 

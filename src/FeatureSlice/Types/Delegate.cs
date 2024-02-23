@@ -10,12 +10,12 @@ public static class DelegateFeatureSlice
     {
         public delegate Task<OneOf<TResponse, Error>> Dispatch(TRequest request);
 
-        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Dispatch> dispatcher)
+        protected static void RegisterBase(IServiceCollection services, ServiceFactory<Dispatch> dispatcher)
         {
             services.AddSingleton<Dispatch>(provider => dispatcher(provider));
 
             Publisher<TRequest>.Register(services);
-            services.AddSingleton<Publisher<TRequest>.Listen>(RegisterListener);
+            Publisher<TRequest>.RegisterListener(services, RegisterListener);
             Publisher<TRequest>.Listen RegisterListener(IServiceProvider provider)
             {
                 return async request => {
@@ -30,12 +30,12 @@ public static class DelegateFeatureSlice
     {
         public delegate Task<OneOf<TResponse, Disabled, Error>> Dispatch(TRequest request);
 
-        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Dispatch> dispatcher)
+        protected static void RegisterBase(IServiceCollection services, ServiceFactory<Dispatch> dispatcher)
         {
             services.AddSingleton<Dispatch>(provider => dispatcher(provider));
 
             Publisher<TRequest>.Register(services);
-            services.AddSingleton<Publisher<TRequest>.Listen>(RegisterListener);
+            Publisher<TRequest>.RegisterListener(services, RegisterListener);
             Publisher<TRequest>.Listen RegisterListener(IServiceProvider provider)
             {
                 return async request => {

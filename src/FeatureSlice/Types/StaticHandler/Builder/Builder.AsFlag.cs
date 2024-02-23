@@ -1,4 +1,4 @@
-using Explicit.Configuration;
+using Definit.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;

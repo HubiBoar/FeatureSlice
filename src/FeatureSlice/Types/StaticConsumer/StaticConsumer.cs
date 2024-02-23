@@ -1,4 +1,4 @@
-using Explicit.Configuration;
+using Definit.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
@@ -22,37 +22,37 @@ public interface IStaticConsumer<TRequest, TDependencies>
 public static class StaticConsumerFeatureSlice
 {
     public abstract partial class Default<TRequest, TConsumer, TDependencies> : DelegateFeatureSlice.Default<TRequest, Success>
+        where TRequest : notnull
         where TConsumer : class, IStaticConsumer<TRequest, TDependencies>
         where TDependencies : class, IFromServices<TDependencies>
     {
-        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Messaging.ISetup> getSetup)
+        protected static void RegisterBase(IServiceCollection services, Messaging.ISetup setup)
         {
             RegisterBase(
                 services,
                 Messaging.Dispatcher<TRequest>.Default.Register(
-                    services,
                     TConsumer.ConsumerName,
                     provider => message => TConsumer.Dispatch<TConsumer>(message, provider),
-                    getSetup));
+                    setup));
         }
     }
 
     public abstract partial class Flag<TFeatureName, TRequest, TConsumer, TDependencies> : DelegateFeatureSlice.Flag<TRequest, Success>
         where TFeatureName : IFeatureName
+        where TRequest : notnull
         where TConsumer : class, IStaticConsumer<TRequest, TDependencies>
         where TDependencies : class, IFromServices<TDependencies>
     {
-        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Messaging.ISetup> getSetup)
+        protected static void RegisterBase(IServiceCollection services, Messaging.ISetup setup)
         {
             services.AddSingleton<TConsumer>();
             RegisterBase(
                 services,
                 Messaging.Dispatcher<TRequest>.WithFlag.Register(
-                    services,
                     TConsumer.ConsumerName,
                     TFeatureName.FeatureName,
                     provider => message => TConsumer.Dispatch<TConsumer>(message, provider),
-                    getSetup));
+                    setup));
         }
     }
 }

@@ -31,6 +31,11 @@ public static class Publisher<TRequest>
         }
     }
 
+    public static void RegisterListener(IServiceCollection services, ServiceFactory<Listen> factory)
+    {
+        services.AddSingleton(factory);
+    }
+
     public static async Task<OneOf<Success, Error>> Dispatcher(TRequest request, IReadOnlyCollection<Listen> listeners)
     {
         foreach(var listener in listeners)

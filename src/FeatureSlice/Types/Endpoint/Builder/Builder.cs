@@ -9,7 +9,7 @@ public static partial class FeatureSliceBuilder
         public abstract class BuildAs<TSelf> : EndpointFeatureSlice.Default<TSelf>
             where TSelf : BuildAs<TSelf>, IEndpoint
         {
-            public static void Register(HostExtender<WebApplication> hostExtender)
+            public static void Register(WebAppExtender hostExtender)
             {
                 EndpointFeatureSlice.Default<TSelf>.RegisterBase(hostExtender);
             }

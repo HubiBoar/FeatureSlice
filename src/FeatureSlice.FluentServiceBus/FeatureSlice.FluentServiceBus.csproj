@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\FeatureSlice\FeatureSlice.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+      <PackageReference Include="OneOf" />
+      <PackageReference Include="FluentServiceBus" />
+      <PackageReference Include="Microsoft.Extensions.Logging" />
+      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+      <PackageReference Include="Azure.Messaging.ServiceBus" />
+      <PackageReference Include="Newtonsoft.Json" />
+      <PackageReference Include="Momolith.Modules" />
+  </ItemGroup>
+
+</Project>

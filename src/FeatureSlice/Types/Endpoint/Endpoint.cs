@@ -57,10 +57,10 @@ public static class EndpointExtensions
         return T.Endpoint.Map(endpoint);
     }
 
-    public static HostExtender<WebApplication> Map<T>(this HostExtender<WebApplication> extender)
+    public static WebAppExtender Map<T>(this WebAppExtender extender)
         where T : IEndpoint
     {
-        extender.AddExtension(host => T.Endpoint.Map(host));
+        extender.Map(builder => T.Endpoint.Map(builder));
 
         return extender;
     }

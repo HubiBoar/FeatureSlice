@@ -11,9 +11,9 @@ public static partial class FeatureSliceBuilder
         public abstract class Build<TSelf> : ConsumerFeatureSlice.Default<TRequest, TConsumer>
             where TSelf : Build<TSelf>
         {
-            public static void Register(IServiceCollection services, Messaging.ISetupProvider setupProvider)
+            public static void Register(IServiceCollection services, Messaging.ISetup setup)
             {
-                RegisterBase(services, setupProvider.GetSetup);
+                RegisterBase(services, setup);
             }
         }
     }

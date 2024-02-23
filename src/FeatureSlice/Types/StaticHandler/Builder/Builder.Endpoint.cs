@@ -15,7 +15,7 @@ public static partial class FeatureSliceBuilder
             public abstract class BuildAs<TSelf> : StaticHandlerFeatureSlice.Default<TRequest, TResponse, TSelf, TDependencies>, EndpointFeatureSlice.Default<TSelf>
                 where TSelf : BuildAs<TSelf>, IEndpoint, IStaticHandler<TRequest, TResponse, TDependencies>
             {
-                public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
+                public static void Register(IServiceCollection services, WebAppExtender hostExtender)
                 {
                     EndpointFeatureSlice.Default<TSelf>.RegisterBase(hostExtender);
                     RegisterBase(services);

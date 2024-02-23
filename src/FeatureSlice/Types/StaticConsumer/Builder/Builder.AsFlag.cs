@@ -1,4 +1,4 @@
-using Explicit.Configuration;
+using Definit.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
@@ -16,9 +16,9 @@ public static partial class FeatureSliceBuilder
             public abstract class BuildAs<TSelf> : StaticConsumerFeatureSlice.Flag<TSelf, TRequest, TSelf, TDependencies>
                 where TSelf : BuildAs<TSelf>, IFeatureName, IStaticConsumer<TRequest, TDependencies>
             {
-                public static void Register(IServiceCollection services, Messaging.ISetupProvider setupProvider)
+                public static void Register(IServiceCollection services, Messaging.ISetup setup)
                 {
-                    RegisterBase(services, setupProvider.GetSetup);
+                    RegisterBase(services, setup);
                 }
             }
 

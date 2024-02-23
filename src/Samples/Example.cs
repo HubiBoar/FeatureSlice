@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
 using Microsoft.AspNetCore.Http;
-using Explicit.Configuration;
+using Definit.Configuration;
+using Momolith.Modules;
 
 namespace FeatureSlice.Samples;
 
@@ -154,12 +154,12 @@ public class Usage
         dispatch5.Invoke(new ExampleStaticConsumerSelf.Request());
     }
 
-    public static void Register(IServiceCollection services, Messaging.ISetupProvider setupProvider, HostExtender<WebApplication> hostExtender)
+    public static void Register(IServiceCollection services, Messaging.ISetup setup, WebAppExtender hostExtender)
     {
         ExampleFeature.Register(services, hostExtender);
         ExampleStaticHandler.Register(services, hostExtender);
         ExampleFeatureSelf.Register(services, hostExtender);
         ExampleStaticHandlerSelf.Register(services, hostExtender);
-        ExampleStaticConsumerSelf.Register(services, setupProvider, hostExtender);
+        ExampleStaticConsumerSelf.Register(services, setup, hostExtender);
     }
 }

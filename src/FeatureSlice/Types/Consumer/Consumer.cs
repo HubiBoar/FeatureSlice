@@ -1,4 +1,4 @@
-using Explicit.Configuration;
+using Definit.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
@@ -25,16 +25,16 @@ public static class ConsumerFeatureSlice
     public abstract partial class Default<TRequest, TConsumer> : DelegateFeatureSlice.Default<TRequest, Success>
         where TConsumer : class, IConsumer<TRequest>
     {
-        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Messaging.ISetup> getSetup)
+        protected static void RegisterBase(IServiceCollection services, Messaging.ISetup setup)
         {
             services.AddSingleton<TConsumer>();
+
             RegisterBase(
                 services,
                 Messaging.Dispatcher<TRequest>.Default.Register(
-                    services,
                     TConsumer.ConsumerName,
                     provider => provider.GetRequiredService<TConsumer>().Consume,
-                    getSetup));
+                    setup));
         }
     }
 
@@ -42,17 +42,17 @@ public static class ConsumerFeatureSlice
         where TFeatureName : IFeatureName
         where TConsumer : class, IConsumer<TRequest>
     {
-        protected static void RegisterBase(IServiceCollection services, Func<IServiceProvider, Messaging.ISetup> getSetup)
+        protected static void RegisterBase(IServiceCollection services, Messaging.ISetup setup)
         {
             services.AddSingleton<TConsumer>();
+
             RegisterBase(
                 services,
                 Messaging.Dispatcher<TRequest>.WithFlag.Register(
-                    services,
                     TConsumer.ConsumerName,
                     TFeatureName.FeatureName,
                     provider => provider.GetRequiredService<TConsumer>().Consume,
-                    getSetup));
+                    setup));
         }
     }
 }

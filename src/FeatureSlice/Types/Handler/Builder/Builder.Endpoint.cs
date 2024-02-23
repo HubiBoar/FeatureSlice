@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice;
@@ -13,7 +12,7 @@ public static partial class FeatureSliceBuilder
             public abstract class BuildAs<TSelf> : HandlerFeatureSlice.Default<TRequest, TResponse, THandler>, EndpointFeatureSlice.Default<TSelf>
                 where TSelf : BuildAs<TSelf>, IEndpoint
             {
-                public static void Register(IServiceCollection services, HostExtender<WebApplication> hostExtender)
+                public static void Register(IServiceCollection services, WebAppExtender hostExtender)
                 {
                     EndpointFeatureSlice.Default<TSelf>.RegisterBase(hostExtender);
                     RegisterBase(services);

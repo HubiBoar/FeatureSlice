@@ -2,13 +2,13 @@ using OneOf.Types;
 using OneOf;
 using Microsoft.FeatureManagement;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
 namespace FeatureSlice;
 
 public static partial class Messaging
 {
     public static class Dispatcher<TMessage>
+        where TMessage : notnull
     {
         public delegate Task<OneOf<Success, Error>> Consume(TMessage message);
 
@@ -16,17 +16,14 @@ public static partial class Messaging
         {
             public static async Task<OneOf<Success, Error>> Dispatch(
                 TMessage message,
-                ConsumerName consumerName,
-                Consume consume,
-                ISetup setup,
-                IReadOnlyList<IPipeline<TMessage, Task<OneOf<Success, Error>>>> pipelines)
+                Dispatch<TMessage> dispatch)
             {
-                var result = await setup.Send(message, consumerName, r => Receive(r, consume, pipelines));
+                var result = await dispatch(message);
 
                 return result.Match<OneOf<Success, Error>>(success => success, disabled => new Success(), error => error);
             }
 
-            public static async Task<OneOf<Success, Disabled, Error>> Receive(
+            public static async Task<OneOf<Success, Disabled, Error>> Consume(
                 TMessage message,
                 Consume consume,
                 IReadOnlyList<IPipeline<TMessage, Task<OneOf<Success, Error>>>> pipelines)
@@ -35,32 +32,27 @@ public static partial class Messaging
                 return pipelinesResult.Match<OneOf<Success, Disabled, Error>>(success => success, error => error);
             }
 
-            public static Func<IServiceProvider, DelegateFeatureSlice.Default<TMessage, Success>.Dispatch> Register(
-                IServiceCollection services,
+            public static ServiceFactory<DelegateFeatureSlice.Default<TMessage, Success>.Dispatch> Register(
                 ConsumerName consumerName,
-                Func<IServiceProvider, Consume> getConsumer,
-                Func<IServiceProvider, ISetup> getSetup)
+                ServiceFactory<Consume> getConsumer,
+                ISetup setup)
             {
-                services.AddHostedService<Registerer>();
-                services.AddSingleton<Registerer.Registration>(provider => () => GetRegistration(provider));
+                var dispatchFactory = setup.Register(consumerName, GetConsume);
 
                 return GetDispatch;
 
-                Task GetRegistration(IServiceProvider provider)
+                Consume<TMessage> GetConsume(IServiceProvider provider)
                 {
-                    var setup = getSetup(provider);
                     var consume = getConsumer(provider);
                     var pipelines = provider.GetServices<IPipeline<TMessage, Task<OneOf<Success, Error>>>>().ToList();
-                    return setup.Register<TMessage>(consumerName, r => Receive(r, consume, pipelines));
+                    return message => Consume(message, consume, pipelines);
                 }
 
                 DelegateFeatureSlice.Default<TMessage, Success>.Dispatch GetDispatch(IServiceProvider provider)
                 {
-                    var setup = getSetup(provider);
-                    var consume = getConsumer(provider);
-                    var pipelines = provider.GetServices<IPipeline<TMessage, Task<OneOf<Success, Error>>>>().ToList();
+                    var dispatch = dispatchFactory(provider);
 
-                    return message => Dispatch(message, consumerName, consume, setup, pipelines);
+                    return message => Dispatch(message, dispatch);
                 }
             }
         }
@@ -69,12 +61,9 @@ public static partial class Messaging
         {
             public static async Task<OneOf<Success, Disabled, Error>> Dispatch(
                 TMessage message,
-                ConsumerName consumerName,
                 string featureName,
-                Consume consume,
-                ISetup setup,
                 IFeatureManager featureManager,
-                IReadOnlyList<IPipeline<TMessage, Task<OneOf<Success, Error>>>> pipelines)
+                Dispatch<TMessage> dispatch)
             {
                 var isEnabled = await featureManager.IsEnabledAsync($"{featureName}-Dispatch");
                 if(isEnabled == false)
@@ -82,17 +71,17 @@ public static partial class Messaging
                     return new Disabled();
                 }
 
-                return await setup.Send(message, consumerName, r => Receive(r, featureName, consume, featureManager, pipelines));
+                return await dispatch(message);
             }
 
-            public static async Task<OneOf<Success, Disabled, Error>> Receive(
+            public static async Task<OneOf<Success, Disabled, Error>> Consume(
                 TMessage message,
                 string featureName,
                 Consume consume,
                 IFeatureManager featureManager,
                 IReadOnlyList<IPipeline<TMessage, Task<OneOf<Success, Error>>>> pipelines)
             {
-                var isEnabled = await featureManager.IsEnabledAsync($"{featureName}-Receive");
+                var isEnabled = await featureManager.IsEnabledAsync($"{featureName}-Consume");
                 if(isEnabled == false)
                 {
                     return new Disabled();
@@ -102,56 +91,33 @@ public static partial class Messaging
                 return pipelinesResult.Match<OneOf<Success, Disabled, Error>>(success => success, error => error);
             }
 
-            public static Func<IServiceProvider, DelegateFeatureSlice.Flag<TMessage, Success>.Dispatch> Register(
-                IServiceCollection services,
+            public static ServiceFactory<DelegateFeatureSlice.Flag<TMessage, Success>.Dispatch> Register(
                 ConsumerName consumerName,
                 string featureName,
-                Func<IServiceProvider, Consume> getConsumer,
-                Func<IServiceProvider, ISetup> getSetup)
+                ServiceFactory<Consume> getConsumer,
+                ISetup setup)
             {
-                services.AddHostedService<Registerer>();
-                services.AddSingleton<Registerer.Registration>(provider => () => GetRegistration(provider));
+                var dispatchFactory = setup.Register(consumerName, GetConsume);
 
                 return GetDispatch;
 
-                Task GetRegistration(IServiceProvider provider)
+                Consume<TMessage> GetConsume(IServiceProvider provider)
                 {
-                    var setup = getSetup(provider);
                     var consume = getConsumer(provider);
                     var featureManager = provider.GetRequiredService<IFeatureManager>();
                     var pipelines = provider.GetServices<IPipeline<TMessage, Task<OneOf<Success, Error>>>>().ToList();
-                    return setup.Register<TMessage>(consumerName, r => Receive(r, featureName, consume, featureManager, pipelines));
+                    return message => Consume(message, featureName, consume, featureManager, pipelines);
                 }
 
                 DelegateFeatureSlice.Flag<TMessage, Success>.Dispatch GetDispatch(IServiceProvider provider)
                 {
-                    var setup = getSetup(provider);
+                    var dispatch = dispatchFactory(provider);
                     var consume = getConsumer(provider);
                     var featureManager = provider.GetRequiredService<IFeatureManager>();
                     var pipelines = provider.GetServices<IPipeline<TMessage, Task<OneOf<Success, Error>>>>().ToList();
 
-                    return message => Dispatch(message, consumerName, featureName, consume, setup, featureManager, pipelines);
+                    return message => Dispatch(message, featureName, featureManager, dispatch);
                 }
-            }
-        }
-    }
-
-    public sealed class Registerer : BackgroundService
-    {
-        public delegate Task Registration();
-
-        private readonly IReadOnlyCollection<Registration> _registrations;
-
-        public Registerer(IEnumerable<Registration> registrations)
-        {
-            _registrations = registrations.ToArray();
-        }
-
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-        {
-            foreach(var registration in _registrations)
-            {
-                await registration();
             }
         }
     }

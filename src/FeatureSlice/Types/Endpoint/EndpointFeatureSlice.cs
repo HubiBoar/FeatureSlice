@@ -1,4 +1,4 @@
-using Explicit.Configuration;
+using Definit.Configuration;
 using Microsoft.AspNetCore.Builder;
 
 namespace FeatureSlice;
@@ -8,7 +8,7 @@ public static class EndpointFeatureSlice
     public interface Default<TEndpoint> : IFeatureSlice
         where TEndpoint : IEndpoint
     {
-        protected static void RegisterBase(HostExtender<WebApplication> hostExtender)
+        protected static void RegisterBase(WebAppExtender hostExtender)
         {
             hostExtender.Map<TEndpoint>();
         }
@@ -18,7 +18,7 @@ public static class EndpointFeatureSlice
         where TFeatureName : IFeatureName
         where TEndpoint : IEndpoint
     {
-        protected static void RegisterBase(HostExtender<WebApplication> hostExtender)
+        protected static void RegisterBase(WebAppExtender hostExtender)
         {
             hostExtender.Map<TEndpoint>();
         }
