@@ -5,38 +5,34 @@ using OneOf.Types;
 
 namespace FeatureSlice;
 
-public static class Publisher<TRequest>
+public sealed class Publisher : IPublisher
 {
-    public delegate Task<OneOf<Success, Error>> Dispatch(TRequest request);
-    public delegate Task<OneOf<Success, Error>> DispatchParallel(TRequest request);
-    public delegate Task<OneOf<Success, Error>> Listen(TRequest request);
+    private readonly IServiceProvider _provider;
 
-    public static void Register(IServiceCollection services)
+    public Publisher(IServiceProvider provider)
     {
-        services.AddSingleton(RegisterDispatcher);
-        services.AddSingleton(RegisterDispatcherParallel);
-
-        static Dispatch RegisterDispatcher(IServiceProvider provider)
-        {
-            return request => Dispatcher(
-                request,
-                provider.GetServices<Listen>().ToList());
-        }
-
-        static DispatchParallel RegisterDispatcherParallel(IServiceProvider provider)
-        {
-            return request => DispatcherParallel(
-                request,
-                provider.GetServices<Listen>().ToList());
-        }
+        _provider = provider;
     }
 
-    public static void RegisterListener(IServiceCollection services, ServiceFactory<Listen> factory)
+    public Task<OneOf<Success, Error>> Dispatch<TRequest>(TRequest request)
     {
-        services.AddSingleton(factory);
+        using var scope = _provider.CreateScope();
+
+        var provider = scope.ServiceProvider;
+
+        return Dispatch<TRequest>(request, provider.GetServices<IPublisher.Listen<TRequest>>().ToArray());
     }
 
-    public static async Task<OneOf<Success, Error>> Dispatcher(TRequest request, IReadOnlyCollection<Listen> listeners)
+    public Task<OneOf<Success, Error>> DispatchParallel<TRequest>(TRequest request)
+    {
+        using var scope = _provider.CreateScope();
+
+        var provider = scope.ServiceProvider;
+
+        return DispatchParallel<TRequest>(request, provider.GetServices<IPublisher.Listen<TRequest>>().ToArray());
+    }
+    
+    public static async Task<OneOf<Success, Error>> Dispatch<TRequest>(TRequest request, IReadOnlyCollection<IPublisher.Listen<TRequest>> listeners)
     {
         foreach(var listener in listeners)
         {
@@ -51,7 +47,7 @@ public static class Publisher<TRequest>
         return new Success();
     }
 
-    public static async Task<OneOf<Success, Error>> DispatcherParallel(TRequest request, IReadOnlyCollection<Listen> listeners)
+    public static async Task<OneOf<Success, Error>> DispatchParallel<TRequest>(TRequest request, IReadOnlyCollection<IPublisher.Listen<TRequest>> listeners)
     {
         var tasks = listeners.Select(listener => listener(request));
 
@@ -64,5 +60,23 @@ public static class Publisher<TRequest>
         }
 
         return new Success();
+    }
+}
+
+public interface IPublisher
+{
+    public Task<OneOf<Success, Error>> Dispatch<TRequest>(TRequest request);
+    public Task<OneOf<Success, Error>> DispatchParallel<TRequest>(TRequest request);
+
+    public delegate Task<OneOf<Success, Error>> Listen<TRequest>(TRequest request);
+
+    public static void Register(IServiceCollection services)
+    {
+        services.AddSingleton<IPublisher, Publisher>();
+    }
+
+    public static void RegisterListener<TRequest>(IServiceCollection services, ServiceFactory<Listen<TRequest>> factory)
+    {
+        services.AddSingleton(factory);
     }
 }

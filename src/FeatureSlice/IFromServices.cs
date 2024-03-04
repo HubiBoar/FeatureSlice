@@ -34,6 +34,24 @@ public sealed class FromServices<T0> : IFromServices<FromServices<T0>>
     }
 }
 
+public class FromServiceProvider
+{
+    public IServiceProvider Provider {get;}
+
+    public FromServiceProvider(IServiceProvider provider)
+    {
+        Provider = provider;
+    }
+}
+
+public static class ServiceProviderExtensions
+{
+    public static FromServiceProvider From(this IServiceProvider provider)
+    {
+        return new FromServiceProvider(provider);
+    }
+}
+
 public sealed class FromServices<T0, T1> : IFromServices<FromServices<T0, T1>>
     where T0 : class
     where T1 : class
@@ -55,6 +73,11 @@ public sealed class FromServices<T0, T1> : IFromServices<FromServices<T0, T1>>
         return new FromServices<T0, T1>(
             provider.GetRequiredService<T0>(),
             provider.GetRequiredService<T1>());
+    }
+
+    public static implicit operator FromServices<T0, T1>(FromServiceProvider provider)
+    {
+        return Create(provider.Provider);
     }
 
     public void Deconstruct(out T0 value0, out T1 value1)
