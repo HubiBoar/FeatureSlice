@@ -4,7 +4,7 @@ using OneOf.Types;
 using Microsoft.AspNetCore.Http;
 using Momolith.Modules;
 
-namespace FeatureSlice.Samples;
+namespace FeatureSlice.Samples.Builder;
 
 public sealed record Dependency1();
 public sealed record Dependency2();
@@ -28,7 +28,7 @@ public sealed class ExampleHandler : FeatureSliceBuilder
     public record Request();
     public record Response();
 
-    protected override string FeatureName => "ExampleFeature";
+    protected override string FeatureName => "ExampleHandler";
 
     protected override IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
     {

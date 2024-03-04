@@ -1,65 +1,140 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using Momolith.Modules;
 using OneOf;
 using OneOf.Types;
 
-namespace FeatureSlice;
+namespace FeatureSlice.Samples.Fluent;
 
-public sealed class ExampleHandler
+public sealed record Dependency1();
+public sealed record Dependency2();
+
+public static class ExampleEndpoint
 {
-    public delegate Task<OneOf<Success, Disabled, Error>> DispatchConsume(Request request);
-    public delegate Task<OneOf<Response, Disabled, Error>> DispatchWithFlag(Request request);
-    public delegate Task<OneOf<Response, Error>> Dispatch(Request request);
-    
-    public sealed record Request();
-    public sealed record Response();
-
     public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
     {
         services.FeatureSlice()
             .WithEndpoint(
                 extender,
-                e => e.MapGet("test", (int a) => Results.Ok()))
-            .WithHandler<Dispatch, Request, Response>(
-                provider => request => Handle(request, provider.From()),
+                Endpoint);
+    }
+
+    private static IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    {
+        return Results.Ok();
+    });
+}
+
+public static class ExampleHandler
+{
+    public delegate Task<OneOf<Response, Disabled, Error>> Dispatch(Request request);
+
+    public record Request();
+    public record Response();
+
+    public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
+    {
+        services.FeatureSlice()
+            .WithFlag("ExampleHandler")
+            .WithEndpoint(
+                extender,
+                Endpoint)
+            .WithHandler<Dispatch, Request, Response, FromServices<Dependency1, Dependency2>>(
+                Handle,
                 handler => handler.Invoke);
     }
 
-    public static void RegisterWithFlag(IServiceCollection services, IHostExtender<WebApplication> extender)
+    private static IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
     {
-        services.FeatureSlice()
-            .WithFlag("Flag")
-            .WithEndpoint(
-                extender,
-                IEndpoint.MapGet("test", (int a) => Results.Ok()))
-            .WithHandler<DispatchWithFlag, Request, Response>(
-                (request, deps) => Handle(request, deps),
-                handler => handler.Invoke);
-    }
+        return Results.Ok();
+    });
 
-    public static void RegisterConsumer(IServiceCollection services, IHostExtender<WebApplication> extender, Messaging.ISetup setup)
+    private static async Task<OneOf<Response, Error>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    {
+        var (dep1, dep2) = dependencies;
+
+        return new Response();
+    }
+}
+
+public static class ExampleConsumer
+{
+    public delegate Task<OneOf<Success, Disabled, Error>> Dispatch(Request request);
+
+    public record Request();
+
+    public static void Register(IServiceCollection services, Messaging.ISetup setup)
     {
         services.FeatureSlice()
-            .WithEndpoint(
-                extender,
-                e => e.MapGet("test", (int a) => Results.Ok()))
-            .WithConsumer<DispatchConsume, Request, FromServices<Request, Request>>(
+            .WithFlag("ExampleConsumer")
+            .WithConsumer<Dispatch, Request, FromServices<Dependency1, Dependency2>>(
                 setup,
-                new ConsumerName("consume-test"),
+                new ("ExampleConsumer"),
                 Consume,
                 handler => handler.Invoke);
     }
 
-    private static async Task<OneOf<Success, Error>> Consume(Request request, FromServices<Request, Request> dependencies)
+    private static async Task<OneOf<Success, Error>> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
+        var (dep1, dep2) = dependencies;
+
         return new Success();
     }
+}
 
-    private static async Task<OneOf<Response, Error>> Handle(Request request, FromServices<Request, Request> dependencies)
+public static class ExampleConsumerWithEndpoint
+{
+    public delegate Task<OneOf<Success, Disabled, Error>> Dispatch(Request request);
+
+    public record Request();
+
+    public static void Register(IServiceCollection services, Messaging.ISetup setup, IHostExtender<WebApplication> extender)
     {
-        return new Response();
+        services.FeatureSlice()
+            .WithFlag("ExampleConsumerWithEndpoint")
+            .WithEndpoint(
+                extender,
+                Endpoint)
+            .WithConsumer<Dispatch, Request, FromServices<Dependency1, Dependency2>>(
+                setup,
+                new ("ExampleConsumerWithEndpoint"),
+                Consume,
+                handler => handler.Invoke);
+    }
+
+    private static IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    {
+        return Results.Ok();
+    });
+
+    private static async Task<OneOf<Success, Error>> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    {
+        var (dep1, dep2) = dependencies;
+
+        return new Success();
+    }
+}
+
+public class Usage
+{
+    public static void Use(
+        IPublisher publisher,
+        ExampleConsumer.Dispatch consumer,
+        ExampleHandler.Dispatch handler,
+        ExampleConsumerWithEndpoint.Dispatch consumerWithEndpoint)
+    {
+        publisher.Dispatch(new ExampleConsumer.Request());
+        consumer(new ExampleConsumer.Request());
+        handler(new ExampleHandler.Request());
+        consumerWithEndpoint(new ExampleConsumerWithEndpoint.Request());
+    }
+
+    public static void Register(IServiceCollection services, Messaging.ISetup setup, WebAppExtender hostExtender)
+    {
+        ExampleEndpoint.Register(services, hostExtender);
+        ExampleConsumer.Register(services, setup);
+        ExampleHandler.Register(services, hostExtender);
+        ExampleConsumerWithEndpoint.Register(services, setup, hostExtender);
     }
 }
