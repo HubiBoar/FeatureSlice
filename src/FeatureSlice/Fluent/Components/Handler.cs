@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Definit.Dependencies;
+using Definit.Endpoint;
 
 namespace FeatureSlice;
 
@@ -51,7 +53,7 @@ public static class FeatureSliceHandler
 
         public static void AddHandler<TDispatcher, TRequest, TResponse>(
             IServiceCollection services,
-            Handler<TRequest, TResponse, FromServiceProvider> handler,
+            Handler<TRequest, TResponse, FromServicesProvider> handler,
             Func<Handler<TRequest, TResponse>, TDispatcher> dispatcherConverter,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
             where TDispatcher : Delegate
@@ -111,7 +113,7 @@ public static class FeatureSliceHandler
         public static void AddHandler<TDispatcher, TRequest, TResponse>(
             IServiceCollection services,
             string featureName,
-            Handler<TRequest, TResponse, FromServiceProvider> handler,
+            Handler<TRequest, TResponse, FromServicesProvider> handler,
             Func<HandlerWithFlag<TRequest, TResponse>, TDispatcher> dispatcherConverter,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
             where TDispatcher : Delegate

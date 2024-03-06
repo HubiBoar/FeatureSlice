@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using OneOf.Types;
+using Definit.Dependencies;
 
 namespace FeatureSlice;
 
@@ -71,7 +72,7 @@ public static class FeatureSliceConsumer
             IServiceCollection services,
             Messaging.ISetup setup,
             ConsumerName consumerName,
-            Handler<TRequest, Success, FromServiceProvider> handler,
+            Handler<TRequest, Success, FromServicesProvider> handler,
             Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
             where TDispatcher : Delegate
@@ -149,7 +150,7 @@ public static class FeatureSliceConsumer
             Messaging.ISetup setup,
             string featureName,
             ConsumerName consumerName,
-            Handler<TRequest, Success, FromServiceProvider> handler,
+            Handler<TRequest, Success, FromServicesProvider> handler,
             Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
             ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
             where TDispatcher : Delegate

@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using Definit.Dependencies;
+using Definit.Endpoint;
 
 namespace FeatureSlice;
 

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 using OneOf.Types;
+using Definit.Dependencies;
+using Definit.Endpoint;
 
 namespace FeatureSlice;
 
@@ -181,7 +183,7 @@ public static class FluentFeatureSlice
             }
 
             public void WithHandler<TDispatcher, TRequest, TResponse>(
-                Handler<TRequest, TResponse, FromServiceProvider> handler,
+                Handler<TRequest, TResponse, FromServicesProvider> handler,
                 Func<Handler<TRequest, TResponse>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
                 where TDispatcher : Delegate
@@ -221,7 +223,7 @@ public static class FluentFeatureSlice
             }
 
             public void WithHandler<TDispatcher, TRequest, TResponse>(
-                Handler<TRequest, TResponse, FromServiceProvider> handler,
+                Handler<TRequest, TResponse, FromServicesProvider> handler,
                 Func<HandlerWithFlag<TRequest, TResponse>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
                 where TDispatcher : Delegate

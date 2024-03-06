@@ -3,6 +3,9 @@ using OneOf;
 using OneOf.Types;
 using Microsoft.AspNetCore.Http;
 using Momolith.Modules;
+using Definit.Dependencies;
+using Definit.Endpoint;
+using Endpoint = Definit.Endpoint.Endpoint;
 
 namespace FeatureSlice.Samples.Builder;
 

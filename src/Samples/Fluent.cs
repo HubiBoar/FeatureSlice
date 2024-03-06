@@ -4,6 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Momolith.Modules;
 using OneOf;
 using OneOf.Types;
+using Definit.Dependencies;
+using Definit.Endpoint;
+using Endpoint = Definit.Endpoint.Endpoint;
 
 namespace FeatureSlice.Samples.Fluent;
 

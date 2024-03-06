@@ -34,6 +34,8 @@
 
   <!-- Definit -->
   <ItemGroup>
+    <PackageVersion Include="Definit.Endpoint" Version="$(DefinitVersion)" />
+    <PackageVersion Include="Definit.Dependencies" Version="$(DefinitVersion)" />
     <PackageVersion Include="Definit.Validation" Version="$(DefinitVersion)" />
     <PackageVersion Include="Definit.Configuration" Version="$(DefinitVersion)" />
     <PackageVersion Include="Definit.Arguments" Version="$(DefinitVersion)" />

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using OneOf;
 using OneOf.Types;
+using Definit.Dependencies;
 
 namespace FeatureSlice;
 

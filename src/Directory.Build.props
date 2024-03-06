@@ -21,7 +21,7 @@
     </ItemGroup>
     
     <PropertyGroup>
-        <DefinitVersion>1.0.4</DefinitVersion>
+        <DefinitVersion>1.0.5</DefinitVersion>
         <MomolithVersion>1.0.0</MomolithVersion>
         <MicrosoftExtensionsVersion>8.0.0</MicrosoftExtensionsVersion>
         <FluentServiceBusVersion>1.0.3</FluentServiceBusVersion>

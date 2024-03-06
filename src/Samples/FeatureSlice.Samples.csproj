@@ -8,6 +8,9 @@
     <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
     <PackageReference Include="Definit.Utils" />
     <PackageReference Include="Definit.Configuration" />
+    <PackageReference Include="Definit.Endpoint" />
+    <PackageReference Include="Definit.Dependencies" />
+    <PackageReference Include="Momolith.Modules" />
   </ItemGroup>
 
   <ItemGroup>
