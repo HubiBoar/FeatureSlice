@@ -13,7 +13,7 @@ public sealed class ExampleEndpoint : FeatureSliceBuilder
     .WithEndpoint
     .Build<ExampleEndpoint>
 {
-    protected override IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    protected override Endpoint Endpoint => Map.Get("test", (int age) => 
     {
         return Results.Ok();
     });
@@ -30,10 +30,11 @@ public sealed class ExampleHandler : FeatureSliceBuilder
 
     protected override string FeatureName => "ExampleHandler";
 
-    protected override IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    protected override Endpoint Endpoint => Map.Get("test", (int age) => 
     {
         return Results.Ok();
-    });
+    })
+    .WithDescription("Name");
 
     protected override async Task<OneOf<Response, Error>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
@@ -70,7 +71,7 @@ public sealed class ExampleConsumerWithEndpoint : FeatureSliceBuilder
 
     protected override ConsumerName ConsumerName => new("ExampleConsumerWithEndpoint");
 
-    protected override IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    protected override Endpoint Endpoint => Map.Get("test", (int age) => 
     {
         return Results.Ok();
     });

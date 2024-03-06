@@ -9,13 +9,13 @@ public static partial class FeatureSliceBuilder
     {
         public static partial class WithEndpoint
         {
-            public abstract class Build<TSelf> : IEndpoint
+            public abstract class Build<TSelf> : IEndpointProvider
                 where TSelf : Build<TSelf>, new()
             {
-                static IEndpoint.Setup IEndpoint.Endpoint { get; } = new TSelf().Endpoint;
+                static Endpoint IEndpointProvider.Endpoint { get; } = new TSelf().Endpoint;
 
                 protected abstract string FeatureName { get; }
-                protected abstract IEndpoint.Setup Endpoint { get; }
+                protected abstract Endpoint Endpoint { get; }
 
                 public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
                 {

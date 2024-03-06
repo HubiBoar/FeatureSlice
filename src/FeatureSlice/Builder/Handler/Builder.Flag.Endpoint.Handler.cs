@@ -14,12 +14,12 @@ public static partial class FeatureSliceBuilder
                 where TRequest : notnull
                 where TResponse : notnull
             {
-                public abstract class Build<TSelf> : HandlerBaseWithFlag<TSelf, TRequest, TResponse, TDependencies>, IEndpoint
+                public abstract class Build<TSelf> : HandlerBaseWithFlag<TSelf, TRequest, TResponse, TDependencies>, IEndpointProvider
                     where TSelf : Build<TSelf>, new()
                 {
-                    static IEndpoint.Setup IEndpoint.Endpoint { get; } = new TSelf().Endpoint;
+                    static Endpoint IEndpointProvider.Endpoint { get; } = new TSelf().Endpoint;
 
-                    protected abstract IEndpoint.Setup Endpoint { get; }
+                    protected abstract Endpoint Endpoint { get; }
 
                     public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
                     {

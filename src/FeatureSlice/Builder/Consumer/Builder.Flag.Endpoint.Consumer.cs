@@ -13,12 +13,12 @@ public static partial class FeatureSliceBuilder
                 where TDependencies : class, IFromServices<TDependencies>
                 where TRequest : notnull
             {
-                public abstract class Build<TSelf> : ConsumerBaseWithFlag<TSelf, TRequest, TDependencies>, IEndpoint
+                public abstract class Build<TSelf> : ConsumerBaseWithFlag<TSelf, TRequest, TDependencies>, IEndpointProvider
                     where TSelf : Build<TSelf>, new()
                 {
-                    static IEndpoint.Setup IEndpoint.Endpoint { get; } = new TSelf().Endpoint;
+                    static Endpoint IEndpointProvider.Endpoint { get; } = new TSelf().Endpoint;
 
-                    protected abstract IEndpoint.Setup Endpoint { get; }
+                    protected abstract Endpoint Endpoint { get; }
 
                     public static void Register(IServiceCollection services, Messaging.ISetup setup, IHostExtender<WebApplication> extender)
                     {

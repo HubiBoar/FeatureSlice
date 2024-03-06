@@ -35,7 +35,7 @@ public static class FluentFeatureSlice
             return new FluentFeatureSliceWithEndpoint(this);
         }
 
-        public IWithEndpoint WithEndpoint(IHostExtender<WebApplication> extender, IEndpoint.Setup endpoint)
+        public IWithEndpoint WithEndpoint(IHostExtender<WebApplication> extender, Endpoint endpoint)
         {
             FeatureSliceEndpoint.AddEndpoint(extender, endpoint);
             return new FluentFeatureSliceWithEndpoint(this);
@@ -58,7 +58,7 @@ public static class FluentFeatureSlice
             return new FluentFeatureSliceWithEndpointAndFlag(this);
         }
 
-        public IWithEndpoint WithEndpoint(IHostExtender<WebApplication> extender, IEndpoint.Setup endpoint)
+        public IWithEndpoint WithEndpoint(IHostExtender<WebApplication> extender, Endpoint endpoint)
         {
             FeatureSliceEndpoint.AddEndpoint(extender, endpoint);
             return new FluentFeatureSliceWithEndpointAndFlag(this);

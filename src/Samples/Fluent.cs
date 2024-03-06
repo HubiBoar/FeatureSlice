@@ -20,16 +20,14 @@ public static class ExampleEndpoint
                 Endpoint);
     }
 
-    private static IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    private static Endpoint Endpoint => Map.Get("test", (int age) => 
     {
         return Results.Ok();
     });
 }
 
-public static class ExampleHandler
+public sealed class ExampleHandler : DispatchableWithFlag<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
 {
-    public delegate Task<OneOf<Response, Disabled, Error>> Dispatch(Request request);
-
     public record Request();
     public record Response();
 
@@ -45,7 +43,7 @@ public static class ExampleHandler
                 handler => handler.Invoke);
     }
 
-    private static IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    private static Endpoint Endpoint => Map.Get("test", (int age) => 
     {
         return Results.Ok();
     });
@@ -103,7 +101,7 @@ public static class ExampleConsumerWithEndpoint
                 handler => handler.Invoke);
     }
 
-    private static IEndpoint.Setup Endpoint => IEndpoint.MapGet("test", (int age) => 
+    private static Endpoint Endpoint => Map.Get("test", (int age) => 
     {
         return Results.Ok();
     });

@@ -1,7 +1,6 @@
 using OneOf;
 using OneOf.Types;
 
-
 namespace FeatureSlice;
 
 public static partial class FeatureSliceBuilder
