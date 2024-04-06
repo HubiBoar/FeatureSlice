@@ -32,5 +32,30 @@ public static partial class FeatureSliceBuilder
                 }
             }
         }
+
+        public static partial class WithHandler<TRequest, TDependencies>
+            where TDependencies : class, IFromServices<TDependencies>
+            where TRequest : notnull
+        {
+            public abstract class Build<TSelf> : HandlerBaseWithFlag<TSelf, TRequest, TDependencies>
+                where TSelf : Build<TSelf>, new()
+            {
+                public static void Register(IServiceCollection services)
+                {
+                    var self = new TSelf();
+                    var featureName = self.FeatureName;
+                    var handle = self.Handle;
+                    var serviceLifetime = self.ServiceLifetime;
+
+                    services
+                        .FeatureSlice()
+                        .WithFlag(featureName)
+                        .WithHandler<Dispatch, TRequest, TDependencies>(
+                            (request, dep) => handle(request, dep),
+                            h => h.Invoke,
+                            serviceLifetime);
+                }
+            }
+        }
     }
 }

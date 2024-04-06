@@ -1,44 +1,46 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.FeatureManagement;
-using OneOf;
-using OneOf.Types;
+using Definit.Results;
 
 namespace FeatureSlice;
 
-public struct Disabled();
-
 public delegate T ServiceFactory<T>(IServiceProvider provider);
 
-public delegate Task<OneOf<TResponse, Error>> HandlerPipeline<TRequest, TResponse>(TRequest request, Handler<TRequest, TResponse> next);
-public delegate Task<OneOf<TResponse, Error>> Handler<TRequest, TResponse>(TRequest request);
-public delegate Task<OneOf<TResponse, Error>> Handler<TRequest, TResponse, TDependencies>(TRequest request, TDependencies dependencies);
-
-public delegate Task<OneOf<TResponse, Disabled, Error>> HandlerWithFlagPipeline<TRequest, TResponse>(TRequest request, HandlerWithFlag<TRequest, TResponse> next);
-public delegate Task<OneOf<TResponse, Disabled, Error>> HandlerWithFlag<TRequest, TResponse>(TRequest request);
-public delegate Task<OneOf<TResponse, Disabled, Error>> HandlerWithFlag<TRequest, TResponse, TDependencies>(TRequest request, TDependencies dependencies);
+public delegate Task<TResponse> HandlerPipeline<TRequest, TResponse>(TRequest request, Handler<TRequest, TResponse> next) where TRequest : notnull where TResponse : notnull;
+public delegate Task<TResponse> Handler<TRequest, TResponse>(TRequest request) where TRequest : notnull where TResponse : notnull;
+public delegate Task<TResponse> Handler<TRequest, TResponse, TDependencies>(TRequest request, TDependencies dependencies) where TRequest : notnull where TResponse : notnull;
 
 public static class HandlerHelper
 {
-    public static Handler<TRequest, TResponse> RunWithPipelines<TRequest, TResponse>(
+    public static Handler<TRequest, Result<TResponse>> RunWithPipelines<TRequest, TResponse>(
         IServiceProvider provider,
-        ServiceFactory<Handler<TRequest, TResponse>> factory)
+        ServiceFactory<Handler<TRequest, Result<TResponse>>> factory)
+        where TRequest : notnull
+        where TResponse : notnull
     {
         var handler = factory(provider);
 
         return request => PipelineHelper.RunPipelines(request, provider, handler.Invoke);
     }
 
-    public static HandlerWithFlag<TRequest, TResponse> RunWithPipelinesAndFlag<TRequest, TResponse>(
+    public static Handler<TRequest, Result<TResponse, Disabled>> RunWithPipelinesAndFlag<TRequest, TResponse>(
         string featureName,
         IServiceProvider provider,
-        ServiceFactory<Handler<TRequest, TResponse>> factory)
+        ServiceFactory<Handler<TRequest, Result<TResponse>>> factory)
+        where TRequest : notnull
+        where TResponse : notnull
     {
         var handler = factory(provider);
 
         return request => PipelineHelper.RunPipelines(request, provider, ConvertToHandlerWithFlag(featureName, provider, handler).Invoke);
     }
 
-    public static HandlerWithFlag<TRequest, TResponse> ConvertToHandlerWithFlag<TRequest, TResponse>(string featureName, IServiceProvider provider, Handler<TRequest, TResponse> handler)
+    public static Handler<TRequest, Result<TResponse, Disabled>> ConvertToHandlerWithFlag<TRequest, TResponse>(
+        string featureName,
+        IServiceProvider provider,
+        Handler<TRequest, Result<TResponse>> handler)
+        where TRequest : notnull
+        where TResponse : notnull
     {
         return async request => {
 
@@ -46,41 +48,80 @@ public static class HandlerHelper
 
             if(await manager.IsEnabledAsync(featureName))
             {
-                return new Disabled();
+                return new Disabled($"FeatureFlag [{featureName}] is Disabled");
             }
 
-            var result = await PipelineHelper.RunPipelines(request, provider, handler.Invoke);
-
-            return result.Match<OneOf<TResponse, Disabled, Error>>(response => response, error => error);
+            return await PipelineHelper.RunPipelines(request, provider, handler.Invoke);
         };
     }
 
-    public static IPublisher.Listen<TRequest> ConvertToListener<TRequest, TResponse>(Handler<TRequest, TResponse> handler)
+    public static IPublisher.Listen<TRequest> ConvertToListener<TRequest, TResponse>(
+        Handler<TRequest, Result<TResponse>> handler)
+        where TRequest : notnull
+        where TResponse : notnull
+    {
+        return async request => await handler(request);
+    }
+
+
+    public static Handler<TRequest, Result> RunWithPipelines<TRequest>(
+        IServiceProvider provider,
+        ServiceFactory<Handler<TRequest, Result>> factory)
+        where TRequest : notnull
+    {
+        var handler = factory(provider);
+
+        return request => PipelineHelper.RunPipelines(request, provider, handler.Invoke);
+    }
+
+    public static Handler<TRequest, Result.Or<Disabled>> RunWithPipelinesAndFlag<TRequest>(
+        string featureName,
+        IServiceProvider provider,
+        ServiceFactory<Handler<TRequest, Result>> factory)
+        where TRequest : notnull
+    {
+        var handler = factory(provider);
+
+        return request => PipelineHelper.RunPipelines(request, provider, ConvertToHandlerWithFlag(featureName, provider, handler).Invoke);
+    }
+
+    public static Handler<TRequest, Result.Or<Disabled>> ConvertToHandlerWithFlag<TRequest>(
+        string featureName,
+        IServiceProvider provider,
+        Handler<TRequest, Result> handler)
+        where TRequest : notnull
     {
         return async request => {
 
-            var result = await handler(request);
+            var manager = provider.GetRequiredService<IFeatureManager>();
 
-            return result.Match<OneOf<Success, Error>>(success => new Success(), error => error);
+            if(await manager.IsEnabledAsync(featureName))
+            {
+                return new Disabled($"FeatureFlag [{featureName}] is Disabled");
+            }
+
+            return await PipelineHelper.RunPipelines(request, provider, handler.Invoke);
         };
     }
 
-    public static IPublisher.Listen<TRequest> ConvertToListener<TRequest>(Messaging.Dispatch<TRequest> dispatch)
+    public static IPublisher.Listen<TRequest> ConvertToListener<TRequest>(
+        Handler<TRequest, Result> handler)
+        where TRequest : notnull
     {
-        return async request => {
-
-            var result = await dispatch(request);
-
-            return result.Match<OneOf<Success, Error>>(success => success, disabled => new Success(), error => error);
-        };
+        return async request => await handler(request);
     }
 
-    public static Messaging.Consume<TRequest> ConvertToConsume<TRequest>(Handler<TRequest, Success> handler)
+    public static IPublisher.Listen<TRequest> ConvertToListener<TRequest>(
+        Messaging.Dispatch<TRequest> dispatch)
+        where TRequest : notnull
     {
-        return async request => {
-            var result = await handler(request);
+        return async request => await dispatch(request);
+    }
 
-            return result.Match<OneOf<Success, Disabled, Error>>(success => success, error => error);
-        };
+    public static Messaging.Consume<TRequest> ConvertToConsume<TRequest>(
+        Handler<TRequest, Result> handler)
+        where TRequest : notnull
+    {
+        return async request => await handler(request);
     }
 }

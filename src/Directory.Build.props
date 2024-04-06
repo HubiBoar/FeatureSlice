@@ -7,24 +7,24 @@
   </PropertyGroup>
 
     <PropertyGroup>
-        <Authors>Hubert Dzikuc</Authors>
-        <PackageLicenseFile>LICENSE</PackageLicenseFile>
-        <PackageReadmeFile>README.md</PackageReadmeFile>
-        <PackageProjectUrl>https://github.com/HubiBoar/FeatureSlice</PackageProjectUrl>
-        <RepositoryType>git</RepositoryType>
-        <RepositoryUrl>https://github.com/HubiBoar/FeatureSlice</RepositoryUrl>
+      <Authors>Hubert Dzikuc</Authors>
+      <PackageLicenseFile>LICENSE</PackageLicenseFile>
+      <PackageReadmeFile>README.md</PackageReadmeFile>
+      <PackageProjectUrl>https://github.com/HubiBoar/FeatureSlice</PackageProjectUrl>
+      <RepositoryType>git</RepositoryType>
+      <RepositoryUrl>https://github.com/HubiBoar/FeatureSlice</RepositoryUrl>
     </PropertyGroup>
     
     <ItemGroup>
-        <None Include="../../README.md" Pack="true" PackagePath="" Visible="false" />
-        <None Include="../../LICENSE" Pack="true" PackagePath="" Visible="false" />
+      <None Include="../../README.md" Pack="true" PackagePath="" Visible="false" />
+      <None Include="../../LICENSE" Pack="true" PackagePath="" Visible="false" />
     </ItemGroup>
     
     <PropertyGroup>
-        <DefinitVersion>1.0.5</DefinitVersion>
-        <MomolithVersion>1.0.0</MomolithVersion>
-        <MicrosoftExtensionsVersion>8.0.0</MicrosoftExtensionsVersion>
-        <FluentServiceBusVersion>1.0.3</FluentServiceBusVersion>
-        <OneOfElseVersion>1.0.3</OneOfElseVersion>
+      <DefinitVersion>1.0.12</DefinitVersion>
+      <MomolithVersion>1.0.0</MomolithVersion>
+      <MicrosoftExtensionsVersion>8.0.0</MicrosoftExtensionsVersion>
+      <FluentServiceBusVersion>1.0.5</FluentServiceBusVersion>
+      <OneOfElseVersion>1.0.5</OneOfElseVersion>
     </PropertyGroup>
 </Project>

@@ -6,6 +6,7 @@
       <PackageReference Include="Definit.Configuration" />
       <PackageReference Include="Definit.Endpoint" />
       <PackageReference Include="Definit.Dependencies" />
+      <PackageReference Include="Definit.Result" />
       <PackageReference Include="Momolith.Modules" />
     </ItemGroup>
 

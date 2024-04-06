@@ -1,11 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
-using OneOf;
-using OneOf.Types;
 using Microsoft.AspNetCore.Http;
 using Momolith.Modules;
 using Definit.Dependencies;
 using Definit.Endpoint;
 using Endpoint = Definit.Endpoint.Endpoint;
+using Definit.Results;
 
 namespace FeatureSlice.Samples.Builder;
 
@@ -39,9 +38,11 @@ public sealed class ExampleHandler : FeatureSliceBuilder
     })
     .WithDescription("Name");
 
-    protected override async Task<OneOf<Response, Error>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    protected override async Task<Result<Response>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
         var (dep1, dep2) = dependencies;
+
+        await Task.CompletedTask;
 
         return new Response();
     }
@@ -56,11 +57,11 @@ public sealed class ExampleConsumer : FeatureSliceBuilder
 
     protected override ConsumerName ConsumerName => new("ExampleConsumer");
 
-    protected override async Task<OneOf<Success, Error>> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    protected override Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
         var (dep1, dep2) = dependencies;
 
-        return new Success();
+        return Result.Success;
     }
 }
 
@@ -79,11 +80,11 @@ public sealed class ExampleConsumerWithEndpoint : FeatureSliceBuilder
         return Results.Ok();
     });
 
-    protected override async Task<OneOf<Success, Error>> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    protected override Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
         var (dep1, dep2) = dependencies;
 
-        return new Success();
+        return Result.Success;
     }
 }
 

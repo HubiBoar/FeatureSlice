@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
-using OneOf.Types;
 using Definit.Dependencies;
 using Definit.Endpoint;
+using Definit.Results;
 
 namespace FeatureSlice;
 
@@ -74,7 +74,7 @@ public static class FluentFeatureSlice
             public void WithConsumer<TDispatcher, TRequest>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
-                ServiceFactory<Handler<TRequest, Success>> handlerFactory,
+                ServiceFactory<Handler<TRequest, Result>> handlerFactory,
                 Func<IServiceProvider, Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
                 where TDispatcher : Delegate
@@ -86,7 +86,7 @@ public static class FluentFeatureSlice
             public void WithConsumer<TDispatcher, TRequest>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
-                ServiceFactory<Handler<TRequest, Success>> handlerFactory,
+                ServiceFactory<Handler<TRequest, Result>> handlerFactory,
                 Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
                 where TDispatcher : Delegate
@@ -98,7 +98,7 @@ public static class FluentFeatureSlice
             public void WithConsumer<TDispatcher, TRequest, TDependencies>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
-                Handler<TRequest, Success, TDependencies> handler,
+                Handler<TRequest, Result, TDependencies> handler,
                 Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
                 where TDispatcher : Delegate
@@ -114,7 +114,7 @@ public static class FluentFeatureSlice
             public void WithConsumer<TDispatcher, TRequest>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
-                ServiceFactory<Handler<TRequest, Success>> handlerFactory,
+                ServiceFactory<Handler<TRequest, Result>> handlerFactory,
                 Func<IServiceProvider, Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
                 where TDispatcher : Delegate
@@ -126,7 +126,7 @@ public static class FluentFeatureSlice
             public void WithConsumer<TDispatcher, TRequest>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
-                ServiceFactory<Handler<TRequest, Success>> handlerFactory,
+                ServiceFactory<Handler<TRequest, Result>> handlerFactory,
                 Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
                 where TDispatcher : Delegate
@@ -138,7 +138,7 @@ public static class FluentFeatureSlice
             public void WithConsumer<TDispatcher, TRequest, TDependencies>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
-                Handler<TRequest, Success, TDependencies> handler,
+                Handler<TRequest, Result, TDependencies> handler,
                 Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
                 where TDispatcher : Delegate
@@ -155,27 +155,33 @@ public static class FluentFeatureSlice
         public interface IDefault : IFluentFeatureSlice
         {
             public void WithHandler<TDispatcher, TRequest, TResponse>(
-                ServiceFactory<Handler<TRequest, TResponse>> handlerFactory,
-                Func<IServiceProvider, Handler<TRequest, TResponse>, TDispatcher> dispatcherConverter,
+                ServiceFactory<Handler<TRequest, Result<TResponse>>> handlerFactory,
+                Func<IServiceProvider, Handler<TRequest, Result<TResponse>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TResponse : notnull
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handlerFactory, dispatcherConverter, serviceLifetime);
             }
 
             public void WithHandler<TDispatcher, TRequest, TResponse>(
-                ServiceFactory<Handler<TRequest, TResponse>> handlerFactory,
-                Func<Handler<TRequest, TResponse>, TDispatcher> dispatcherConverter,
+                ServiceFactory<Handler<TRequest, Result<TResponse>>> handlerFactory,
+                Func<Handler<TRequest, Result<TResponse>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TResponse : notnull
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handlerFactory, dispatcherConverter, serviceLifetime);
             }
 
             public void WithHandler<TDispatcher, TRequest, TResponse, TDependencies>(
-                Handler<TRequest, TResponse, TDependencies> handler,
-                Func<Handler<TRequest, TResponse>, TDispatcher> dispatcherConverter,
+                Handler<TRequest, Result<TResponse>, TDependencies> handler,
+                Func<Handler<TRequest, Result<TResponse>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TResponse : notnull
                 where TDispatcher : Delegate
                 where TDependencies : class, IFromServices<TDependencies>
             {
@@ -183,9 +189,55 @@ public static class FluentFeatureSlice
             }
 
             public void WithHandler<TDispatcher, TRequest, TResponse>(
-                Handler<TRequest, TResponse, FromServicesProvider> handler,
-                Func<Handler<TRequest, TResponse>, TDispatcher> dispatcherConverter,
+                Handler<TRequest, Result<TResponse>, FromServicesProvider> handler,
+                Func<Handler<TRequest, Result<TResponse>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TResponse : notnull
+                where TDispatcher : Delegate
+            {
+                FeatureSliceHandler.Default.AddHandler(Services, handler, dispatcherConverter, serviceLifetime);
+            }
+
+
+
+
+            public void WithHandler<TDispatcher, TRequest>(
+                ServiceFactory<Handler<TRequest, Result>> handlerFactory,
+                Func<IServiceProvider, Handler<TRequest, Result>, TDispatcher> dispatcherConverter,
+                ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TDispatcher : Delegate
+            {
+                FeatureSliceHandler.Default.AddHandler(Services, handlerFactory, dispatcherConverter, serviceLifetime);
+            }
+
+            public void WithHandler<TDispatcher, TRequest>(
+                ServiceFactory<Handler<TRequest, Result>> handlerFactory,
+                Func<Handler<TRequest, Result>, TDispatcher> dispatcherConverter,
+                ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TDispatcher : Delegate
+            {
+                FeatureSliceHandler.Default.AddHandler(Services, handlerFactory, dispatcherConverter, serviceLifetime);
+            }
+
+            public void WithHandler<TDispatcher, TRequest, TDependencies>(
+                Handler<TRequest, Result, TDependencies> handler,
+                Func<Handler<TRequest, Result>, TDispatcher> dispatcherConverter,
+                ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TDispatcher : Delegate
+                where TDependencies : class, IFromServices<TDependencies>
+            {
+                FeatureSliceHandler.Default.AddHandler(Services, handler, dispatcherConverter, serviceLifetime);
+            }
+
+            public void WithHandler<TDispatcher, TRequest>(
+                Handler<TRequest, Result, FromServicesProvider> handler,
+                Func<Handler<TRequest, Result>, TDispatcher> dispatcherConverter,
+                ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handler, dispatcherConverter, serviceLifetime);
@@ -195,27 +247,33 @@ public static class FluentFeatureSlice
         public interface IWithFlag : IFluentFeatureSlice.IFeatureName
         {
             public void WithHandler<TDispatcher, TRequest, TResponse>(
-                ServiceFactory<Handler<TRequest, TResponse>> handlerFactory,
-                Func<IServiceProvider, HandlerWithFlag<TRequest, TResponse>, TDispatcher> dispatcherConverter,
+                ServiceFactory<Handler<TRequest, Result<TResponse>>> handlerFactory,
+                Func<IServiceProvider, Handler<TRequest, Result<TResponse, Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TResponse : notnull
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handlerFactory, dispatcherConverter, serviceLifetime);
             }
 
             public void WithHandler<TDispatcher, TRequest, TResponse>(
-                ServiceFactory<Handler<TRequest, TResponse>> handlerFactory,
-                Func<HandlerWithFlag<TRequest, TResponse>, TDispatcher> dispatcherConverter,
+                ServiceFactory<Handler<TRequest, Result<TResponse>>> handlerFactory,
+                Func<Handler<TRequest, Result<TResponse, Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TResponse : notnull
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handlerFactory, dispatcherConverter, serviceLifetime);
             }
 
             public void WithHandler<TDispatcher, TRequest, TResponse, TDependencies>(
-                Handler<TRequest, TResponse, TDependencies> handler,
-                Func<HandlerWithFlag<TRequest, TResponse>, TDispatcher> dispatcherConverter,
+                Handler<TRequest, Result<TResponse>, TDependencies> handler,
+                Func<Handler<TRequest, Result<TResponse, Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TResponse : notnull
                 where TDispatcher : Delegate
                 where TDependencies : class, IFromServices<TDependencies>
             {
@@ -223,9 +281,54 @@ public static class FluentFeatureSlice
             }
 
             public void WithHandler<TDispatcher, TRequest, TResponse>(
-                Handler<TRequest, TResponse, FromServicesProvider> handler,
-                Func<HandlerWithFlag<TRequest, TResponse>, TDispatcher> dispatcherConverter,
+                Handler<TRequest, Result<TResponse>, FromServicesProvider> handler,
+                Func<Handler<TRequest, Result<TResponse, Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TResponse : notnull
+                where TDispatcher : Delegate
+            {
+                FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handler, dispatcherConverter, serviceLifetime);
+            }
+
+
+
+            public void WithHandler<TDispatcher, TRequest>(
+                ServiceFactory<Handler<TRequest, Result>> handlerFactory,
+                Func<IServiceProvider, Handler<TRequest, Result.Or<Disabled>>, TDispatcher> dispatcherConverter,
+                ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TDispatcher : Delegate
+            {
+                FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handlerFactory, dispatcherConverter, serviceLifetime);
+            }
+
+            public void WithHandler<TDispatcher, TRequest>(
+                ServiceFactory<Handler<TRequest, Result>> handlerFactory,
+                Func<Handler<TRequest, Result.Or<Disabled>>, TDispatcher> dispatcherConverter,
+                ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TDispatcher : Delegate
+            {
+                FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handlerFactory, dispatcherConverter, serviceLifetime);
+            }
+
+            public void WithHandler<TDispatcher, TRequest, TDependencies>(
+                Handler<TRequest, Result, TDependencies> handler,
+                Func<Handler<TRequest, Result.Or<Disabled>>, TDispatcher> dispatcherConverter,
+                ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
+                where TDispatcher : Delegate
+                where TDependencies : class, IFromServices<TDependencies>
+            {
+                FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handler, dispatcherConverter, serviceLifetime);
+            }
+
+            public void WithHandler<TDispatcher, TRequest>(
+                Handler<TRequest, Result, FromServicesProvider> handler,
+                Func<Handler<TRequest, Result.Or<Disabled>>, TDispatcher> dispatcherConverter,
+                ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+                where TRequest : notnull
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handler, dispatcherConverter, serviceLifetime);

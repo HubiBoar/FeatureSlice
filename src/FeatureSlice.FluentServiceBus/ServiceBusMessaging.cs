@@ -1,11 +1,10 @@
-using OneOf;
-using OneOf.Types;
 using FluentServiceBus;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
 using Momolith.Modules;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
+using Definit.Results;
 
 namespace FeatureSlice.FluentServiceBus;
 
@@ -65,22 +64,22 @@ public sealed class ServiceBusMessaging : Messaging.ISetup
 
         return provider => message => Dispatch(provider, message, queueName);
 
-        static async Task<OneOf<Success, Disabled, Error>> Dispatch(IServiceProvider provider, TMessage message, QueueName queueName)
+        static async Task<Result.Or<Disabled>> Dispatch(IServiceProvider provider, TMessage message, QueueName queueName)
         {
             var publisher = provider.GetRequiredService<IRouterPublisher>();
             await publisher.Publish(message, queueName.Value);
 
-            return new Success();
+            return Result.Success;
         }
 
-        static async Task<OneOf<Success, Abandon, DeadLetter>> Consume(TMessage message, Messaging.Consume<TMessage> consume)
+        static async Task<Result.Or<Abandon>> Consume(TMessage message, Messaging.Consume<TMessage> consume)
         {
             var result = await consume(message);
 
-            return result.Match<OneOf<Success, Abandon, DeadLetter>>(
+            return result.Match<Result.Or<Abandon>>(
                 success => success,
-                disabled => new Abandon(),
-                error => new DeadLetter("InternalError"));
+                abandon => new Abandon(),
+                error => error);
         }
     }
 

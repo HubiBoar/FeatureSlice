@@ -2,11 +2,10 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Momolith.Modules;
-using OneOf;
-using OneOf.Types;
 using Definit.Dependencies;
 using Definit.Endpoint;
 using Endpoint = Definit.Endpoint.Endpoint;
+using Definit.Results;
 
 namespace FeatureSlice.Samples.Fluent;
 
@@ -29,7 +28,7 @@ public static class ExampleEndpoint
     });
 }
 
-public sealed class ExampleHandler : DispatchableWithFlag<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
+public sealed class ExampleHandler : Dispatchable<ExampleHandler, ExampleHandler.Request, Result<ExampleHandler.Response, Disabled>>
 {
     public record Request();
     public record Response();
@@ -51,9 +50,11 @@ public sealed class ExampleHandler : DispatchableWithFlag<ExampleHandler, Exampl
         return Results.Ok();
     });
 
-    private static async Task<OneOf<Response, Error>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    private static async Task<Result<Response>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
         var (dep1, dep2) = dependencies;
+
+        await Task.CompletedTask;
 
         return new Response();
     }
@@ -61,7 +62,7 @@ public sealed class ExampleHandler : DispatchableWithFlag<ExampleHandler, Exampl
 
 public static class ExampleConsumer
 {
-    public delegate Task<OneOf<Success, Disabled, Error>> Dispatch(Request request);
+    public delegate Task<Result.Or<Disabled>> Dispatch(Request request);
 
     public record Request();
 
@@ -76,17 +77,19 @@ public static class ExampleConsumer
                 handler => handler.Invoke);
     }
 
-    private static async Task<OneOf<Success, Error>> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    private static async Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
         var (dep1, dep2) = dependencies;
 
-        return new Success();
+        await Task.CompletedTask;
+
+        return Result.Success;
     }
 }
 
 public static class ExampleConsumerWithEndpoint
 {
-    public delegate Task<OneOf<Success, Disabled, Error>> Dispatch(Request request);
+    public delegate Task<Result.Or<Disabled>> Dispatch(Request request);
 
     public record Request();
 
@@ -109,11 +112,13 @@ public static class ExampleConsumerWithEndpoint
         return Results.Ok();
     });
 
-    private static async Task<OneOf<Success, Error>> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    private static async Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
         var (dep1, dep2) = dependencies;
 
-        return new Success();
+await Task.CompletedTask;
+
+        return Result.Success;
     }
 }
 

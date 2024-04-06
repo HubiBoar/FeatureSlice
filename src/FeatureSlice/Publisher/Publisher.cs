@@ -1,7 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
-using OneOf;
-using OneOf.Else;
-using OneOf.Types;
+using Microsoft.Extensions.DependencyInjection;using Definit.Results;
 
 namespace FeatureSlice;
 
@@ -14,25 +11,25 @@ public sealed class Publisher : IPublisher
         _provider = provider;
     }
 
-    public Task<OneOf<Success, Error>> Dispatch<TRequest>(TRequest request)
+    public Task<Result> Dispatch<TRequest>(TRequest request)
     {
         using var scope = _provider.CreateScope();
 
         var provider = scope.ServiceProvider;
 
-        return Dispatch<TRequest>(request, provider.GetServices<IPublisher.Listen<TRequest>>().ToArray());
+        return Dispatch(request, provider.GetServices<IPublisher.Listen<TRequest>>().ToArray());
     }
 
-    public Task<OneOf<Success, Error>> DispatchParallel<TRequest>(TRequest request)
+    public Task<Result> DispatchParallel<TRequest>(TRequest request)
     {
         using var scope = _provider.CreateScope();
 
         var provider = scope.ServiceProvider;
 
-        return DispatchParallel<TRequest>(request, provider.GetServices<IPublisher.Listen<TRequest>>().ToArray());
+        return DispatchParallel(request, provider.GetServices<IPublisher.Listen<TRequest>>().ToArray());
     }
     
-    public static async Task<OneOf<Success, Error>> Dispatch<TRequest>(TRequest request, IReadOnlyCollection<IPublisher.Listen<TRequest>> listeners)
+    public static async Task<Result> Dispatch<TRequest>(TRequest request, IReadOnlyCollection<IPublisher.Listen<TRequest>> listeners)
     {
         foreach(var listener in listeners)
         {
@@ -44,31 +41,37 @@ public sealed class Publisher : IPublisher
             }
         }
 
-        return new Success();
+        return Result.Success;
     }
 
-    public static async Task<OneOf<Success, Error>> DispatchParallel<TRequest>(TRequest request, IReadOnlyCollection<IPublisher.Listen<TRequest>> listeners)
+    public static async Task<Result> DispatchParallel<TRequest>(TRequest request, IReadOnlyCollection<IPublisher.Listen<TRequest>> listeners)
     {
         var tasks = listeners.Select(listener => listener(request));
 
         var results = await Task.WhenAll(tasks);
 
-        if(results.Any(x => x.IsT1))
+        var errors = results.SelectWhere(x => (x.Is(out Error error), error)).ToArray();
+        
+        if (errors.Length == 1)
         {
-            //TODO Combine errors as result
-            return new Error();
+            return errors.Single();
         }
 
-        return new Success();
+        if (errors.Length > 1)
+        {
+            return new Error(string.Join(", ", errors.Select(x => x.Message)));
+        }
+
+        return Result.Success;
     }
 }
 
 public interface IPublisher
 {
-    public Task<OneOf<Success, Error>> Dispatch<TRequest>(TRequest request);
-    public Task<OneOf<Success, Error>> DispatchParallel<TRequest>(TRequest request);
+    public Task<Result> Dispatch<TRequest>(TRequest request);
+    public Task<Result> DispatchParallel<TRequest>(TRequest request);
 
-    public delegate Task<OneOf<Success, Error>> Listen<TRequest>(TRequest request);
+    public delegate Task<Result> Listen<TRequest>(TRequest request);
 
     public static void Register(IServiceCollection services)
     {

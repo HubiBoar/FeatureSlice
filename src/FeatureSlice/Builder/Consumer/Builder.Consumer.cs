@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Definit.Dependencies;
 
+
 namespace FeatureSlice;
 
 public static partial class FeatureSliceBuilder
@@ -24,7 +25,7 @@ public static partial class FeatureSliceBuilder
                     .WithConsumer<Dispatch, TRequest, TDependencies>(
                         setup,
                         consumerName,
-                        (request, dep) => handle(request, dep),
+                        (request, dep) =>  handle(request, dep),
                         h => h.Invoke,
                         serviceLifetime);
             }

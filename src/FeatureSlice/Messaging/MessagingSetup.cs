@@ -1,12 +1,11 @@
-using OneOf.Types;
-using OneOf;
+using Definit.Results;
 
 namespace FeatureSlice;
 
 public static partial class Messaging
 {
-    public delegate Task<OneOf<Success, Disabled, Error>> Consume<TMessage>(TMessage message);
-    public delegate Task<OneOf<Success, Disabled, Error>> Dispatch<TMessage>(TMessage message);
+    public delegate Task<Result.Or<Disabled>> Consume<TMessage>(TMessage message);
+    public delegate Task<Result.Or<Disabled>> Dispatch<TMessage>(TMessage message);
 
     public interface ISetup
     {
@@ -26,6 +25,23 @@ public static partial class Messaging
             where TMessage : notnull
         {
             return provider => message => consumerFactory(provider)(message);
+        }
+    }
+}
+
+public static class EnumerableExtensions
+{
+    public delegate (bool Exists, TTo Value) Is<TFrom, TTo>(TFrom from);
+
+    public static IEnumerable<TTo> SelectWhere<TFrom, TTo>(this IEnumerable<TFrom> enumerable, Is<TFrom, TTo> func)
+    {
+        foreach(var item in enumerable)
+        {
+            var result = func(item);
+            if(result.Exists)
+            {
+                yield return result.Value;
+            }
         }
     }
 }
