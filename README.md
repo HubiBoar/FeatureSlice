@@ -6,7 +6,7 @@
 
 **FeatureSlice** is an library aiming to help working with Vertical/Feature Slice Architecture.
 
-FeatureSlices can be Endpoints, Handlers and Consumers, and can also have a FeatureToggle.
+FeatureSlices can be Handlers or Consumers, and have an Endpoint and/or FeatureToggle.
 - Handlers are a InMemory classes which take and Request and produces an Response.
 - Consumers are Message Consumers which take an Request and produces only Success or Error status, they can be setup to use for example Azure ServiceBus.
 - Both of those can also be reachable from API as Endpoints and/or be toggable using FeatureToggles. 
