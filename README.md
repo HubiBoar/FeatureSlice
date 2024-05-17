@@ -114,7 +114,145 @@ public static void Register(IServiceCollection services, Messaging.ISetup setup,
 }
 ```
 
-## [Functional](src/Samples/Fluent.cs) 
+## [Functional](src/Samples/Fluent.cs) which needs more manual setup
+
+#### Endpoint
+```csharp
+public static class ExampleEndpoint
+{
+    public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
+    {
+        services.FeatureSlice()
+            .WithEndpoint(
+                extender,
+                Endpoint);
+    }
+
+    private static Endpoint Endpoint => Map.Get("test", (int age) => 
+    {
+        return Results.Ok();
+    });
+}
+```
+
+#### Handler
+```csharp
+public sealed class ExampleHandler : Dispatchable<ExampleHandler, ExampleHandler.Request, Result<ExampleHandler.Response, Disabled>>
+{
+    public record Request();
+    public record Response();
+
+    public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
+    {
+        services.FeatureSlice()
+            .WithHandler<Dispatch, Request, Response, FromServices<Dependency1, Dependency2>>(
+                Handle,
+                handler => handler.Invoke);
+    }
+
+    private static async Task<Result<Response>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    {
+        var (dep1, dep2) = dependencies;
+
+        await Task.CompletedTask;
+
+        return new Response();
+    }
+}
+```
+
+#### Consumer
+```csharp
+public static class ExampleConsumer
+{
+    public delegate Task<Result> Dispatch(Request request);
+
+    public record Request();
+
+    public static void Register(IServiceCollection services, Messaging.ISetup setup)
+    {
+        services.FeatureSlice()
+            .WithConsumer<Dispatch, Request, FromServices<Dependency1, Dependency2>>(
+                setup,
+                new ("ExampleConsumer"),
+                Consume,
+                handler => handler.Invoke);
+    }
+
+    private static async Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    {
+        var (dep1, dep2) = dependencies;
+
+        await Task.CompletedTask;
+
+        return Result.Success;
+    }
+}
+```
+
+#### Combination of Consumer with Endpoint, Handler with Endpoint and both with FeatureFlag
+```csharp
+public static class ExampleConsumerWithEndpoint
+{
+    public delegate Task<Result.Or<Disabled>> Dispatch(Request request);
+
+    public record Request();
+
+    public static void Register(IServiceCollection services, Messaging.ISetup setup, IHostExtender<WebApplication> extender)
+    {
+        services.FeatureSlice()
+            .WithFlag("ExampleConsumerWithEndpoint")
+            .WithEndpoint(
+                extender,
+                Endpoint)
+            .WithConsumer<Dispatch, Request, FromServices<Dependency1, Dependency2>>(
+                setup,
+                new ("ExampleConsumerWithEndpoint"),
+                Consume,
+                handler => handler.Invoke);
+    }
+
+    private static Endpoint Endpoint => Map.Get("test", (int age) => 
+    {
+        return Results.Ok();
+    });
+
+    private static async Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    {
+        var (dep1, dep2) = dependencies;
+
+        await Task.CompletedTask;
+
+        return Result.Success;
+    }
+}
+```
+
+#### Handlers and Consumers need to have manually added Dispatch methods which allow them to be called from dependencies
+```csharp
+public static void Use(
+    IPublisher publisher,
+    ExampleConsumer.Dispatch consumer,
+    ExampleHandler.Dispatch handler,
+    ExampleConsumerWithEndpoint.Dispatch consumerWithEndpoint)
+{
+    publisher.Dispatch(new ExampleConsumer.Request());
+    consumer(new ExampleConsumer.Request());
+    handler(new ExampleHandler.Request());
+    consumerWithEndpoint(new ExampleConsumerWithEndpoint.Request());
+}
+```
+
+#### Handlers and Consumers need to have manually added Register for DI registration
+```csharp
+public static void Register(IServiceCollection services, Messaging.ISetup setup, WebAppExtender hostExtender)
+{
+    ExampleEndpoint.Register(services, hostExtender);
+    ExampleConsumer.Register(services, setup);
+    ExampleHandler.Register(services, hostExtender);
+    ExampleConsumerWithEndpoint.Register(services, setup, hostExtender);
+}
+```
 
 ### Samples
 [src/Samples](src/Samples)
