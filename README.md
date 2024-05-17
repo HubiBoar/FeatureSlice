@@ -5,8 +5,12 @@
 [![NuGet Downloads](https://img.shields.io/nuget/dt/FeatureSlice)](https://www.nuget.org/packages/FeatureSlice/)
 
 **FeatureSlice** is an library aiming to help working with Vertical/Feature Slice Architecture.
+FeatureSlices can be Endpoints, Handlers and Consumers, and can also have a FeatureToggle.
+- Handlers are a InMemory classes which take and Request and produces an Response.
+- Consumers are Message Consumers which take an Request and produces only Success or Error status, they can be setup to use for example Azure ServiceBus.
+- Both of those can also be reachable from API as Endpoints or be toggable using FeatureToggles. 
 
-It achieves that by creating an abstraction in a form of two types of APIs:
+Those elements can be setup using two types of API:
 
 ## [FluentGenericBuilder](src/Samples/Builder.cs)
 
