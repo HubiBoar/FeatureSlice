@@ -8,7 +8,7 @@
 
 It achieves that by creating an abstraction in a form of two types of APIs:
 
-### [FluentGenericBuilder](src/Samples/Builder.cs)
+## [FluentGenericBuilder](src/Samples/Builder.cs)
 
 #### Endpoint
 ```csharp
