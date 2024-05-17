@@ -9,7 +9,7 @@
 FeatureSlices can be Handlers or Consumers, and have an Endpoint and/or FeatureToggle.
 - Handlers are a InMemory classes which take and Request and produces an Response.
 - Consumers are Message Consumers which take an Request and produces only Success or Error status, they can be setup to use for example Azure ServiceBus.
-- Both of those can also be set to be reachable from API as Endpoints and/or be toggable using FeatureToggles. 
+- Both of those can also be set to be reachable from API as Endpoints and/or have a FeatureToggle. 
 
 Those elements can be setup using two types of API:
 
