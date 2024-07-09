@@ -12,22 +12,6 @@ namespace FeatureSlice.Samples.Fluent;
 public sealed record Dependency1();
 public sealed record Dependency2();
 
-public static class ExampleEndpoint
-{
-    public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
-    {
-        services.FeatureSlice()
-            .WithEndpoint(
-                extender,
-                Endpoint);
-    }
-
-    private static Endpoint Endpoint => Map.Get("test", (int age) => 
-    {
-        return Results.Ok();
-    });
-}
-
 public sealed class ExampleHandler : Dispatchable<ExampleHandler, ExampleHandler.Request, Result<ExampleHandler.Response, Disabled>>
 {
     public record Request();
@@ -37,12 +21,16 @@ public sealed class ExampleHandler : Dispatchable<ExampleHandler, ExampleHandler
     {
         services.FeatureSlice()
             .WithFlag("ExampleHandler")
-            .WithEndpoint(
-                extender,
-                Endpoint)
-            .WithHandler<Dispatch, Request, Response, FromServices<Dependency1, Dependency2>>(
+            .WithHandler<Dispatch, Request, Response, FromServices<Dependency1, Dependency2>>
+            (
                 Handle,
-                handler => handler.Invoke);
+                handler => handler.Invoke
+            )
+            .WithEndpoint
+            (
+                extender,
+                Endpoint
+            );
     }
 
     private static Endpoint Endpoint => Map.Get("test", (int age) => 
@@ -97,14 +85,18 @@ public static class ExampleConsumerWithEndpoint
     {
         services.FeatureSlice()
             .WithFlag("ExampleConsumerWithEndpoint")
-            .WithEndpoint(
-                extender,
-                Endpoint)
-            .WithConsumer<Dispatch, Request, FromServices<Dependency1, Dependency2>>(
+            .WithConsumer<Dispatch, Request, FromServices<Dependency1, Dependency2>>
+            (
                 setup,
                 new ("ExampleConsumerWithEndpoint"),
                 Consume,
-                handler => handler.Invoke);
+                handler => handler.Invoke
+            )
+            .WithEndpoint
+            (
+                extender,
+                Endpoint
+            );
     }
 
     private static Endpoint Endpoint => Map.Get("test", (int age) => 
@@ -116,7 +108,7 @@ public static class ExampleConsumerWithEndpoint
     {
         var (dep1, dep2) = dependencies;
 
-await Task.CompletedTask;
+        await Task.CompletedTask;
 
         return Result.Success;
     }
@@ -138,7 +130,6 @@ public class Usage
 
     public static void Register(IServiceCollection services, Messaging.ISetup setup, WebAppExtender hostExtender)
     {
-        ExampleEndpoint.Register(services, hostExtender);
         ExampleConsumer.Register(services, setup);
         ExampleHandler.Register(services, hostExtender);
         ExampleConsumerWithEndpoint.Register(services, setup, hostExtender);

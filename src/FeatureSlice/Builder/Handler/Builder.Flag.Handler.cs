@@ -25,10 +25,12 @@ public static partial class FeatureSliceBuilder
                     services
                         .FeatureSlice()
                         .WithFlag(featureName)
-                        .WithHandler<Dispatch, TRequest, TResponse, TDependencies>(
+                        .WithHandler<Dispatch, TRequest, TResponse, TDependencies>
+                        (
                             (request, dep) => handle(request, dep),
                             h => h.Invoke,
-                            serviceLifetime);
+                            serviceLifetime
+                        );
                 }
             }
         }
@@ -50,10 +52,12 @@ public static partial class FeatureSliceBuilder
                     services
                         .FeatureSlice()
                         .WithFlag(featureName)
-                        .WithHandler<Dispatch, TRequest, TDependencies>(
+                        .WithHandler<Dispatch, TRequest, TDependencies>
+                        (
                             (request, dep) => handle(request, dep),
                             h => h.Invoke,
-                            serviceLifetime);
+                            serviceLifetime
+                        );
                 }
             }
         }

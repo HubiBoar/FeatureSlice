@@ -11,20 +11,10 @@ namespace FeatureSlice.Samples.Builder;
 public sealed record Dependency1();
 public sealed record Dependency2();
 
-public sealed class ExampleEndpoint : FeatureSliceBuilder
-    .WithEndpoint
-    .Build<ExampleEndpoint>
-{
-    protected override Endpoint Endpoint => Map.Get("test", (int age) => 
-    {
-        return Results.Ok();
-    });
-}
-
 public sealed class ExampleHandler : FeatureSliceBuilder
     .WithFlag
-    .WithEndpoint
     .WithHandler<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
+    .WithEndpoint
     .Build<ExampleHandler>
 {
     public record Request();
@@ -32,7 +22,7 @@ public sealed class ExampleHandler : FeatureSliceBuilder
 
     protected override string FeatureName => "ExampleHandler";
 
-    protected override Endpoint Endpoint => Map.Get("test", (int age) => 
+    protected override Endpoint Endpoint => Map.Get("test", (int age, Dispatch dispatch) => 
     {
         return Results.Ok();
     })
@@ -46,6 +36,7 @@ public sealed class ExampleHandler : FeatureSliceBuilder
 
         return new Response();
     }
+
 }
 
 public sealed class ExampleConsumer : FeatureSliceBuilder
@@ -67,8 +58,8 @@ public sealed class ExampleConsumer : FeatureSliceBuilder
 
 public sealed class ExampleConsumerWithEndpoint : FeatureSliceBuilder
     .WithFlag
-    .WithEndpoint
     .WithConsumer<ExampleConsumerWithEndpoint.Request, FromServices<Dependency1, Dependency2>>
+    .WithEndpoint
     .Build<ExampleConsumerWithEndpoint>
 {
     public record Request();
@@ -104,7 +95,6 @@ public class Usage
 
     public static void Register(IServiceCollection services, Messaging.ISetup setup, WebAppExtender hostExtender)
     {
-        ExampleEndpoint.Register(services, hostExtender);
         ExampleConsumer.Register(services, setup);
         ExampleHandler.Register(services, hostExtender);
         ExampleConsumerWithEndpoint.Register(services, setup, hostExtender);

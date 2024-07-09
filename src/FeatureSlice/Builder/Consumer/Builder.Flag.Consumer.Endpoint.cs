@@ -9,11 +9,11 @@ public static partial class FeatureSliceBuilder
 {
     public static partial class WithFlag
     {
-        public static partial class WithEndpoint
+        public static partial class WithConsumer<TRequest, TDependencies>
+            where TDependencies : class, IFromServices<TDependencies>
+            where TRequest : notnull
         {
-            public static partial class WithConsumer<TRequest, TDependencies>
-                where TDependencies : class, IFromServices<TDependencies>
-                where TRequest : notnull
+            public static partial class WithEndpoint
             {
                 public abstract class Build<TSelf> : ConsumerBaseWithFlag<TSelf, TRequest, TDependencies>, IEndpointProvider
                     where TSelf : Build<TSelf>, new()
@@ -34,13 +34,15 @@ public static partial class FeatureSliceBuilder
                         services
                             .FeatureSlice()
                             .WithFlag(featureName)
-                            .WithEndpoint(extender, endpoint)
-                            .WithConsumer<Dispatch, TRequest, TDependencies>(
+                            .WithConsumer<Dispatch, TRequest, TDependencies>
+                            (
                                 setup,
                                 consumerName,
                                 (request, dep) => handle(request, dep),
                                 h => h.Invoke,
-                                serviceLifetime);
+                                serviceLifetime
+                            )
+                            .WithEndpoint(extender, endpoint);
                     }
                 }
             }

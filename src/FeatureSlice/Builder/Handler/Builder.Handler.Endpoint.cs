@@ -7,12 +7,12 @@ namespace FeatureSlice;
 
 public static partial class FeatureSliceBuilder
 {
-    public static partial class WithEndpoint
+    public static partial class WithHandler<TRequest, TResponse, TDependencies>
+        where TDependencies : class, IFromServices<TDependencies>
+        where TRequest : notnull
+        where TResponse : notnull
     {
-        public static partial class WithHandler<TRequest, TResponse, TDependencies>
-            where TDependencies : class, IFromServices<TDependencies>
-            where TRequest : notnull
-            where TResponse : notnull
+        public static partial class WithEndpoint
         {
             public abstract class Build<TSelf> : HandlerBase<TSelf, TRequest, TResponse, TDependencies>, IEndpointProvider
                 where TSelf : Build<TSelf>, new()
@@ -30,18 +30,23 @@ public static partial class FeatureSliceBuilder
 
                     services
                         .FeatureSlice()
-                        .WithEndpoint(extender, endpoint)
-                        .WithHandler<Dispatch, TRequest, TResponse, TDependencies>(
+                        .WithHandler<Dispatch, TRequest, TResponse, TDependencies>
+                        (
                             (request, dep) => handle(request, dep),
                             h => h.Invoke,
-                            serviceLifetime);
+                            serviceLifetime
+                        )
+                        .WithEndpoint(extender, endpoint);
                 }
             }
         }
+    }
 
-        public static partial class WithHandler<TRequest, TDependencies>
-            where TDependencies : class, IFromServices<TDependencies>
-            where TRequest : notnull
+    public static partial class WithHandler<TRequest, TDependencies>
+        where TDependencies : class, IFromServices<TDependencies>
+        where TRequest : notnull
+    {
+        public static partial class WithEndpoint
         {
             public abstract class Build<TSelf> : HandlerBase<TSelf, TRequest, TDependencies>, IEndpointProvider
                 where TSelf : Build<TSelf>, new()
@@ -59,11 +64,13 @@ public static partial class FeatureSliceBuilder
 
                     services
                         .FeatureSlice()
-                        .WithEndpoint(extender, endpoint)
-                        .WithHandler<Dispatch, TRequest, TDependencies>(
+                        .WithHandler<Dispatch, TRequest, TDependencies>
+                        (
                             (request, dep) => handle(request, dep),
                             h => h.Invoke,
-                            serviceLifetime);
+                            serviceLifetime
+                        )
+                        .WithEndpoint(extender, endpoint);
                 }
             }
         }

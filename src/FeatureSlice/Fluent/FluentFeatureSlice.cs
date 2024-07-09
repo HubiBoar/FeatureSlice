@@ -30,48 +30,30 @@ public static class FluentFeatureSlice
         {
             return new FluentFeatureSliceWithFlag(this, featureName);
         }
-
-        public IWithEndpoint WithEndpoint(IHostExtender<WebApplication> extender, Func<IEndpointRouteBuilder, IEndpointConventionBuilder> endpoint)
-        {
-            FeatureSliceEndpoint.AddEndpoint(extender, endpoint);
-            return new FluentFeatureSliceWithEndpoint(this);
-        }
-
-        public IWithEndpoint WithEndpoint(IHostExtender<WebApplication> extender, Endpoint endpoint)
-        {
-            FeatureSliceEndpoint.AddEndpoint(extender, endpoint);
-            return new FluentFeatureSliceWithEndpoint(this);
-        }
     }
 
-    public interface IWithEndpoint : AddConsumer.IDefault, AddHandler.IDefault
+    public interface ICanHaveEndpoint : IFluentFeatureSlice
     {
+        public void WithEndpoint(IHostExtender<WebApplication> extender, Func<IEndpointRouteBuilder, IEndpointConventionBuilder> endpoint)
+        {
+            FeatureSliceEndpoint.AddEndpoint(extender, endpoint);
+        }
+
+        public void WithEndpoint(IHostExtender<WebApplication> extender, Endpoint endpoint)
+        {
+            FeatureSliceEndpoint.AddEndpoint(extender, endpoint);
+        }
     }
 
     public interface IWithFlag : AddConsumer.IWithFlag, AddHandler.IWithFlag
     {
-        public interface IWithEndpoint : AddConsumer.IWithFlag, AddHandler.IWithFlag 
-        {
-        }
-
-        public IWithEndpoint WithEndpoint(IHostExtender<WebApplication> extender, Func<IEndpointRouteBuilder, IEndpointConventionBuilder> endpoint)
-        {
-            FeatureSliceEndpoint.AddEndpoint(extender, endpoint);
-            return new FluentFeatureSliceWithEndpointAndFlag(this);
-        }
-
-        public IWithEndpoint WithEndpoint(IHostExtender<WebApplication> extender, Endpoint endpoint)
-        {
-            FeatureSliceEndpoint.AddEndpoint(extender, endpoint);
-            return new FluentFeatureSliceWithEndpointAndFlag(this);
-        }
     }
 
     public static class AddConsumer
     {
         public interface IDefault : IFluentFeatureSlice
         {
-            public void WithConsumer<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithConsumer<TDispatcher, TRequest>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
                 ServiceFactory<Handler<TRequest, Result>> handlerFactory,
@@ -81,9 +63,10 @@ public static class FluentFeatureSlice
                 where TRequest : notnull
             {
                 FeatureSliceConsumer.Default.AddConsumer(Services, setup, consumerName, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithConsumer<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithConsumer<TDispatcher, TRequest>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
                 ServiceFactory<Handler<TRequest, Result>> handlerFactory,
@@ -93,9 +76,10 @@ public static class FluentFeatureSlice
                 where TRequest : notnull
             {
                 FeatureSliceConsumer.Default.AddConsumer(Services, setup, consumerName, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithConsumer<TDispatcher, TRequest, TDependencies>(
+            public ICanHaveEndpoint WithConsumer<TDispatcher, TRequest, TDependencies>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
                 Handler<TRequest, Result, TDependencies> handler,
@@ -106,12 +90,13 @@ public static class FluentFeatureSlice
                 where TDependencies : class, IFromServices<TDependencies>
             {
                 FeatureSliceConsumer.Default.AddConsumer(Services, setup, consumerName, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
         }
 
         public interface IWithFlag : IFluentFeatureSlice.IFeatureName
         {
-            public void WithConsumer<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithConsumer<TDispatcher, TRequest>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
                 ServiceFactory<Handler<TRequest, Result>> handlerFactory,
@@ -121,9 +106,10 @@ public static class FluentFeatureSlice
                 where TRequest : notnull
             {
                 FeatureSliceConsumer.Flag.AddConsumer(Services, setup, FeatureName, consumerName, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithConsumer<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithConsumer<TDispatcher, TRequest>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
                 ServiceFactory<Handler<TRequest, Result>> handlerFactory,
@@ -133,9 +119,10 @@ public static class FluentFeatureSlice
                 where TRequest : notnull
             {
                 FeatureSliceConsumer.Flag.AddConsumer(Services, setup, FeatureName, consumerName, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithConsumer<TDispatcher, TRequest, TDependencies>(
+            public ICanHaveEndpoint WithConsumer<TDispatcher, TRequest, TDependencies>(
                 Messaging.ISetup setup,
                 ConsumerName consumerName,
                 Handler<TRequest, Result, TDependencies> handler,
@@ -146,6 +133,7 @@ public static class FluentFeatureSlice
                 where TDependencies : class, IFromServices<TDependencies>
             {
                 FeatureSliceConsumer.Flag.AddConsumer(Services, setup, FeatureName, consumerName, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
         }
     }
@@ -154,7 +142,7 @@ public static class FluentFeatureSlice
     {
         public interface IDefault : IFluentFeatureSlice
         {
-            public void WithHandler<TDispatcher, TRequest, TResponse>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TResponse>(
                 ServiceFactory<Handler<TRequest, Result<TResponse>>> handlerFactory,
                 Func<IServiceProvider, Handler<TRequest, Result<TResponse>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -163,9 +151,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest, TResponse>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TResponse>(
                 ServiceFactory<Handler<TRequest, Result<TResponse>>> handlerFactory,
                 Func<Handler<TRequest, Result<TResponse>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -174,9 +163,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest, TResponse, TDependencies>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TResponse, TDependencies>(
                 Handler<TRequest, Result<TResponse>, TDependencies> handler,
                 Func<Handler<TRequest, Result<TResponse>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -186,9 +176,10 @@ public static class FluentFeatureSlice
                 where TDependencies : class, IFromServices<TDependencies>
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest, TResponse>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TResponse>(
                 Handler<TRequest, Result<TResponse>, FromServicesProvider> handler,
                 Func<Handler<TRequest, Result<TResponse>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -197,12 +188,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-
-
-
-            public void WithHandler<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest>(
                 ServiceFactory<Handler<TRequest, Result>> handlerFactory,
                 Func<IServiceProvider, Handler<TRequest, Result>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -210,9 +199,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest>(
                 ServiceFactory<Handler<TRequest, Result>> handlerFactory,
                 Func<Handler<TRequest, Result>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -220,9 +210,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest, TDependencies>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TDependencies>(
                 Handler<TRequest, Result, TDependencies> handler,
                 Func<Handler<TRequest, Result>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -231,9 +222,10 @@ public static class FluentFeatureSlice
                 where TDependencies : class, IFromServices<TDependencies>
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest>(
                 Handler<TRequest, Result, FromServicesProvider> handler,
                 Func<Handler<TRequest, Result>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -241,12 +233,13 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Default.AddHandler(Services, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
         }
 
         public interface IWithFlag : IFluentFeatureSlice.IFeatureName
         {
-            public void WithHandler<TDispatcher, TRequest, TResponse>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TResponse>(
                 ServiceFactory<Handler<TRequest, Result<TResponse>>> handlerFactory,
                 Func<IServiceProvider, Handler<TRequest, Result<TResponse, Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -255,9 +248,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest, TResponse>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TResponse>(
                 ServiceFactory<Handler<TRequest, Result<TResponse>>> handlerFactory,
                 Func<Handler<TRequest, Result<TResponse, Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -266,9 +260,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest, TResponse, TDependencies>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TResponse, TDependencies>(
                 Handler<TRequest, Result<TResponse>, TDependencies> handler,
                 Func<Handler<TRequest, Result<TResponse, Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -278,9 +273,10 @@ public static class FluentFeatureSlice
                 where TDependencies : class, IFromServices<TDependencies>
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest, TResponse>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TResponse>(
                 Handler<TRequest, Result<TResponse>, FromServicesProvider> handler,
                 Func<Handler<TRequest, Result<TResponse, Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -289,11 +285,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-
-
-            public void WithHandler<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest>(
                 ServiceFactory<Handler<TRequest, Result>> handlerFactory,
                 Func<IServiceProvider, Handler<TRequest, Result.Or<Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -301,9 +296,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest>(
                 ServiceFactory<Handler<TRequest, Result>> handlerFactory,
                 Func<Handler<TRequest, Result.Or<Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -311,9 +307,10 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handlerFactory, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest, TDependencies>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest, TDependencies>(
                 Handler<TRequest, Result, TDependencies> handler,
                 Func<Handler<TRequest, Result.Or<Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -322,9 +319,10 @@ public static class FluentFeatureSlice
                 where TDependencies : class, IFromServices<TDependencies>
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
 
-            public void WithHandler<TDispatcher, TRequest>(
+            public ICanHaveEndpoint WithHandler<TDispatcher, TRequest>(
                 Handler<TRequest, Result, FromServicesProvider> handler,
                 Func<Handler<TRequest, Result.Or<Disabled>>, TDispatcher> dispatcherConverter,
                 ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
@@ -332,6 +330,7 @@ public static class FluentFeatureSlice
                 where TDispatcher : Delegate
             {
                 FeatureSliceHandler.Flag.AddHandler(Services, FeatureName, handler, dispatcherConverter, serviceLifetime);
+                return new FluentFeatureSliceEndpoint(Services);
             }
         }
     }
@@ -361,24 +360,12 @@ internal sealed class FluentFeatureSliceWithFlag : FluentFeatureSlice.IWithFlag
     }
 }
 
-internal sealed class FluentFeatureSliceWithEndpoint : FluentFeatureSlice.IWithEndpoint
+internal sealed class FluentFeatureSliceEndpoint : FluentFeatureSlice.ICanHaveEndpoint
 {
     public IServiceCollection Services { get; }
 
-    public FluentFeatureSliceWithEndpoint(FluentFeatureSlice.IInitial builder)
+    public FluentFeatureSliceEndpoint(IServiceCollection services)
     {
-        Services = builder.Services;
-    }
-}
-
-internal sealed class FluentFeatureSliceWithEndpointAndFlag : FluentFeatureSlice.IWithFlag.IWithEndpoint
-{
-    public IServiceCollection Services { get; }
-    public string FeatureName { get; }
-
-    public FluentFeatureSliceWithEndpointAndFlag(FluentFeatureSlice.IWithFlag feature)
-    {
-        Services = feature.Services;
-        FeatureName = feature.FeatureName;
+        Services = services;
     }
 }
