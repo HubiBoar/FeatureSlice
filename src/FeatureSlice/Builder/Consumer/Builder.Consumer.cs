@@ -4,11 +4,11 @@ using Definit.Dependencies;
 
 namespace FeatureSlice;
 
-public static partial class FeatureSliceBuilder
+public static partial class FeatureSlice<TRequest, TDependencies>
+    where TDependencies : class, IFromServices<TDependencies>
+    where TRequest : notnull
 {
-    public static partial class WithConsumer<TRequest, TDependencies>
-        where TDependencies : class, IFromServices<TDependencies>
-        where TRequest : notnull
+    public static partial class WithConsumer
     {
         public abstract class Build<TSelf> : ConsumerBase<TSelf, TRequest, TDependencies>
             where TSelf : Build<TSelf>, new()

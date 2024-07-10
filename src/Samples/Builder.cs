@@ -11,8 +11,8 @@ namespace FeatureSlice.Samples.Builder;
 public sealed record Dependency1();
 public sealed record Dependency2();
 
-public sealed class ExampleHandler : FeatureSliceBuilder
-    .Handler<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
+public sealed class ExampleHandler : 
+    FeatureSlice<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
     .WithFlag
     .WithEndpoint
     .Build<ExampleHandler>
@@ -38,9 +38,10 @@ public sealed class ExampleHandler : FeatureSliceBuilder
     }
 }
 
-public sealed class ExampleConsumer : FeatureSliceBuilder
-    .Consumer<ExampleConsumer.Request, FromServices<Dependency1, Dependency2>>
+public sealed class ExampleConsumer : 
+    FeatureSlice<ExampleConsumer.Request, FromServices<Dependency1, Dependency2>>
     .WithFlag
+    .WithConsumer
     .Build<ExampleConsumer>
 {
     public record Request();
@@ -55,10 +56,11 @@ public sealed class ExampleConsumer : FeatureSliceBuilder
     }
 }
 
-public sealed class ExampleConsumerWithEndpoint : FeatureSliceBuilder
-    .Consumer<ExampleConsumerWithEndpoint.Request, FromServices<Dependency1, Dependency2>>
+public sealed class ExampleConsumerWithEndpoint : 
+    FeatureSlice<ExampleConsumerWithEndpoint.Request, FromServices<Dependency1, Dependency2>>
     .WithFlag
     .WithEndpoint
+    .WithConsumer
     .Build<ExampleConsumerWithEndpoint>
 {
     public record Request();
