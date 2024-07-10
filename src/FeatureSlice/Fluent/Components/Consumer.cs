@@ -10,13 +10,15 @@ public static class FeatureSliceConsumer
 {
     public static class Default
     {
-        public static void AddConsumer<TDispatcher, TRequest>(
+        public static void AddConsumer<TDispatcher, TRequest>
+        (
             IServiceCollection services,
             Messaging.ISetup setup,
             ConsumerName consumerName,
             ServiceFactory<Handler<TRequest, Result>> handlerFactory,
             Func<IServiceProvider, Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton
+        )
             where TDispatcher : Delegate
             where TRequest : notnull
         {
@@ -41,26 +43,30 @@ public static class FeatureSliceConsumer
             }
         }
 
-        public static void AddConsumer<TDispatcher, TRequest>(
+        public static void AddConsumer<TDispatcher, TRequest>
+        (
             IServiceCollection services,
             Messaging.ISetup setup,
             ConsumerName consumerName,
             ServiceFactory<Handler<TRequest, Result>> handlerFactory,
             Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton
+        )
             where TDispatcher : Delegate
             where TRequest : notnull
         {
             AddConsumer(services, setup, consumerName, handlerFactory, (_, handler) => dispatcherConverter(handler), serviceLifetime);
         }
 
-        public static void AddConsumer<TDispatcher, TRequest, TDependencies>(
+        public static void AddConsumer<TDispatcher, TRequest, TDependencies>
+        (
             IServiceCollection services,
             Messaging.ISetup setup,
             ConsumerName consumerName,
             Handler<TRequest, Result, TDependencies> handler,
             Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton
+        )
             where TDispatcher : Delegate
             where TRequest : notnull
             where TDependencies : class, IFromServices<TDependencies>
@@ -68,13 +74,15 @@ public static class FeatureSliceConsumer
             AddConsumer(services, setup, consumerName, provider => request => handler(request, TDependencies.Create(provider)), dispatcherConverter, serviceLifetime);
         }
 
-        public static void AddConsumer<TDispatcher, TRequest>(
+        public static void AddConsumer<TDispatcher, TRequest>
+        (
             IServiceCollection services,
             Messaging.ISetup setup,
             ConsumerName consumerName,
             Handler<TRequest, Result, FromServicesProvider> handler,
             Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton
+        )
             where TDispatcher : Delegate
             where TRequest : notnull
         {
@@ -84,14 +92,16 @@ public static class FeatureSliceConsumer
 
     public static class Flag
     {
-        public static void AddConsumer<TDispatcher, TRequest>(
+        public static void AddConsumer<TDispatcher, TRequest>
+        (
             IServiceCollection services,
             Messaging.ISetup setup,
             string featureName,
             ConsumerName consumerName,
             ServiceFactory<Handler<TRequest, Result>> handlerFactory,
             Func<IServiceProvider, Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton
+        )
             where TDispatcher : Delegate
             where TRequest : notnull
         {
@@ -116,28 +126,32 @@ public static class FeatureSliceConsumer
             }
         }
 
-        public static void AddConsumer<TDispatcher, TRequest>(
+        public static void AddConsumer<TDispatcher, TRequest>
+        (
             IServiceCollection services,
             Messaging.ISetup setup,
             string featureName,
             ConsumerName consumerName,
             ServiceFactory<Handler<TRequest, Result>> handlerFactory,
             Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton
+        )
             where TDispatcher : Delegate
             where TRequest : notnull
         {
             AddConsumer(services, setup, featureName, consumerName, handlerFactory, (_, handler) => dispatcherConverter(handler), serviceLifetime);
         }
 
-        public static void AddConsumer<TDispatcher, TRequest, TDependencies>(
+        public static void AddConsumer<TDispatcher, TRequest, TDependencies>
+        (
             IServiceCollection services,
             Messaging.ISetup setup,
             string featureName,
             ConsumerName consumerName,
             Handler<TRequest, Result, TDependencies> handler,
             Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton
+        )
             where TDispatcher : Delegate
             where TRequest : notnull
             where TDependencies : class, IFromServices<TDependencies>
@@ -145,14 +159,16 @@ public static class FeatureSliceConsumer
             AddConsumer(services, setup, featureName, consumerName, provider => request => handler(request, TDependencies.Create(provider)), dispatcherConverter, serviceLifetime);
         }
 
-        public static void AddConsumer<TDispatcher, TRequest>(
+        public static void AddConsumer<TDispatcher, TRequest>
+        (
             IServiceCollection services,
             Messaging.ISetup setup,
             string featureName,
             ConsumerName consumerName,
             Handler<TRequest, Result, FromServicesProvider> handler,
             Func<Messaging.Dispatch<TRequest>, TDispatcher> dispatcherConverter,
-            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton)
+            ServiceLifetime serviceLifetime = ServiceLifetime.Singleton
+        )
             where TDispatcher : Delegate
             where TRequest : notnull
         {

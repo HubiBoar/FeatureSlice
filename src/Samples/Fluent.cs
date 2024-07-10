@@ -12,7 +12,7 @@ namespace FeatureSlice.Samples.Fluent;
 public sealed record Dependency1();
 public sealed record Dependency2();
 
-public sealed class ExampleHandler : Dispatchable<ExampleHandler, ExampleHandler.Request, Result<ExampleHandler.Response, Disabled>>
+public sealed class ExampleHandler : Handler<ExampleHandler, ExampleHandler.Request, Result<ExampleHandler.Response, Disabled>>
 {
     public record Request();
     public record Response();

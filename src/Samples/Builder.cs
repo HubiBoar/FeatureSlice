@@ -11,7 +11,7 @@ namespace FeatureSlice.Samples.Builder;
 public sealed record Dependency1();
 public sealed record Dependency2();
 
-public sealed class ExampleHandler : 
+public sealed class ExampleHandler :
     FeatureSlice<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
     .WithFlag
     .WithEndpoint
