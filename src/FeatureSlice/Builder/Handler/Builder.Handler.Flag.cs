@@ -5,12 +5,12 @@ namespace FeatureSlice;
 
 public static partial class FeatureSliceBuilder
 {
-    public static partial class WithFlag
+    public static partial class Handler<TRequest, TResponse, TDependencies>
+        where TDependencies : class, IFromServices<TDependencies>
+        where TRequest : notnull
+        where TResponse : notnull
     {
-        public static partial class WithHandler<TRequest, TResponse, TDependencies>
-            where TDependencies : class, IFromServices<TDependencies>
-            where TRequest : notnull
-            where TResponse : notnull
+        public static partial class WithFlag
         {
             public abstract class Build<TSelf> : HandlerBaseWithFlag<TSelf, TRequest, TResponse, TDependencies>
                 where TSelf : Build<TSelf>, new()
@@ -34,10 +34,13 @@ public static partial class FeatureSliceBuilder
                 }
             }
         }
+    }
 
-        public static partial class WithHandler<TRequest, TDependencies>
-            where TDependencies : class, IFromServices<TDependencies>
-            where TRequest : notnull
+    public static partial class Handler<TRequest, TDependencies>
+        where TDependencies : class, IFromServices<TDependencies>
+        where TRequest : notnull
+    {
+        public static partial class WithFlag
         {
             public abstract class Build<TSelf> : HandlerBaseWithFlag<TSelf, TRequest, TDependencies>
                 where TSelf : Build<TSelf>, new()

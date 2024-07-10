@@ -7,11 +7,11 @@ namespace FeatureSlice;
 
 public static partial class FeatureSliceBuilder
 {
-    public static partial class WithFlag
+    public static partial class Consumer<TRequest, TDependencies>
+        where TDependencies : class, IFromServices<TDependencies>
+        where TRequest : notnull
     {
-        public static partial class WithConsumer<TRequest, TDependencies>
-            where TDependencies : class, IFromServices<TDependencies>
-            where TRequest : notnull
+        public static partial class WithFlag
         {
             public static partial class WithEndpoint
             {

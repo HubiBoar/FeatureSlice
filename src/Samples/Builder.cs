@@ -12,8 +12,8 @@ public sealed record Dependency1();
 public sealed record Dependency2();
 
 public sealed class ExampleHandler : FeatureSliceBuilder
+    .Handler<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
     .WithFlag
-    .WithHandler<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
     .WithEndpoint
     .Build<ExampleHandler>
 {
@@ -36,12 +36,11 @@ public sealed class ExampleHandler : FeatureSliceBuilder
 
         return new Response();
     }
-
 }
 
 public sealed class ExampleConsumer : FeatureSliceBuilder
+    .Consumer<ExampleConsumer.Request, FromServices<Dependency1, Dependency2>>
     .WithFlag
-    .WithConsumer<ExampleConsumer.Request, FromServices<Dependency1, Dependency2>>
     .Build<ExampleConsumer>
 {
     public record Request();
@@ -57,8 +56,8 @@ public sealed class ExampleConsumer : FeatureSliceBuilder
 }
 
 public sealed class ExampleConsumerWithEndpoint : FeatureSliceBuilder
+    .Consumer<ExampleConsumerWithEndpoint.Request, FromServices<Dependency1, Dependency2>>
     .WithFlag
-    .WithConsumer<ExampleConsumerWithEndpoint.Request, FromServices<Dependency1, Dependency2>>
     .WithEndpoint
     .Build<ExampleConsumerWithEndpoint>
 {

@@ -5,11 +5,11 @@ namespace FeatureSlice;
 
 public static partial class FeatureSliceBuilder
 {
-    public static partial class WithFlag
+    public static partial class Consumer<TRequest, TDependencies>
+        where TDependencies : class, IFromServices<TDependencies>
+        where TRequest : notnull
     {
-        public static partial class WithConsumer<TRequest, TDependencies>
-            where TDependencies : class, IFromServices<TDependencies>
-            where TRequest : notnull
+        public static partial class WithFlag
         {
             public abstract class Build<TSelf> : ConsumerBaseWithFlag<TSelf, TRequest, TDependencies>
                 where TSelf : Build<TSelf>, new()
