@@ -8,7 +8,7 @@ using Definit.Results;
 
 namespace FeatureSlice.FluentServiceBus;
 
-public sealed class ServiceBusMessaging : IConsumerSetup.ISetup
+public sealed class ServiceBusMessaging : IConsumerSetup
 {
     private IRouterPublisher Publisher { get; set; } = null!;
     private readonly IServiceBusBuilder _builder;
@@ -26,7 +26,7 @@ public sealed class ServiceBusMessaging : IConsumerSetup.ISetup
         services.AddSingleton<IRouterPublisher>(_ => Publisher);
     }
 
-    public static IConsumerSetup.ISetup Create(
+    public static IConsumerSetup Create(
         IServiceBusBuilder builder,
         IServiceCollection services,
         IHostExtender extender,
@@ -36,7 +36,7 @@ public sealed class ServiceBusMessaging : IConsumerSetup.ISetup
         return new ServiceBusMessaging(builder, services, extender, client, admin);
     }
 
-    public static IConsumerSetup.ISetup Create(
+    public static IConsumerSetup Create(
         IServiceCollection services,
         IHostExtender extender,
         ServiceBusClient client,

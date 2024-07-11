@@ -54,7 +54,7 @@ public static class ExampleConsumer
 
     public record Request();
 
-    public static void Register(IServiceCollection services, IConsumerSetup.ISetup setup)
+    public static void Register(IServiceCollection services, IConsumerSetup setup)
     {
         services.FeatureSlice()
             .WithFlag("ExampleConsumer")
@@ -81,7 +81,7 @@ public static class ExampleConsumerWithEndpoint
 
     public record Request();
 
-    public static void Register(IServiceCollection services, IConsumerSetup.ISetup setup, IHostExtender<WebApplication> extender)
+    public static void Register(IServiceCollection services, IConsumerSetup setup, IHostExtender<WebApplication> extender)
     {
         services.FeatureSlice()
             .WithFlag("ExampleConsumerWithEndpoint")
@@ -128,7 +128,7 @@ public class Usage
         consumerWithEndpoint(new ExampleConsumerWithEndpoint.Request());
     }
 
-    public static void Register(IServiceCollection services, IConsumerSetup.ISetup setup, WebAppExtender hostExtender)
+    public static void Register(IServiceCollection services, IConsumerSetup setup, WebAppExtender hostExtender)
     {
         ExampleConsumer.Register(services, setup);
         ExampleHandler.Register(services, hostExtender);

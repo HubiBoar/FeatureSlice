@@ -4,12 +4,13 @@ using Definit.Results;
 
 namespace FeatureSlice;
 
-public abstract class ConsumerBase<TSelf, TRequest, TResponse, TDependencies> :
-        HandlerBase<TSelf, TRequest, Result<TResponse>, TDependencies>
-    where TSelf : ConsumerBase<TSelf, TRequest, TResponse, TDependencies>, new()
+public abstract class ConsumerBase<TSelf, TRequest, TResponse, TResult, TDependencies> :
+        HandlerBase<TSelf, TRequest, TResponse, TResult, TDependencies>
+    where TSelf : ConsumerBase<TSelf, TRequest, TResponse, TResult, TDependencies>, new()
     where TDependencies : class, IFromServices<TDependencies>
     where TRequest : notnull
-    where TResponse : notnull
+    where TResponse : Result_Base<TResult>
+    where TResult : notnull
 {
     public delegate Task<Result> Consume(TRequest request);
 
@@ -40,10 +41,28 @@ public abstract class ConsumerBase<TSelf, TRequest, TResponse, TDependencies> :
                 consumerName,
                 provider,
                 handling,
-                async request => await handler(request)
+                async request => 
+                {
+                    if((await handler(request))
+                        .Is(out Error error))
+                    {
+                        return error;
+                    }
+
+                    return Result.Success;
+                }
             );
 
             return request => consumer(request);
         }
    }
+}
+
+
+public abstract class ConsumerBase<TSelf, TRequest, TDependencies> :
+        ConsumerBase<TSelf, TRequest, Result, Success, TDependencies>
+    where TSelf : ConsumerBase<TSelf, TRequest, TDependencies>, new()
+    where TDependencies : class, IFromServices<TDependencies>
+    where TRequest : notnull
+{
 }

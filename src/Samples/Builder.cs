@@ -94,7 +94,7 @@ public class Usage
         consumerWithEndpoint(new ExampleConsumerWithEndpoint.Request());
     }
 
-    public static void Register(IServiceCollection services, IConsumerSetup.ISetup setup, WebAppExtender hostExtender)
+    public static void Register(IServiceCollection services, IConsumerSetup setup, WebAppExtender hostExtender)
     {
         ExampleConsumer.Register(services, setup);
         ExampleHandler.Register(services, hostExtender);
