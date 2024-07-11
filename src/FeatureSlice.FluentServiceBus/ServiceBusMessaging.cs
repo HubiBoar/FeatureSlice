@@ -8,7 +8,7 @@ using Definit.Results;
 
 namespace FeatureSlice.FluentServiceBus;
 
-public sealed class ServiceBusMessaging : Messaging.ISetup
+public sealed class ServiceBusMessaging : IConsumerSetup.ISetup
 {
     private IRouterPublisher Publisher { get; set; } = null!;
     private readonly IServiceBusBuilder _builder;
@@ -26,7 +26,7 @@ public sealed class ServiceBusMessaging : Messaging.ISetup
         services.AddSingleton<IRouterPublisher>(_ => Publisher);
     }
 
-    public static Messaging.ISetup Create(
+    public static IConsumerSetup.ISetup Create(
         IServiceBusBuilder builder,
         IServiceCollection services,
         IHostExtender extender,
@@ -36,7 +36,7 @@ public sealed class ServiceBusMessaging : Messaging.ISetup
         return new ServiceBusMessaging(builder, services, extender, client, admin);
     }
 
-    public static Messaging.ISetup Create(
+    public static IConsumerSetup.ISetup Create(
         IServiceCollection services,
         IHostExtender extender,
         ServiceBusClient client,
@@ -45,9 +45,9 @@ public sealed class ServiceBusMessaging : Messaging.ISetup
         return new ServiceBusMessaging(new ServiceBusBuilder(), services, extender, client, admin);
     }
 
-    public ServiceFactory<Messaging.Dispatch<TMessage>> Register<TMessage>(
+    public ServiceFactory<IConsumerSetup.Out<TMessage>> GetConsumer<TMessage>(
         ConsumerName consumerName,
-        ServiceFactory<Messaging.Consume<TMessage>> consumerFactory)
+        ServiceFactory<IConsumerSetup.Consume<TMessage>> consumerFactory)
         where TMessage : notnull
     {
         var queueName = PathConverter.ToQueueName(consumerName.Name);
@@ -72,7 +72,7 @@ public sealed class ServiceBusMessaging : Messaging.ISetup
             return Result.Success;
         }
 
-        static async Task<Result.Or<Abandon>> Consume(TMessage message, Messaging.Consume<TMessage> consume)
+        static async Task<Result.Or<Abandon>> Consume(TMessage message, IConsumerSetup.Consume<TMessage> consume)
         {
             var result = await consume(message);
 

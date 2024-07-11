@@ -20,7 +20,7 @@ public static partial class FeatureSlice<TRequest, TDependencies>
 
                 protected abstract Endpoint Endpoint { get; }
 
-                public static void Register(IServiceCollection services, Messaging.ISetup setup, IHostExtender<WebApplication> extender)
+                public static void Register(IServiceCollection services, IConsumerSetup.ISetup setup, IHostExtender<WebApplication> extender)
                 {
                     var self = new TSelf();
                     var consumerName = self.ConsumerName;

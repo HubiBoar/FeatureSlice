@@ -57,7 +57,6 @@ public abstract class HandlerBase<TSelf, TRequest, TDependencies>
 // }
 
 
-
 // public static void AddEndpoint(
 //     IHostExtender<WebApplication> extender,
 //     Func<IEndpointRouteBuilder, IEndpointConventionBuilder> endpoint)
