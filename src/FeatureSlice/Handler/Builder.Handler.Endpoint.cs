@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Definit.Endpoint;
 using Definit.Dependencies;
+using Definit.Results;
 
 namespace FeatureSlice;
 
@@ -12,29 +13,32 @@ public static partial class FeatureSlice<TRequest, TResponse, TDependencies>
 {
     public static partial class WithEndpoint
     {
-        public abstract class Build<TSelf> : HandlerBase<TSelf, TRequest, TResponse, TDependencies>, IEndpointProvider
-            where TSelf : Build<TSelf>, new()
+        public abstract class Build<TSelf> : HandlerBase<TSelf, TRequest, Result<TResponse>, TResponse, TDependencies>, IEndpointProvider
+            where TSelf : Build<TSelf>, IEndpointProvider, new()
         {
             static Endpoint IEndpointProvider.Endpoint { get; } = new TSelf().Endpoint;
 
             protected abstract Endpoint Endpoint { get; }
 
-            public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
+            public static void Register
+            (
+                IServiceCollection services,
+                IHostExtender<WebApplication> extender
+            )
             {
-                var self = new TSelf();
-                var handle = self.Handle;
-                var serviceLifetime = self.ServiceLifetime;
-                var endpoint = self.Endpoint;
-
-                services
-                    .FeatureSlice()
-                    .WithHandler<Dispatch, TRequest, TResponse, TDependencies>
-                    (
-                        (request, dep) => handle(request, dep),
-                        h => h.Invoke,
-                        serviceLifetime
-                    )
-                    .WithEndpoint(extender, endpoint);
+                RegisterHandler(services);
+                extender.Map(TSelf.Endpoint);
+            }
+    
+            public static void Register
+            (
+                IServiceCollection services,
+                IHostExtender<WebApplication> extender,
+                ServiceFactory<IHandlerSetup> setupFactory 
+            )
+            {
+                RegisterHandler(services, setupFactory);
+                extender.Map(TSelf.Endpoint);
             }
         }
     }
@@ -46,30 +50,12 @@ public static partial class FeatureSlice<TRequest, TDependencies>
 {
     public static partial class WithEndpoint
     {
-        public abstract class Build<TSelf> : HandlerBase<TSelf, TRequest, TDependencies>, IEndpointProvider
+        public abstract class Build<TSelf> : 
+            FeatureSlice<TRequest, Result, TDependencies>
+            .WithEndpoint
+            .Build<TSelf>
             where TSelf : Build<TSelf>, new()
         {
-            static Endpoint IEndpointProvider.Endpoint { get; } = new TSelf().Endpoint;
-
-            protected abstract Endpoint Endpoint { get; }
-
-            public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
-            {
-                var self = new TSelf();
-                var handle = self.Handle;
-                var serviceLifetime = self.ServiceLifetime;
-                var endpoint = self.Endpoint;
-
-                services
-                    .FeatureSlice()
-                    .WithHandler<Dispatch, TRequest, TDependencies>
-                    (
-                        (request, dep) => handle(request, dep),
-                        h => h.Invoke,
-                        serviceLifetime
-                    )
-                    .WithEndpoint(extender, endpoint);
-            }
         }
     }
 }

@@ -2,43 +2,57 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Definit.Dependencies;
 using Definit.Endpoint;
+using Definit.Results;
 
 namespace FeatureSlice;
 
-public static partial class FeatureSlice<TRequest, TDependencies>
+public static partial class FeatureSlice<TRequest, TResponse, TDependencies>
     where TDependencies : class, IFromServices<TDependencies>
     where TRequest : notnull
+    where TResponse : notnull
 {
-    public static partial class WithEndpoint
+    public static partial class WithConsumer
     {
-        public static partial class WithConsumer
-        { 
-            public abstract class Build<TSelf> : ConsumerBase<TSelf, TRequest, TDependencies>, IEndpointProvider
-                where TSelf : Build<TSelf>, new()
+        public static partial class WithEndpoint
+        {
+            public abstract class Build<TSelf> : ConsumerBase<TSelf, TRequest, Result<TResponse>, TResponse, TDependencies>, IEndpointProvider
+                where TSelf : Build<TSelf>, IEndpointProvider, new()
             {
                 static Endpoint IEndpointProvider.Endpoint { get; } = new TSelf().Endpoint;
 
                 protected abstract Endpoint Endpoint { get; }
 
-                public static void Register(IServiceCollection services, IConsumerSetup setup, IHostExtender<WebApplication> extender)
+                public static void Register
+                (
+                    IServiceCollection services,
+                    IConsumerSetup setup,
+                    IHostExtender<WebApplication> extender
+                )
                 {
-                    var self = new TSelf();
-                    var consumerName = self.ConsumerName;
-                    var handle = self.Consume;
-                    var serviceLifetime = self.ServiceLifetime;
-                    var endpoint = self.Endpoint;
+                    RegisterConsumer(services, setup);
+                    extender.Map(TSelf.Endpoint);
+                }
 
-                    services
-                        .FeatureSlice()
-                        .WithConsumer<Dispatch, TRequest, TDependencies>
-                        (
-                            setup,
-                            consumerName,
-                            (request, dep) => handle(request, dep),
-                            h => h.Invoke,
-                            serviceLifetime
-                        )
-                        .WithEndpoint(extender, endpoint);
+                public static void Register
+                (
+                    IServiceCollection services,
+                    IHostExtender<WebApplication> extender
+                )
+                {
+                    RegisterConsumer(services);
+                    extender.Map(TSelf.Endpoint);
+                }
+
+                public static void Register
+                (
+                    IServiceCollection services,
+                    IHostExtender<WebApplication> extender,
+                    ServiceFactory<IHandlerSetup> handlingSetupFactory,
+                    ServiceFactory<IConsumerSetup> consumerSetupFactory
+                )
+                {
+                    RegisterConsumer(services, handlingSetupFactory, consumerSetupFactory);
+                    extender.Map(TSelf.Endpoint);
                 }
             }
         }
