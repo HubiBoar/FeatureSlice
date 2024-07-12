@@ -5,7 +5,6 @@ using Definit.Dependencies;
 using Definit.Endpoint;
 using Endpoint = Definit.Endpoint.Endpoint;
 using Definit.Results;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Builder;
 
 namespace FeatureSlice.Samples.Builder;
@@ -13,12 +12,32 @@ namespace FeatureSlice.Samples.Builder;
 public sealed record Dependency1();
 public sealed record Dependency2();
 
-
-
 public sealed class ExampleHandler2 :
-    FeatureSlice<ExampleHandler2.Request, ExampleHandler2.Response, FromServices<Dependency1, Dependency2>>
+    FeatureSlice2<ExampleHandler2, ExampleHandler2.Request, ExampleHandler2.Response>
+{
+    public record Request();
+    public record Response();
+
+    public override Options Setup => Handle<Dependency1, Dependency2>
+    (
+        async (request, dep1, dep2) => 
+        {
+            await Task.CompletedTask;
+
+            return new Response();
+        }
+    )
+    .AddEndpoint(HttpMethod.Get, "test")
+        .RequestFromBody()
+        .WithDefaultResult();
+}
+
+
+
+public sealed class ExampleHandler :
+    FeatureSlice<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
     .WithEndpoint
-    .Build<ExampleHandler2>
+    .Build<ExampleHandler>
 {
     public record Request();
     public record Response();
