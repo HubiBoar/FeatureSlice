@@ -5,16 +5,20 @@ using Definit.Dependencies;
 using Definit.Endpoint;
 using Endpoint = Definit.Endpoint.Endpoint;
 using Definit.Results;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Builder;
 
 namespace FeatureSlice.Samples.Builder;
 
 public sealed record Dependency1();
 public sealed record Dependency2();
 
-public sealed class ExampleHandler :
-    FeatureSlice<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
+
+
+public sealed class ExampleHandler2 :
+    FeatureSlice<ExampleHandler2.Request, ExampleHandler2.Response, FromServices<Dependency1, Dependency2>>
     .WithEndpoint
-    .Build<ExampleHandler>
+    .Build<ExampleHandler2>
 {
     public record Request();
     public record Response();
@@ -24,6 +28,30 @@ public sealed class ExampleHandler :
         return Results.Ok();
     })
     .WithDescription("Name");
+
+    protected override async Task<Result<Response>> OnRequest(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    {
+        var (dep1, dep2) = dependencies;
+
+        await Task.CompletedTask;
+
+        return new Response();
+    }
+}
+
+public sealed class ExampleHandlerAlt :
+    FeatureSlice<ExampleHandlerAlt.Request, ExampleHandlerAlt.Response, FromServices<Dependency1, Dependency2>>
+    .WithEndpoint<IHttpMethod.Get>
+    .Build<ExampleHandlerAlt>
+{
+    public record Request();
+    public record Response();
+
+    protected override string Path => "test";
+    protected override void AppendEndpoint(IEndpointConventionBuilder builder)
+    {
+        builder.WithGroupName("");
+    }
 
     protected override async Task<Result<Response>> OnRequest(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
@@ -80,19 +108,19 @@ public class Usage
     public static void Use(
         IPublisher publisher,
         ExampleConsumer.Dispatch consumer,
-        ExampleHandler.Dispatch handler,
+        ExampleHandler2.Dispatch handler,
         ExampleConsumerWithEndpoint.Dispatch consumerWithEndpoint)
     {
         publisher.Publish(new ExampleConsumer.Request());
         consumer(new ExampleConsumer.Request());
-        handler(new ExampleHandler.Request());
+        handler(new ExampleHandler2.Request());
         consumerWithEndpoint(new ExampleConsumerWithEndpoint.Request());
     }
 
     public static void Register(IServiceCollection services, IConsumerSetup setup, WebAppExtender hostExtender)
     {
         ExampleConsumer.Register(services, setup);
-        ExampleHandler.Register(services, hostExtender);
+        ExampleHandler2.Register(services, hostExtender);
         ExampleConsumerWithEndpoint.Register(services, setup, hostExtender);
     }
 }
