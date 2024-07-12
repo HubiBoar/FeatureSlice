@@ -27,3 +27,26 @@ public static partial class FeatureSlice<TRequest, TResponse, TDependencies>
         }
     }
 }
+
+public static partial class FeatureSlice<TRequest, TDependencies>
+    where TDependencies : class, IFromServices<TDependencies>
+    where TRequest : notnull
+{
+    public abstract class Build<TSelf> : HandlerBase<TSelf, TRequest, TDependencies>
+        where TSelf : Build<TSelf>, new()
+    {
+        public static void Register(IServiceCollection services)
+        {
+            RegisterHandler(services);
+        }
+ 
+        public static void Register
+        (
+            IServiceCollection services,
+            ServiceFactory<IHandlerSetup> setupFactory
+        )
+        {
+            RegisterHandler(services, setupFactory);
+        }
+    }
+}

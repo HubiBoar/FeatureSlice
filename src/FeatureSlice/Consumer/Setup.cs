@@ -1,4 +1,6 @@
 using Definit.Results;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FeatureSlice;
 
@@ -19,6 +21,11 @@ public interface IConsumerSetup
     )
         where TMessage : notnull;
 
+    public static ServiceFactory<IConsumerSetup> TryRegisterDefault(IServiceCollection services)
+    {
+        services.TryAddSingleton<IConsumerSetup, InMemorySetup>();
+        return provider => provider.GetRequiredService<IConsumerSetup>();
+    }
 
     internal sealed class InMemorySetup : IConsumerSetup
     {

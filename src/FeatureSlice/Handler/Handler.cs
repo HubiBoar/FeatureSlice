@@ -4,11 +4,12 @@ using Definit.Results;
 
 namespace FeatureSlice;
 
-public abstract class HandlerBase<TSelf, TRequest, TResponse, TDependencies>
-    where TSelf : HandlerBase<TSelf, TRequest, TResponse, TDependencies>, new()
+public abstract class HandlerBase<TSelf, TRequest, TResponse, TResult, TDependencies>
+    where TSelf : HandlerBase<TSelf, TRequest, TResponse, TResult, TDependencies>, new()
     where TDependencies : class, IFromServices<TDependencies>
     where TRequest : notnull
-    where TResponse : notnull
+    where TResponse : Result_Base<TResult>
+    where TResult : notnull
 {
     public delegate Task<TResponse> Handle(TRequest request);
     protected virtual ServiceLifetime ServiceLifetime { get; } = ServiceLifetime.Singleton;
@@ -39,14 +40,27 @@ public abstract class HandlerBase<TSelf, TRequest, TResponse, TDependencies>
             return request => handler(request);
         }
     }
+
+    internal static void RegisterHandler
+    (
+        IServiceCollection services
+    )
+    {
+        var factory = IHandlerSetup.TryRegisterDefault(services);
+        RegisterHandler(services, factory);
+    }
 }
 
-public abstract class HandlerBase<TSelf, TRequest, TDependencies> 
-    : HandlerBase<TSelf, TRequest, Result, TDependencies>
-    where TSelf : HandlerBase<TSelf, TRequest, TDependencies>, new()
-    where TDependencies : class, IFromServices<TDependencies>
-    where TRequest : notnull
+public static class DependencyInjectionExtensions
 {
+    public static void Add<TService>(
+        this IServiceCollection services,
+        ServiceLifetime lifetime,
+        Func<IServiceProvider, TService> factory)
+        where TService : notnull
+    {
+        services.Add(ServiceDescriptor.Describe(typeof(TService), provider => factory(provider), lifetime));
+    }
 }
 
 // var manager = provider.GetRequiredService<IFeatureManager>();

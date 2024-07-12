@@ -1,3 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
 namespace FeatureSlice;
 
 public delegate T ServiceFactory<T>(IServiceProvider provider);
@@ -9,6 +12,12 @@ public interface IHandlerSetup
         where TResponse : notnull;
 
     public static IHandlerSetup Default { get; } = new DefaultSetup();
+
+    public static ServiceFactory<IHandlerSetup> TryRegisterDefault(IServiceCollection services)
+    {
+        services.TryAddSingleton<IHandlerSetup, DefaultSetup>();
+        return provider => provider.GetRequiredService<IHandlerSetup>();
+    }
 
     public Handle<TRequest, TResponse> GetHandler<TRequest, TResponse>
     (

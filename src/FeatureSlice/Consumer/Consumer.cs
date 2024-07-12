@@ -20,7 +20,7 @@ public abstract class ConsumerBase<TSelf, TRequest, TResponse, TResult, TDepende
     (
         IServiceCollection services,
         ServiceFactory<IHandlerSetup> handlingSetupFactory,
-        ServiceFactory<IConsumerSetup> messaginSetupFactory
+        ServiceFactory<IConsumerSetup> consumerSetupFactory
     )
     {
         RegisterHandler(services, handlingSetupFactory);
@@ -32,7 +32,7 @@ public abstract class ConsumerBase<TSelf, TRequest, TResponse, TResult, TDepende
 
         Consume GetConsumer(IServiceProvider provider)
         {
-            var setup = messaginSetupFactory(provider);
+            var setup = consumerSetupFactory(provider);
             var handling = handlingSetupFactory(provider);
             var handler = provider.GetRequiredService<Handle>();
 
@@ -55,14 +55,25 @@ public abstract class ConsumerBase<TSelf, TRequest, TResponse, TResult, TDepende
 
             return request => consumer(request);
         }
-   }
-}
+    }
 
+    internal static void RegisterConsumer
+    (
+        IServiceCollection services
+    )
+    {
+        var consumerFactory = IConsumerSetup.TryRegisterDefault(services);
+        var handlerFactory = IHandlerSetup.TryRegisterDefault(services);
+        RegisterConsumer(services, handlerFactory, consumerFactory);
+    }
 
-public abstract class ConsumerBase<TSelf, TRequest, TDependencies> :
-        ConsumerBase<TSelf, TRequest, Result, Success, TDependencies>
-    where TSelf : ConsumerBase<TSelf, TRequest, TDependencies>, new()
-    where TDependencies : class, IFromServices<TDependencies>
-    where TRequest : notnull
-{
+    internal static void RegisterConsumer
+    (
+        IServiceCollection services,
+        IConsumerSetup consumerSetup
+    )
+    {
+        var handlerFactory = IHandlerSetup.TryRegisterDefault(services);
+        RegisterConsumer(services, handlerFactory, provider => consumerSetup);
+    }
 }
