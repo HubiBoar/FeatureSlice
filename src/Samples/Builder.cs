@@ -18,15 +18,12 @@ public sealed class ExampleHandler2 :
     public record Request();
     public record Response();
 
-    public override Options Setup => Handle<Dependency1, Dependency2>
-    (
-        async (request, dep1, dep2) => 
-        {
-            await Task.CompletedTask;
+    public override Options Setup => Handle<Dependency1, Dependency2> (async (request, dep1, dep2) => 
+    {
+        await Task.CompletedTask;
 
-            return new Response();
-        }
-    )
+        return new Response();
+    })
     .AddEndpoint(HttpMethod.Get, "test")
         .RequestFromBody()
         .WithDefaultResult();
