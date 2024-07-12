@@ -2,7 +2,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Definit.Dependencies;
 using Definit.Results;
 
-
 namespace FeatureSlice;
 
 public static partial class FeatureSlice<TRequest, TResponse, TDependencies>
@@ -10,7 +9,6 @@ public static partial class FeatureSlice<TRequest, TResponse, TDependencies>
     where TRequest : notnull
     where TResponse : notnull
 {
-    
     public static partial class WithConsumer
     {
         public abstract class Build<TSelf> : ConsumerBase<TSelf, TRequest, Result<TResponse>, TResponse, TDependencies>

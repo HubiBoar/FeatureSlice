@@ -13,22 +13,19 @@ public sealed record Dependency2();
 
 public sealed class ExampleHandler :
     FeatureSlice<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
-    .WithFlag
     .WithEndpoint
     .Build<ExampleHandler>
 {
     public record Request();
     public record Response();
 
-    protected override string FeatureName => "ExampleHandler";
-
-    protected override Endpoint Endpoint => Map.Get("test", (int age, Dispatch dispatch) => 
+    protected override Endpoint Endpoint => Map.Get("test", (int age, Handle handle) => 
     {
         return Results.Ok();
     })
     .WithDescription("Name");
 
-    protected override async Task<Result<Response>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    protected override async Task<Result<Response>> OnRequest(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
         var (dep1, dep2) = dependencies;
 
@@ -40,7 +37,6 @@ public sealed class ExampleHandler :
 
 public sealed class ExampleConsumer : 
     FeatureSlice<ExampleConsumer.Request, FromServices<Dependency1, Dependency2>>
-    .WithFlag
     .WithConsumer
     .Build<ExampleConsumer>
 {
@@ -48,7 +44,7 @@ public sealed class ExampleConsumer :
 
     protected override ConsumerName ConsumerName => new("ExampleConsumer");
 
-    protected override Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    protected override Task<Result> OnRequest(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
         var (dep1, dep2) = dependencies;
 
@@ -58,9 +54,8 @@ public sealed class ExampleConsumer :
 
 public sealed class ExampleConsumerWithEndpoint : 
     FeatureSlice<ExampleConsumerWithEndpoint.Request, FromServices<Dependency1, Dependency2>>
-    .WithFlag
-    .WithEndpoint
     .WithConsumer
+    .WithEndpoint
     .Build<ExampleConsumerWithEndpoint>
 {
     public record Request();
@@ -72,7 +67,7 @@ public sealed class ExampleConsumerWithEndpoint :
         return Results.Ok();
     });
 
-    protected override Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    protected override Task<Result> OnRequest(Request request, FromServices<Dependency1, Dependency2> dependencies)
     {
         var (dep1, dep2) = dependencies;
 

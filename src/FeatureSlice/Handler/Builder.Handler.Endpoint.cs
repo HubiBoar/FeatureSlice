@@ -39,7 +39,7 @@ public static partial class FeatureSlice<TRequest, TResponse, TDependencies>
             {
                 RegisterHandler(services, setupFactory);
                 extender.Map(TSelf.Endpoint);
-            }
+            } 
         }
     }
 }
@@ -50,12 +50,33 @@ public static partial class FeatureSlice<TRequest, TDependencies>
 {
     public static partial class WithEndpoint
     {
-        public abstract class Build<TSelf> : 
-            FeatureSlice<TRequest, Result, TDependencies>
-            .WithEndpoint
-            .Build<TSelf>
-            where TSelf : Build<TSelf>, new()
+        public abstract class Build<TSelf> : HandlerBase<TSelf, TRequest, Result, Success, TDependencies>, IEndpointProvider
+            where TSelf : Build<TSelf>, IEndpointProvider, new()
         {
+            static Endpoint IEndpointProvider.Endpoint { get; } = new TSelf().Endpoint;
+
+            protected abstract Endpoint Endpoint { get; }
+
+            public static void Register
+            (
+                IServiceCollection services,
+                IHostExtender<WebApplication> extender
+            )
+            {
+                RegisterHandler(services);
+                extender.Map(TSelf.Endpoint);
+            }
+    
+            public static void Register
+            (
+                IServiceCollection services,
+                IHostExtender<WebApplication> extender,
+                ServiceFactory<IHandlerSetup> setupFactory 
+            )
+            {
+                RegisterHandler(services, setupFactory);
+                extender.Map(TSelf.Endpoint);
+            } 
         }
     }
 }

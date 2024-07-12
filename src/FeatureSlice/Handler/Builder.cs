@@ -32,7 +32,7 @@ public static partial class FeatureSlice<TRequest, TDependencies>
     where TDependencies : class, IFromServices<TDependencies>
     where TRequest : notnull
 {
-    public abstract class Build<TSelf> : HandlerBase<TSelf, TRequest, TDependencies>
+    public abstract class Build<TSelf> : HandlerBase<TSelf, TRequest, Result, Success, TDependencies>
         where TSelf : Build<TSelf>, new()
     {
         public static void Register(IServiceCollection services)
