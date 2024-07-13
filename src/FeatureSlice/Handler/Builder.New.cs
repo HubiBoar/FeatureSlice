@@ -1,11 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
-using Definit.Dependencies;
 using Definit.Results;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FeatureSlice;
 
@@ -35,9 +35,9 @@ public abstract class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
 {
     public sealed record Endpoint(Options Options, Func<IEndpointRouteBuilder, IEndpointConventionBuilder> Extender) : IEndpointBuilder
     {
-        private readonly List<Action<EndpointBuilder>> _conventions = [];
+        private readonly List<Action<Microsoft.AspNetCore.Builder.EndpointBuilder>> _conventions = [];
 
-        public void Add(Action<EndpointBuilder> convention)
+        public void Add(Action<Microsoft.AspNetCore.Builder.EndpointBuilder> convention)
         {
             _conventions.Add(convention);
         }
@@ -51,13 +51,25 @@ public abstract class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
             }
         }
 
-        public static implicit operator Options(Endpoint endpoint) => endpoint.Options;
+        public void TryRegister()
+        {
+            Options.Extend(services => services.TryAddEnumerable(ServiceDescriptor.Singleton<IEndpointBuilder>(this)));
+        }
+
+        public static implicit operator Options(Endpoint endpoint)
+        {
+            endpoint.TryRegister();
+            return endpoint.Options;
+        }
     }
 
     public sealed record Options(Func<IServiceProvider, Dispatch> DispatchFactory)
     {
+        private readonly List<Action<IServiceCollection>> _extensions = [];
+
         public void Extend(Action<IServiceCollection> extension)
         {
+            _extensions.Add(extension);
         }
 
         public EndpointBuilder AddEndpoint
@@ -77,16 +89,37 @@ public abstract class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
         public void Register
         (
             IServiceCollection services,
-            Func<IServiceProvider, Dispatch, Dispatch> dispatcher,
+            Func<IServiceProvider, Dispatch, Dispatch> dispatchModifier,
             ServiceLifetime serviceLifetime
         )
         {
+            services.Add(serviceLifetime, GetDispatch);
 
+            Dispatch GetDispatch(IServiceProvider provider)
+            {
+                var dispatch = DispatchFactory(provider); 
+                return dispatchModifier(provider, dispatch);
+            }
         }
     }
 
     public sealed record EndpointBuilder(Options Options, HttpMethod Method, string Path)
     {
+        public RequestBuilder<TRequest> RequestFromBody()
+        {
+            return FromBody<TRequest>(request => request);
+        }
+
+        public RequestBuilder<T0> FromBody<T0>(Func<T0, Task<TRequest>> mapRequest)
+        {
+            return new (this, mapRequest);
+        }
+
+        public RequestBuilder<T0> FromBody<T0>(Func<T0, TRequest> mapRequest)
+        {
+            return new (this, t0 => Task.FromResult(mapRequest(t0)));
+        }
+
         public sealed record RequestBuilder<T0>(EndpointBuilder Builder, Func<T0, Task<TRequest>> MapRequest)
         { 
             public Endpoint WithResult<THttpResult>(Func<TResult, THttpResult> mapResult)
@@ -119,31 +152,38 @@ public abstract class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
                 });
             }
         }
-
-        public RequestBuilder<TRequest> RequestFromBody()
-        {
-            return FromBody<TRequest>(request => request);
-        }
-
-        public RequestBuilder<T0> FromBody<T0>(Func<T0, Task<TRequest>> mapRequest)
-        {
-            return new (this, mapRequest);
-        }
-
-        public RequestBuilder<T0> FromBody<T0>(Func<T0, TRequest> mapRequest)
-        {
-            return new (this, t0 => Task.FromResult(mapRequest(t0)));
-        }
     }
  
-    public static Options Handle<TDep0>(Func<TRequest, TDep0, Task<TResult>> func)
+    public static Options Handle<TDep0>(Func<TRequest, TDep0, Task<TResult>> handle)
+        where TDep0 : notnull
     {
-
+        return new Options
+        (
+            provider =>
+                request =>
+                    handle
+                    (
+                        request,
+                        provider.GetRequiredService<TDep0>()
+                    )
+        );
     }
 
-    public static Options Handle<TDep0, TDep1>(Func<TRequest, TDep0, TDep1, Task<TResult>> func)
+    public static Options Handle<TDep0, TDep1>(Func<TRequest, TDep0, TDep1, Task<TResult>> handle)
+        where TDep0 : notnull
+        where TDep1 : notnull
     {
-
+        return new Options
+        (
+            provider =>
+                request =>
+                    handle
+                    (
+                        request,
+                        provider.GetRequiredService<TDep0>(), 
+                        provider.GetRequiredService<TDep1>()
+                    )
+        );
     }
 
     public delegate Task<TResult> Dispatch(TRequest request);
