@@ -14,11 +14,6 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
 {
     public sealed partial record Options
     {
-        public Endpoint.Builder AddEndpoint(HttpMethod method, string path)
-        {
-            return new (this, method, path);
-        }
-
         public sealed partial record Endpoint(Options Options, Func<IEndpointRouteBuilder, IEndpointConventionBuilder> Extender) : IEndpointBuilder
         {
             private readonly List<Action<EndpointBuilder>> _conventions = [];
