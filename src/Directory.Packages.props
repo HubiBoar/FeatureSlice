@@ -44,6 +44,13 @@
     <PackageVersion Include="Definit.Validation.FluentValidation" Version="$(DefinitVersion)" />
   </ItemGroup>
 
+  <!-- API -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="6.6.2" />
+  </ItemGroup>
+
   <!-- Tests -->
   <ItemGroup>
     <PackageVersion Include="FluentAssertions" Version="7.0.0-alpha.3" />

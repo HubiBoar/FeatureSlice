@@ -20,6 +20,11 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
             ServiceLifetime serviceLifetime
         )
         {
+            foreach(var extension in _extensions)
+            {
+                extension(services);
+            }
+            
             services.Add(serviceLifetime, GetDispatch);
 
             Dispatch GetDispatch(IServiceProvider provider)

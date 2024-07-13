@@ -8,6 +8,18 @@ namespace FeatureSlice;
 public interface IEndpointBuilder : IEndpointConventionBuilder
 {
     public void Map(IEndpointRouteBuilder builder);
+
+    public static async Task MapAll(IEndpointRouteBuilder builder)
+    {
+        await using var scope = builder.ServiceProvider.CreateAsyncScope();
+
+        var endpoints = scope.ServiceProvider.GetServices<IEndpointBuilder>();
+
+        foreach(var endpoint in endpoints)
+        {
+            endpoint.Map(builder);
+        }
+    }
 }
 
 public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
