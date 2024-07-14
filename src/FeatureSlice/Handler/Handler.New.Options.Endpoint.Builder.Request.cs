@@ -1,10 +1,47 @@
-using Definit.Results;
+using System.Reflection;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.OpenApi.Models;
 
 namespace FeatureSlice;
+
+public interface IRouteName
+{
+    public static abstract string Name { get; }
+
+    public sealed record Id : IRouteName
+    {
+        public static string Name => "id";
+    }
+}
+
+public sealed record FromRouteBinder<T, TName>(T Value) : IBindable<FromRouteBinder<T, TName>>
+    where TName : IRouteName
+{
+    public static ValueTask<FromRouteBinder<T, TName>> BindAsync(HttpContext context, ParameterInfo parameter)
+    {
+        var name = TName.Name;
+        var value = (T)context.Request.RouteValues[name!]!;
+
+        return ValueTask.FromResult(new FromRouteBinder<T, TName>(value));
+    }
+
+    public static OpenApiOperation OpenApi(OpenApiOperation openApi)
+    {
+        openApi.Parameters.Add(new ());
+        return openApi;
+    }
+}
+
+
+public interface IBindable<TSelf>
+    where TSelf : IBindable<TSelf>
+{
+    public abstract static ValueTask<TSelf> BindAsync(HttpContext context, ParameterInfo parameter);
+
+    public abstract static OpenApiOperation OpenApi(OpenApiOperation openApi);
+}
 
 public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
 {
@@ -32,9 +69,19 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                 public Endpoint Setup<T0, T1, THttpResult>(Func<T0, T1, TRequest> mapRequest, Func<TResult, THttpResult> mapResult)
                     where THttpResult : IResult
                 {
-                    return new Endpoint(Options, builder => builder.MapMethods(Path, [Method.Method], OnEndpoint));
+                    var parameters = mapRequest.Method.GetParameters();
+                    var attributes = parameters.SelectMany(x => x.GetCustomAttributesData()).ToArray();
+                    foreach(var attribute in attributes)
+                    {
+                        Console.WriteLine(attribute.AttributeType);
+                    }
 
-                    async Task<THttpResult> OnEndpoint(T0 t0, T1 t1, [FromServices] Dispatch dispatch)
+                    var metadata = RequestDelegateFactory.Create(OnEndpoint);
+
+                    return new Endpoint(Options, builder => builder.MapMethods(Path, [Method.Method], OnEndpoint))
+                        .WithFormOptions();
+
+                    async Task<THttpResult> OnEndpoint(T0 t0, [FromBody] T1 t1, [FromServices] Dispatch dispatch)
                     {
                         var request = mapRequest(t0, t1);
 
@@ -61,22 +108,28 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
 
                 public sealed record RequestBuilder(Builder Builder)
                 {
-                    public FromRouteBuilder<TRoute> FromRoute<TRoute>()
+                    public FromRouteBuilder<TRoute, TName> FromRoute<TRoute, TName>()
+                        where TName : IRouteName
                     {
-                        return new FromRouteBuilder<TRoute>(Builder);
+                        Builder.Path += "/{" + TName.Name + "}";
+                        return new FromRouteBuilder<TRoute, TName>(Builder);
                     }
 
-                    public sealed record FromRouteBuilder<TRoute>(Builder Builder)
+                    public sealed record FromRouteBuilder<TRoute, TName>(Builder Builder)
+                        where TName : IRouteName
                     {
                         public Endpoint Result<THttpResult>(Func<TRoute, Task<TRequest>> mapRequest, Func<TResult, Task<THttpResult>> mapResult)
                             where THttpResult : IResult
                         {
                             var builder = Builder;
-                            return new Endpoint(builder.Options, x => x.MapMethods(builder.Path, [builder.Method.Method], OnEndpoint));
+                            var metadata = RequestDelegateFactory.Create(OnEndpoint);
 
-                            async Task<THttpResult> OnEndpoint([FromRoute] TRoute id, [FromServices] Dispatch dispatch)
+                            return new Endpoint(builder.Options, x => x.MapMethods(builder.Path, [builder.Method.Method], OnEndpoint))
+                                .WithOpenApi(FromRouteBinder<TRoute, TName>.OpenApi);
+
+                            async Task<THttpResult> OnEndpoint(FromRouteBinder<TRoute, TName> route, [FromServices] Dispatch dispatch)
                             {
-                                var request = await mapRequest(id);
+                                var request = await mapRequest(route.Value);
 
                                 var response = await dispatch(request);
 

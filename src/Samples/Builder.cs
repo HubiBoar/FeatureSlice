@@ -17,14 +17,14 @@ public sealed class ExampleHandler :
 
         return new Response(request.Value2, request.Value1);
     })
-    .AddEndpoint(HttpMethod.Post, "test/{id}")
+    .MapPost("test")
         .Request()
-        .FromRoute<int>()
+        .FromRoute<int, IRouteName.Id>()
         .DefaultResult(route => new ("TestVal", route))
-        //.Setup(([FromRoute(Name = "testId")] string id, [FromBody] Request request) => request)
+        //.Setup(([FromRoute] string id, [FromBody] Request request) => request)
         //.FromBody()
         //.DefaultResult()
-    .WithName("name");
+    .WithTags("TestName");
 }
 
 public class Example
