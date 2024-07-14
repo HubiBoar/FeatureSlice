@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Mvc;
+
 namespace FeatureSlice.Samples.Builder;
 
 public sealed record Dependency1();
@@ -15,11 +17,16 @@ public sealed class ExampleHandler :
 
         return new Response(request.Value2, request.Value1);
     })
-    .AddEndpoint(HttpMethod.Post, "test")
-        .FromBody()
-        .DefaultResult()
+    .AddEndpoint(HttpMethod.Post, "test/{id}")
+        .Request()
+        .FromRoute<int>()
+        .DefaultResult(route => new ("TestVal", route))
+        //.Setup(([FromRoute(Name = "testId")] string id, [FromBody] Request request) => request)
+        //.FromBody()
+        //.DefaultResult()
     .WithName("name");
 }
+
 public class Example
 {
     public static void Register(IServiceCollection services)

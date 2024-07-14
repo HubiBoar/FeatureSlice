@@ -48,19 +48,24 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
 
                     public Endpoint DefaultResult()
                     {
-                        return Result(DefaultHttpResult);
+                        return Result(DefaultHttpResultAsync);
                     }
                 }
 
-                public static Task<Results<Ok<TResponse>, BadRequest<string>>> DefaultHttpResult(TResult result)
+                public static Task<Results<Ok<TResponse>, BadRequest<string>>> DefaultHttpResultAsync(TResult result)
+                {
+                    return Task.FromResult(DefaultHttpResult(result));
+                }
+
+                public static Results<Ok<TResponse>, BadRequest<string>> DefaultHttpResult(TResult result)
                 {
                     if(result.Is(out Error error).Else(out var response))
                     {
-                        return Task.FromResult<Results<Ok<TResponse>, BadRequest<string>>>(error.ToBadRequest());
+                        return error.ToBadRequest();
                     }
                     else
                     {
-                        return Task.FromResult<Results<Ok<TResponse>, BadRequest<string>>>(TypedResults.Ok(response));
+                        return TypedResults.Ok(response);
                     }
                 }
             }
