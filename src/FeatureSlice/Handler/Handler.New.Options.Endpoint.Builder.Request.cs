@@ -27,10 +27,14 @@ public sealed record FromRouteBinder<T, TName>(T Value) : IBindable<FromRouteBin
         return ValueTask.FromResult(new FromRouteBinder<T, TName>(value));
     }
 
-    public static OpenApiOperation OpenApi(OpenApiOperation openApi)
+    public static void ExtendEndpoint(IEndpointConventionBuilder builder)
     {
-        openApi.Parameters.Add(new ());
-        return openApi;
+        builder.WithOpenApi(openApi =>
+        {
+            openApi.Parameters.Add(new ());
+
+            return openApi;
+        });
     }
 }
 
@@ -40,7 +44,7 @@ public interface IBindable<TSelf>
 {
     public abstract static ValueTask<TSelf> BindAsync(HttpContext context, ParameterInfo parameter);
 
-    public abstract static OpenApiOperation OpenApi(OpenApiOperation openApi);
+    public abstract static void ExtendEndpoint(IEndpointConventionBuilder builder);
 }
 
 public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
@@ -124,8 +128,11 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                             var builder = Builder;
                             var metadata = RequestDelegateFactory.Create(OnEndpoint);
 
-                            return new Endpoint(builder.Options, x => x.MapMethods(builder.Path, [builder.Method.Method], OnEndpoint))
-                                .WithOpenApi(FromRouteBinder<TRoute, TName>.OpenApi);
+                            var endpoint = new Endpoint(builder.Options, x => x.MapMethods(builder.Path, [builder.Method.Method], OnEndpoint));
+
+                            FromRouteBinder<TRoute, TName>.ExtendEndpoint(endpoint);
+
+                            return endpoint!;
 
                             async Task<THttpResult> OnEndpoint(FromRouteBinder<TRoute, TName> route, [FromServices] Dispatch dispatch)
                             {

@@ -29,19 +29,30 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         public sealed partial record Endpoint(Options Options, Func<IEndpointRouteBuilder, IEndpointConventionBuilder> Extender) : IEndpointBuilder
         {
             private readonly List<Action<EndpointBuilder>> _conventions = [];
+            private readonly List<Action<EndpointBuilder>> _finalConventions = [];
 
             public void Add(Action<EndpointBuilder> convention)
             {
                 _conventions.Add(convention);
             }
 
-            void IEndpointBuilder.Map(IEndpointRouteBuilder builder)
+            public void Map(IEndpointRouteBuilder builder)
             {
                 var endpointConventionBuilder = Extender(builder);
                 foreach (var convention in _conventions)
                 {
                     endpointConventionBuilder.Add(convention);
                 }
+
+                foreach (var convention in _finalConventions)
+                {
+                    endpointConventionBuilder.Add(convention);
+                }
+            }
+
+            public void Finally(Action<EndpointBuilder> finallyConvention)
+            {
+                _finalConventions.Add(finallyConvention);
             }
 
             public void TryRegister()
