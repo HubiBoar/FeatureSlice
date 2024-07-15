@@ -16,11 +16,13 @@ public sealed class ExampleHandler :
         return new Response(request.Value2, request.Value1);
     })
     .MapPost("test")
-        .Request(Binder.FromRouteInt("id"), Binder.FromBody<Request>(), (route, request) => new ("TestVal", route))
+        .Request
+        (
+            Binder.FromRouteInt("id"),
+            Binder.FromBody<Request>(),
+            (id, body) => new ("TestVal", id)
+        )
         .DefaultResponse()
-        //.Setup(([FromRoute] string id, [FromBody] Request request) => request)
-        //.FromBody()
-        //.DefaultResult()
     .WithTags("TestName");
 }
 

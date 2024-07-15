@@ -81,7 +81,7 @@ internal static class OpenApiSchemaGenerator
     }
 }
 
-public sealed record FromRouteIntBinder(string Name) : ISingleBinder<int>, IManyBinder<int>
+public sealed record FromRouteIntBinder(string Name) : IManyBinder<int>
 {
     public ValueTask<int> BindAsync(HttpContext context)
     {
@@ -113,7 +113,7 @@ public sealed record FromRouteIntBinder(string Name) : ISingleBinder<int>, IMany
 }
 
 
-public sealed record FromBodyBinder<T>() : ISingleBinder<T>
+public sealed record FromBodyBinder<T>() : ISingleBinder<T, IBindingSubject.Body>
 {
     public ValueTask<T> BindAsync(HttpContext context)
     {
@@ -162,7 +162,14 @@ public static class Binder
     }
 }
 
-public interface ISingleBinder<T> : IBinder<T>
+
+public interface IBindingSubject
+{
+    public class Body : IBindingSubject;
+}
+
+public interface ISingleBinder<T, TSubject> : IBinder<T>
+    where TSubject : IBindingSubject
 {
 }
 
@@ -192,7 +199,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         {           
             public sealed partial record Builder
             {
-                public ResponseBuilder Request<T0>(ISingleBinder<T0> bind0, Func<T0, Task<TRequest>> mapRequest)
+                public ResponseBuilder Request<T0>(IBinder<T0> bind0, Func<T0, Task<TRequest>> mapRequest)
                 {
                     return new (this, new (async context => 
                     {
@@ -203,12 +210,13 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                     bind0.ExtendEndpoint));
                 }
 
-                public ResponseBuilder Request<T0>(ISingleBinder<T0> bind0, Func<T0, TRequest> mapRequest)
+                public ResponseBuilder Request<T0>(IBinder<T0> bind0, Func<T0, TRequest> mapRequest)
                 {
                     return Request(bind0, v0 => Task.FromResult(mapRequest(v0)));
                 }
 
-                public ResponseBuilder Request<T0, T1>(IManyBinder<T0> bind0, ISingleBinder<T1> bind1, Func<T0, T1, Task<TRequest>> mapRequest)
+                public ResponseBuilder Request<T0, T1, TSubject>(IManyBinder<T0> bind0, ISingleBinder<T1, TSubject> bind1, Func<T0, T1, Task<TRequest>> mapRequest)
+                    where TSubject : IBindingSubject
                 {
                     return new (this, new (async context => 
                     {
@@ -220,7 +228,25 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                     bind0.ExtendEndpoint));
                 }
 
-                public ResponseBuilder Request<T0, T1>(IManyBinder<T0> bind0, ISingleBinder<T1> bind1, Func<T0, T1, TRequest> mapRequest)
+                public ResponseBuilder Request<T0, T1, TSubject>(IManyBinder<T0> bind0, ISingleBinder<T1, TSubject> bind1, Func<T0, T1, TRequest> mapRequest)
+                    where TSubject : IBindingSubject
+                {
+                    return Request(bind0, bind1, (v0, v1) => Task.FromResult(mapRequest(v0, v1)));
+                }
+
+                public ResponseBuilder Request<T0, T1>(IManyBinder<T0> bind0, IManyBinder<T1> bind1, Func<T0, T1, Task<TRequest>> mapRequest)
+                {
+                    return new (this, new (async context => 
+                    {
+                        var value0 = await bind0.BindAsync(context);
+                        var value1 = await bind1.BindAsync(context);
+
+                        return await mapRequest(value0, value1);
+                    },
+                    bind0.ExtendEndpoint));
+                }
+
+                public ResponseBuilder Request<T0, T1>(IManyBinder<T0> bind0, IManyBinder<T1> bind1, Func<T0, T1, TRequest> mapRequest)
                 {
                     return Request(bind0, bind1, (v0, v1) => Task.FromResult(mapRequest(v0, v1)));
                 }
