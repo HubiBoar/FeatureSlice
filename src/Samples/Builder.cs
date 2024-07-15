@@ -18,9 +18,8 @@ public sealed class ExampleHandler :
         return new Response(request.Value2, request.Value1);
     })
     .MapPost("test")
-        .Request()
-        .FromRoute<int>("Id")
-        .DefaultResult(route => new ("TestVal", route))
+        .Request(new FromRouteBinderInt("id"), route => new ("TestVal", route))
+        .DefaultResponse()
         //.Setup(([FromRoute] string id, [FromBody] Request request) => request)
         //.FromBody()
         //.DefaultResult()
