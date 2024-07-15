@@ -10,6 +10,7 @@ using Microsoft.OpenApi.Models;
 
 namespace FeatureSlice;
 
+//https://andrewlock.net/behind-the-scenes-of-minimal-apis-3-exploring-the-model-binding-logic-of-minimal-apis/
 internal static class OpenApiSchemaGenerator
 {
     private static readonly Dictionary<Type, (string, string?)> simpleTypesAndFormats =
@@ -80,7 +81,7 @@ internal static class OpenApiSchemaGenerator
     }
 }
 
-public sealed record FromRouteBinderInt(string Name) : IBindable<int>
+public sealed record FromRouteIntBinder(string Name) : ISingleBinder<int>, IManyBinder<int>
 {
     public ValueTask<int> BindAsync(HttpContext context)
     {
@@ -111,7 +112,65 @@ public sealed record FromRouteBinderInt(string Name) : IBindable<int>
     }
 }
 
-public interface IBindable<T>
+
+public sealed record FromBodyBinder<T>() : ISingleBinder<T>
+{
+    public ValueTask<T> BindAsync(HttpContext context)
+    {
+        return context.Request.ReadFromJsonAsync<T>()!;
+    }
+
+    public void ExtendEndpoint(IEndpointBuilder builder)
+    {
+        builder.Extend(x => x.WithOpenApi(openApi =>
+        {
+            openApi.RequestBody = new OpenApiRequestBody
+            {
+                Content =
+                {
+                    ["application/json"] = new OpenApiMediaType
+                    {
+                        Schema = new OpenApiSchema
+                        {
+                            Type = "object",
+                            Properties =
+                            {
+                                ["username"] = new OpenApiSchema { Type = "string" },
+                                ["email"] = new OpenApiSchema { Type = "string" },
+                                ["password"] = new OpenApiSchema { Type = "string" }
+                            },
+                            Required = new HashSet<string> { "username", "email", "password" }
+                        }
+                    }
+                }
+            };
+            return openApi;
+        }));
+    }
+}
+
+public static class Binder
+{
+    public static FromBodyBinder<T> FromBody<T>()
+    {
+        return new FromBodyBinder<T>();
+    }
+
+    public static FromRouteIntBinder FromRouteInt(string name)
+    {
+        return new FromRouteIntBinder(name);
+    }
+}
+
+public interface ISingleBinder<T> : IBinder<T>
+{
+}
+
+public interface IManyBinder<T> : IBinder<T>
+{
+}
+
+public interface IBinder<T>
 {
     ValueTask<T> BindAsync(HttpContext context);
 
@@ -133,7 +192,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         {           
             public sealed partial record Builder
             {
-                public ResponseBuilder Request<T0>(IBindable<T0> bind0, Func<T0, Task<TRequest>> mapRequest)
+                public ResponseBuilder Request<T0>(ISingleBinder<T0> bind0, Func<T0, Task<TRequest>> mapRequest)
                 {
                     return new (this, new (async context => 
                     {
@@ -144,12 +203,12 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                     bind0.ExtendEndpoint));
                 }
 
-                public ResponseBuilder Request<T0>(IBindable<T0> bind0, Func<T0, TRequest> mapRequest)
+                public ResponseBuilder Request<T0>(ISingleBinder<T0> bind0, Func<T0, TRequest> mapRequest)
                 {
                     return Request(bind0, v0 => Task.FromResult(mapRequest(v0)));
                 }
 
-                public ResponseBuilder Request<T0, T1>(IBindable<T0> bind0, IBindable<T1> bind1, Func<T0, T1, Task<TRequest>> mapRequest)
+                public ResponseBuilder Request<T0, T1>(IManyBinder<T0> bind0, ISingleBinder<T1> bind1, Func<T0, T1, Task<TRequest>> mapRequest)
                 {
                     return new (this, new (async context => 
                     {
@@ -161,7 +220,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                     bind0.ExtendEndpoint));
                 }
 
-                public ResponseBuilder Request<T0, T1>(IBindable<T0> bind0, IBindable<T1> bind1, Func<T0, T1, TRequest> mapRequest)
+                public ResponseBuilder Request<T0, T1>(IManyBinder<T0> bind0, ISingleBinder<T1> bind1, Func<T0, T1, TRequest> mapRequest)
                 {
                     return Request(bind0, bind1, (v0, v1) => Task.FromResult(mapRequest(v0, v1)));
                 }

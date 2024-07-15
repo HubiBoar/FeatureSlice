@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-
 namespace FeatureSlice.Samples.Builder;
 
 public sealed record Dependency1();
@@ -18,7 +16,7 @@ public sealed class ExampleHandler :
         return new Response(request.Value2, request.Value1);
     })
     .MapPost("test")
-        .Request(new FromRouteBinderInt("id"), route => new ("TestVal", route))
+        .Request(Binder.FromRouteInt("id"), Binder.FromBody<Request>(), (route, request) => new ("TestVal", route))
         .DefaultResponse()
         //.Setup(([FromRoute] string id, [FromBody] Request request) => request)
         //.FromBody()
