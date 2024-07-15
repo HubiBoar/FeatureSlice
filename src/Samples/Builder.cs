@@ -19,7 +19,7 @@ public sealed class ExampleHandler :
     })
     .MapPost("test")
         .Request()
-        .FromRoute<int, IRouteName.Id>()
+        .FromRoute<int>("Id")
         .DefaultResult(route => new ("TestVal", route))
         //.Setup(([FromRoute] string id, [FromBody] Request request) => request)
         //.FromBody()

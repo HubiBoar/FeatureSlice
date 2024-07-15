@@ -1,50 +1,122 @@
+using System.Collections;
 using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.OpenApi.Models;
 
 namespace FeatureSlice;
 
-public interface IRouteName
+internal static class OpenApiSchemaGenerator
 {
-    public static abstract string Name { get; }
+    private static readonly Dictionary<Type, (string, string?)> simpleTypesAndFormats =
+        new()
+        {
+            [typeof(bool)] = ("boolean", null),
+            [typeof(byte)] = ("string", "byte"),
+            [typeof(int)] = ("integer", "int32"),
+            [typeof(uint)] = ("integer", "int32"),
+            [typeof(ushort)] = ("integer", "int32"),
+            [typeof(long)] = ("integer", "int64"),
+            [typeof(ulong)] = ("integer", "int64"),
+            [typeof(float)] = ("number", "float"),
+            [typeof(double)] = ("number", "double"),
+            [typeof(decimal)] = ("number", "double"),
+            [typeof(DateTime)] = ("string", "date-time"),
+            [typeof(DateTimeOffset)] = ("string", "date-time"),
+            [typeof(TimeSpan)] = ("string", "date-span"),
+            [typeof(Guid)] = ("string", "uuid"),
+            [typeof(char)] = ("string", null),
+            [typeof(Uri)] = ("string", "uri"),
+            [typeof(string)] = ("string", null),
+            [typeof(object)] = ("object", null)
+        };
 
-    public sealed record Id : IRouteName
+    internal static OpenApiSchema GetOpenApiSchema<T>()
     {
-        public static string Name => "id";
+        var type = typeof(T);
+        if (type is null)
+        {
+            return new OpenApiSchema();
+        }
+
+        var (openApiType, openApiFormat) = GetTypeAndFormatProperties(type);
+        return new OpenApiSchema
+        {
+            Type = openApiType,
+            Format = openApiFormat,
+            Nullable = Nullable.GetUnderlyingType(type) != null,
+        };
+    }
+
+    private static (string, string?) GetTypeAndFormatProperties(Type type)
+    {
+        type = Nullable.GetUnderlyingType(type) ?? type;
+
+        if (simpleTypesAndFormats.TryGetValue(type, out var typeAndFormat))
+        {
+            return typeAndFormat;
+        }
+
+        if (type == typeof(IFormFileCollection) || type == typeof(IFormFile))
+        {
+            return ("object", null);
+        }
+
+        if (typeof(IDictionary).IsAssignableFrom(type))
+        {
+            return ("object", null);
+        }
+
+        if (type != typeof(string) && (type.IsArray || typeof(IEnumerable).IsAssignableFrom(type)))
+        {
+            return ("array", null);
+        }
+
+        return ("object", null);
     }
 }
 
-public sealed record FromRouteBinder<T, TName>(T Value) : IBindable<FromRouteBinder<T, TName>>
-    where TName : IRouteName
+public sealed record FromRouteBinder<T>(string Name) : IBindable<T>
 {
-    public static ValueTask<FromRouteBinder<T, TName>> BindAsync(HttpContext context, ParameterInfo parameter)
+    public ValueTask<T> BindAsync(HttpContext context)
     {
-        var name = TName.Name;
-        var value = (T)context.Request.RouteValues[name!]!;
+        var value = context.Request.RouteValues[Name]!;
 
-        return ValueTask.FromResult(new FromRouteBinder<T, TName>(value));
+        //var deserialized = JsonSerializer.Deserialize<T>(value);
+        T converted = (T)Convert.ChangeType(value, typeof(T));
+
+        return ValueTask.FromResult(converted);
     }
 
-    public static void ExtendEndpoint(IEndpointConventionBuilder builder)
+    public void ExtendEndpoint(IEndpointBuilder builder)
     {
-        builder.WithOpenApi(openApi =>
+        builder.Path += "/{" + Name + "}";
+
+        builder.Extend(x => x.WithOpenApi(openApi =>
         {
-            openApi.Parameters.Add(new ());
+            openApi.Parameters.Add(new OpenApiParameter()
+            {
+                Name = Name,
+                In = ParameterLocation.Path,
+                Description = "The ID of the item to retrieve",
+                Required = true,
+                Schema = OpenApiSchemaGenerator.GetOpenApiSchema<T>()
+            });
 
             return openApi;
-        });
+        }));
     }
 }
 
-
-public interface IBindable<TSelf>
-    where TSelf : IBindable<TSelf>
+public interface IBindable<T>
 {
-    public abstract static ValueTask<TSelf> BindAsync(HttpContext context, ParameterInfo parameter);
+    ValueTask<T> BindAsync(HttpContext context);
 
-    public abstract static void ExtendEndpoint(IEndpointConventionBuilder builder);
+    void ExtendEndpoint(IEndpointBuilder builder);
 }
 
 public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
@@ -55,56 +127,6 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         {           
             public sealed partial record Builder
             {
-                public Endpoint Setup<T0, THttpResult>(Func<T0, TRequest> mapRequest, Func<TResult, THttpResult> mapResult)
-                    where THttpResult : IResult
-                {
-                    return new Endpoint(Options, builder => builder.MapMethods(Path, [Method.Method], OnEndpoint));
-
-                    async Task<THttpResult> OnEndpoint(T0 t0, [FromServices] Dispatch dispatch)
-                    {
-                        var request = mapRequest(t0);
-
-                        var response = await dispatch(request);
-
-                        return mapResult(response);
-                    }
-                }
-
-                public Endpoint Setup<T0, T1, THttpResult>(Func<T0, T1, TRequest> mapRequest, Func<TResult, THttpResult> mapResult)
-                    where THttpResult : IResult
-                {
-                    var parameters = mapRequest.Method.GetParameters();
-                    var attributes = parameters.SelectMany(x => x.GetCustomAttributesData()).ToArray();
-                    foreach(var attribute in attributes)
-                    {
-                        Console.WriteLine(attribute.AttributeType);
-                    }
-
-                    var metadata = RequestDelegateFactory.Create(OnEndpoint);
-
-                    return new Endpoint(Options, builder => builder.MapMethods(Path, [Method.Method], OnEndpoint))
-                        .WithFormOptions();
-
-                    async Task<THttpResult> OnEndpoint(T0 t0, [FromBody] T1 t1, [FromServices] Dispatch dispatch)
-                    {
-                        var request = mapRequest(t0, t1);
-
-                        var response = await dispatch(request);
-
-                        return mapResult(response);
-                    }
-                }
-
-                public Endpoint Setup<T0>(Func<T0, TRequest> mapRequest)
-                {
-                    return Setup(mapRequest, DefaultHttpResult);
-                }
-
-                public Endpoint Setup<T0, T1>(Func<T0, T1, TRequest> mapRequest)
-                {
-                    return Setup(mapRequest, DefaultHttpResult);
-                }
-
                 public RequestBuilder Request()
                 {
                     return new (this);
@@ -112,31 +134,35 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
 
                 public sealed record RequestBuilder(Builder Builder)
                 {
-                    public FromRouteBuilder<TRoute, TName> FromRoute<TRoute, TName>()
-                        where TName : IRouteName
+                    public FromRouteBuilder<TRoute> FromRoute<TRoute>(string name)
                     {
-                        Builder.Path += "/{" + TName.Name + "}";
-                        return new FromRouteBuilder<TRoute, TName>(Builder);
+                        return new FromRouteBuilder<TRoute>(Builder, name);
                     }
 
-                    public sealed record FromRouteBuilder<TRoute, TName>(Builder Builder)
-                        where TName : IRouteName
+                    public sealed record FromRouteBuilder<TRoute>(Builder Builder, string Name)
                     {
                         public Endpoint Result<THttpResult>(Func<TRoute, Task<TRequest>> mapRequest, Func<TResult, Task<THttpResult>> mapResult)
                             where THttpResult : IResult
                         {
                             var builder = Builder;
+                            var binder = new FromRouteBinder<TRoute>(Name);
                             var metadata = RequestDelegateFactory.Create(OnEndpoint);
 
-                            var endpoint = new Endpoint(builder.Options, x => x.MapMethods(builder.Path, [builder.Method.Method], OnEndpoint));
+                            binder.ExtendEndpoint(builder);
 
-                            FromRouteBinder<TRoute, TName>.ExtendEndpoint(endpoint);
+                            Delegate onEndpoint = OnEndpoint;
+
+                            var endpoint = new Endpoint(builder.Options, x => x.MapMethods(builder.Path, [builder.Method.Method], onEndpoint));
+
+                            builder.Extend(endpoint);
 
                             return endpoint!;
 
-                            async Task<THttpResult> OnEndpoint(FromRouteBinder<TRoute, TName> route, [FromServices] Dispatch dispatch)
+                            async Task<THttpResult> OnEndpoint(HttpContext context)
                             {
-                                var request = await mapRequest(route.Value);
+                                var dispatch = context.RequestServices.GetRequiredService<Dispatch>();
+                                var route = await binder.BindAsync(context);
+                                var request = await mapRequest(route);
 
                                 var response = await dispatch(request);
 

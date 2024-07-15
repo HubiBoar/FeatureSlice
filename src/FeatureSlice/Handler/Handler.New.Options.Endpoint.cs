@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FeatureSlice;
 
-public interface IEndpointBuilder : IEndpointConventionBuilder
+public interface IEndpointMapper : IEndpointConventionBuilder
 {
     public void Map(IEndpointRouteBuilder builder);
 
@@ -13,7 +13,7 @@ public interface IEndpointBuilder : IEndpointConventionBuilder
     {
         await using var scope = builder.ServiceProvider.CreateAsyncScope();
 
-        var endpoints = scope.ServiceProvider.GetServices<IEndpointBuilder>();
+        var endpoints = scope.ServiceProvider.GetServices<IEndpointMapper>();
 
         foreach(var endpoint in endpoints)
         {
@@ -26,7 +26,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
 {
     public sealed partial record Options
     {
-        public sealed partial record Endpoint(Options Options, Func<IEndpointRouteBuilder, IEndpointConventionBuilder> Extender) : IEndpointBuilder
+        public sealed partial record Endpoint(Options Options, Func<IEndpointRouteBuilder, IEndpointConventionBuilder> Extender) : IEndpointMapper
         {
             private readonly List<Action<EndpointBuilder>> _conventions = [];
             private readonly List<Action<EndpointBuilder>> _finalConventions = [];
@@ -57,7 +57,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
 
             public void TryRegister()
             {
-                Options.Extend(services => services.TryAddEnumerable(ServiceDescriptor.Singleton<IEndpointBuilder>(this)));
+                Options.Extend(services => services.TryAddEnumerable(ServiceDescriptor.Singleton<IEndpointMapper>(this)));
             }
 
             public static implicit operator Options(Endpoint endpoint)
