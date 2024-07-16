@@ -107,7 +107,7 @@ public sealed record FromRouteBinder<T>
     string Name,
     bool Required
 )
-    : ParameterBinder<T>(Name, Required, ParameterLocation.Query)
+    : ParameterBinder<T>(Name, Required, ParameterLocation.Path)
 {
     protected override T Get(HttpContext context)
     {
@@ -133,9 +133,9 @@ public sealed record FromQueryBinder<T>
 {
     protected override T Get(HttpContext context)
     {
-        var value = context.Request.Query[Name]!;
+        var value = context.Request.Query[Name];
 
-        return (T)Convert.ChangeType(value, typeof(T));
+        return JsonSerializer.Deserialize<T>(value!)!;
     }
 }
 
@@ -150,7 +150,7 @@ public sealed record FromHeaderBinder<T>
     {
         var value = context.Request.Headers[Name]!;
 
-        return (T)Convert.ChangeType(value, typeof(T));
+        return JsonSerializer.Deserialize<T>(value!)!;
     }
 }
 
@@ -165,7 +165,7 @@ public sealed record FromCookieBinder<T>
     {
         var value = context.Request.Cookies[Name]!;
 
-        return (T)Convert.ChangeType(value, typeof(T));
+        return JsonSerializer.Deserialize<T>(value!)!;
     }
 }
 
