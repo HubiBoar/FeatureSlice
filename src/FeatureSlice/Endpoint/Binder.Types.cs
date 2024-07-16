@@ -43,7 +43,7 @@ public sealed record FromRouteBinder<T>
         base.ExtendEndpoint(builder);
     }
 }
- 
+
 public sealed record FromQueryBinder<T>
 (
     string Name,

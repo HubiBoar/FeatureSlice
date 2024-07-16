@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Http;
-
 namespace FeatureSlice;
 
 public static class Binder
@@ -29,19 +27,4 @@ public static class Binder
     {
         return new (name, required);
     }
-}
-
-public interface IAnyBinder<T> : ILastBinder<T>
-{
-}
-
-public interface ILastBinder<T> : IBinder<T>
-{
-}
-
-public interface IBinder<T>
-{
-    ValueTask<T> BindAsync(HttpContext context);
-
-    void ExtendEndpoint(IEndpointBuilder builder);
 }

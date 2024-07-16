@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice;
- 
+
 public static class FeatureSliceEndpointExtensions
 {
     public static void MapFeatureSlices(this IEndpointRouteBuilder endpointRoute)
