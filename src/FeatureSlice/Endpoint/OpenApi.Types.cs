@@ -61,16 +61,6 @@ public static class OpenApiType
             }
         }
 
-        public sealed record String : IParameterOpenApiType<string>
-        {
-            public static OpenApiSchema GetSchema() => GetString(false);
-
-            public sealed record Nullable : IParameterOpenApiType<string?>
-            {
-                public static OpenApiSchema GetSchema() => GetString(true);
-            }
-        }
-
         public sealed record Int : IParameterOpenApiType<int>
         {
             public static OpenApiSchema GetSchema() => GetInt32(false);
@@ -191,6 +181,26 @@ public static class OpenApiType
             }
         }
 
+        public sealed record Uri : IParameterOpenApiType<System.Uri>
+        {
+            public static OpenApiSchema GetSchema() => GetUri(false);
+
+            public sealed record Nullable : IParameterOpenApiType<System.Uri>
+            {
+                public static OpenApiSchema GetSchema() => GetUri(true);
+            }
+        }
+
+        public sealed record String : IParameterOpenApiType<string>
+        {
+            public static OpenApiSchema GetSchema() => GetString(false);
+
+            public sealed record Nullable : IParameterOpenApiType<string?>
+            {
+                public static OpenApiSchema GetSchema() => GetString(true);
+            }
+        }
+
         public sealed record Array<T> : IParameterOpenApiType<T>
             where T : IEnumerable
         {
@@ -202,7 +212,18 @@ public static class OpenApiType
             }
         }
 
-        public sealed record FormFileCollection<T> : IParameterOpenApiType<T>
+        public sealed record ObjectCollection<T> : IOpenApiType<T>
+            where T : class
+        {
+            public static OpenApiSchema GetSchema() => GetObject(false);
+
+            public sealed record Nullable : IParameterOpenApiType<T?>
+            {
+                public static OpenApiSchema GetSchema() => GetObject(true);
+            }
+        }
+
+        public sealed record FormFileCollection<T> : IOpenApiType<T>
             where T : IFormFileCollection
         {
             public static OpenApiSchema GetSchema() => GetObject(false);
@@ -213,7 +234,7 @@ public static class OpenApiType
             }
         }
 
-        public sealed record FormFile<T> : IParameterOpenApiType<T>
+        public sealed record FormFile<T> : IOpenApiType<T>
             where T : IFormFile
         {
             public static OpenApiSchema GetSchema() => GetObject(false);
@@ -224,7 +245,7 @@ public static class OpenApiType
             }
         }
 
-        public sealed record Dictionary<T> : IParameterOpenApiType<T>
+        public sealed record Dictionary<T> : IOpenApiType<T>
             where T : IDictionary
         {
             public static OpenApiSchema GetSchema() => GetObject(false);
