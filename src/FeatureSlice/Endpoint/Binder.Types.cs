@@ -6,28 +6,32 @@ using Microsoft.OpenApi.Models;
 namespace FeatureSlice;
 
 public sealed record FromBodyJsonBinder<T>() : FromBodyBinder<T>("application/json")
-    where T : notnull;
+    where T : notnull
+{
+    public override ValueTask<T> BindAsync(HttpContext context)
+    {
+        return context.Request.ReadFromJsonAsync<T>()!;
+    }
+}
 
 public abstract record FromBodyBinder<T>(string contentType) : ILastBinder<T>
     where T : notnull
 {
-    public ValueTask<T> BindAsync(HttpContext context)
-    {
-        return context.Request.ReadFromJsonAsync<T>()!;
-    }
-
     public void ExtendEndpoint(IEndpointBuilder builder)
     {
         builder.Extend(x => x.Accepts<T>(contentType));
     }
+
+    public abstract ValueTask<T> BindAsync(HttpContext context);
 }
 
-public sealed record FromRouteBinder<T>
+public sealed record FromRouteBinder<T, TParameter>
 (
     string Name,
     bool Required
 )
-    : ParameterBinder<T>(Name, Required, ParameterLocation.Path)
+: ParameterBinder<T, TParameter>(Name, Required, ParameterLocation.Path)
+    where TParameter : IParameterOpenApiType<T>
 {
     protected override T Get(HttpContext context)
     {
@@ -44,12 +48,13 @@ public sealed record FromRouteBinder<T>
     }
 }
 
-public sealed record FromQueryBinder<T>
+public sealed record FromQueryBinder<T, TParameter>
 (
     string Name,
     bool Required
 )
-    : ParameterBinder<T>(Name, Required, ParameterLocation.Query)
+: ParameterBinder<T, TParameter>(Name, Required, ParameterLocation.Query)
+    where TParameter : IParameterOpenApiType<T>
 {
     protected override T Get(HttpContext context)
     {
@@ -59,12 +64,13 @@ public sealed record FromQueryBinder<T>
     }
 }
 
-public sealed record FromHeaderBinder<T>
+public sealed record FromHeaderBinder<T, TParameter>
 (
     string Name,
     bool Required
 )
-    : ParameterBinder<T>(Name, Required, ParameterLocation.Header)
+: ParameterBinder<T, TParameter>(Name, Required, ParameterLocation.Header)
+    where TParameter : IParameterOpenApiType<T>
 {
     protected override T Get(HttpContext context)
     {
@@ -74,12 +80,13 @@ public sealed record FromHeaderBinder<T>
     }
 }
 
-public sealed record FromCookieBinder<T>
+public sealed record FromCookieBinder<T, TParameter>
 (
     string Name,
     bool Required
 )
-    : ParameterBinder<T>(Name, Required, ParameterLocation.Cookie)
+: ParameterBinder<T, TParameter>(Name, Required, ParameterLocation.Cookie)
+    where TParameter : IParameterOpenApiType<T>
 {
     protected override T Get(HttpContext context)
     {
@@ -89,13 +96,14 @@ public sealed record FromCookieBinder<T>
     }
 }
 
-public abstract record ParameterBinder<T>
+public abstract record ParameterBinder<T, TParameter>
 (
     string Name,
     bool Required,
     ParameterLocation In
 )
-    : IAnyBinder<T>
+: IAnyBinder<T>
+    where TParameter : IParameterOpenApiType<T>
 {
     protected abstract T Get(HttpContext context);
 
@@ -113,7 +121,7 @@ public abstract record ParameterBinder<T>
                 Name = Name,
                 In = In,
                 Required = Required,
-                Schema = OpenApiSchemaGenerator.GetOpenApiSchema<T>()
+                Schema = TParameter.GetSchema()
             });
 
             return openApi;

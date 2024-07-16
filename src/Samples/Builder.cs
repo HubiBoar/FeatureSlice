@@ -18,9 +18,9 @@ public sealed class ExampleHandler :
     .MapPost("test", builder => builder
         .Request
         (
-            Binder.FromRoute<int>("id"),
-            Binder.FromQuery<int>("qu"),
-            Binder.FromBodyJson<Request>(),
+            From.Route.Int("id"),
+            From.Query.Int("qu"),
+            From.Body.Json<Request>(),
             (id, qu, body) => new (body.Value0, qu, id)
         )
         .DefaultResponse()
