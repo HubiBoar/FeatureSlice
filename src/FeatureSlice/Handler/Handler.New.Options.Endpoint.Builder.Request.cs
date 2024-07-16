@@ -84,38 +84,12 @@ internal static class OpenApiSchemaGenerator
     }
 }
 
-public sealed record FromRouteIntBinder(string Name) : IAnyBinder<int>
-{
-    public ValueTask<int> BindAsync(HttpContext context)
-    {
-        var value = context.Request.RouteValues[Name]!.ToString();
 
-        var converted = int.Parse(value!);
+public sealed record FromBodyJsonBinder<T>() : FromBodyBinder<T>("application/json")
+    where T : notnull;
 
-        return ValueTask.FromResult(converted);
-    }
-
-    public void ExtendEndpoint(IEndpointBuilder builder)
-    {
-        builder.Path += "/{" + Name + ":int}";
-
-        builder.Extend(x => x.WithOpenApi(openApi =>
-        {
-            openApi.Parameters.Add(new OpenApiParameter()
-            {
-                Name = Name,
-                In = ParameterLocation.Path,
-                Description = $"The {Name} of the item to retrieve",
-                Required = true,
-                Schema = OpenApiSchemaGenerator.GetOpenApiSchema<int>()
-            });
-
-            return openApi;
-        }));
-    }
-}
-
-public sealed record FromBodyBinder<T>() : ILastBinder<T>
+public abstract record FromBodyBinder<T>(string contentType) : ILastBinder<T>
+    where T : notnull
 {
     public ValueTask<T> BindAsync(HttpContext context)
     {
@@ -124,59 +98,102 @@ public sealed record FromBodyBinder<T>() : ILastBinder<T>
 
     public void ExtendEndpoint(IEndpointBuilder builder)
     {
-        builder.Extend(x => x.Accepts<T>(""));
+        builder.Extend(x => x.Accepts<T>(contentType));
+    }
+}
 
-        builder.Extend(x => x.WithOpenApi(openApi =>
-        {
-            openApi.RequestBody = new OpenApiRequestBody
-            {
-                Content =
-                {
-                    ["application/json"] = new OpenApiMediaType
-                    {
-                        Schema = OpenApiSchemaGenerator.GetOpenApiSchema<T>()
-                        // Schema = new OpenApiSchema
-                        // {
-                        //     Type = "object",
-                        //     Properties =
-                        //     {
-                        //         ["username"] = new OpenApiSchema { Type = "string" },
-                        //         ["email"] = new OpenApiSchema { Type = "string" },
-                        //         ["password"] = new OpenApiSchema { Type = "string" }
-                        //     },
-                        //     Required = new HashSet<string> { "username", "email", "password" }
-                        // }
-                    }
-                }
-            };
+public sealed record FromRouteBinder<T>
+(
+    string Name,
+    bool Required
+)
+    : ParameterBinder<T>(Name, Required, ParameterLocation.Query)
+{
+    protected override T Get(HttpContext context)
+    {
+        var value = context.Request.RouteValues[Name]!;
 
-            return openApi;
-        }));
+        return (T)Convert.ChangeType(value, typeof(T));
+    }
+
+    public override void ExtendEndpoint(IEndpointBuilder builder)
+    {
+        builder.Path += "/{" + Name + "}";
+
+        base.ExtendEndpoint(builder);
     }
 }
  
-public sealed record FromQueryBinderInt(string Name) : IAnyBinder<int>
+public sealed record FromQueryBinder<T>
+(
+    string Name,
+    bool Required
+)
+    : ParameterBinder<T>(Name, Required, ParameterLocation.Query)
 {
-    public ValueTask<int> BindAsync(HttpContext context)
+    protected override T Get(HttpContext context)
     {
-        var value = context.Request.Query[Name]!.ToString();
+        var value = context.Request.Query[Name]!;
 
-        var converted = int.Parse(value!);
+        return (T)Convert.ChangeType(value, typeof(T));
+    }
+}
 
-        return ValueTask.FromResult(converted);
+public sealed record FromHeaderBinder<T>
+(
+    string Name,
+    bool Required
+)
+    : ParameterBinder<T>(Name, Required, ParameterLocation.Header)
+{
+    protected override T Get(HttpContext context)
+    {
+        var value = context.Request.Headers[Name]!;
+
+        return (T)Convert.ChangeType(value, typeof(T));
+    }
+}
+
+public sealed record FromCookieBinder<T>
+(
+    string Name,
+    bool Required
+)
+    : ParameterBinder<T>(Name, Required, ParameterLocation.Cookie)
+{
+    protected override T Get(HttpContext context)
+    {
+        var value = context.Request.Cookies[Name]!;
+
+        return (T)Convert.ChangeType(value, typeof(T));
+    }
+}
+
+public abstract record ParameterBinder<T>
+(
+    string Name,
+    bool Required,
+    ParameterLocation In
+)
+    : IAnyBinder<T>
+{
+    protected abstract T Get(HttpContext context);
+
+    public ValueTask<T> BindAsync(HttpContext context)
+    {
+        return ValueTask.FromResult(Get(context));
     }
 
-    public void ExtendEndpoint(IEndpointBuilder builder)
+    public virtual void ExtendEndpoint(IEndpointBuilder builder)
     {
         builder.Extend(x => x.WithOpenApi(openApi =>
         {
             openApi.Parameters.Add(new OpenApiParameter()
             {
                 Name = Name,
-                In = ParameterLocation.Query,
-                Description = $"The {Name} of the item to retrieve",
-                Required = true,
-                Schema = OpenApiSchemaGenerator.GetOpenApiSchema<int>()
+                In = In,
+                Required = Required,
+                Schema = OpenApiSchemaGenerator.GetOpenApiSchema<T>()
             });
 
             return openApi;
@@ -187,19 +204,30 @@ public sealed record FromQueryBinderInt(string Name) : IAnyBinder<int>
 
 public static class Binder
 {
-    public static FromBodyBinder<T> FromBody<T>()
+    public static FromBodyJsonBinder<T> FromBodyJson<T>()
+        where T : notnull
     {
-        return new FromBodyBinder<T>();
+        return new ();
     }
 
-    public static FromQueryBinderInt FromQueryInt(string name)
+    public static FromQueryBinder<T> FromQuery<T>(string name, bool required = true)
     {
-        return new FromQueryBinderInt(name);
+        return new (name, required);
     }
 
-    public static FromRouteIntBinder FromRouteInt(string name)
+    public static FromRouteBinder<T> FromRoute<T>(string name, bool required = true)
     {
-        return new FromRouteIntBinder(name);
+        return new (name, required);
+    }
+
+    public static FromHeaderBinder<T> FromHeader<T>(string name, bool required = true)
+    {
+        return new (name, required);
+    }
+
+    public static FromCookieBinder<T> FromCookie<T>(string name, bool required = true)
+    {
+        return new (name, required);
     }
 }
 

@@ -1,6 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 namespace FeatureSlice.Samples.Builder;
 
 public sealed record Dependency1();
@@ -21,10 +18,10 @@ public sealed class ExampleHandler :
     .MapPost("test", builder => builder
         .Request
         (
-            Binder.FromRouteInt("id"),
-            Binder.FromQueryInt("qu"),
-            Binder.FromBody<Request>(),
-            (id, qu, body) => new ("TestVal", qu, id)
+            Binder.FromRoute<int>("id"),
+            Binder.FromQuery<int>("qu"),
+            Binder.FromBodyJson<Request>(),
+            (id, qu, body) => new (body.Value0, qu, id)
         )
         .DefaultResponse()
         .WithTags("TestName"));
