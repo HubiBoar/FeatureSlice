@@ -13,6 +13,6 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-await IEndpointMapper.MapAll(app);
+app.MapFeatureSlices();
 
 await app.RunAsync();

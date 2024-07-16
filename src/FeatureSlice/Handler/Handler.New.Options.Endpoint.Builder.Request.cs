@@ -2,10 +2,13 @@ using System.Collections;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Definit.Results;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Models;
 
 namespace FeatureSlice;
@@ -121,6 +124,8 @@ public sealed record FromBodyBinder<T>() : ILastBinder<T>
 
     public void ExtendEndpoint(IEndpointBuilder builder)
     {
+        builder.Extend(x => x.Accepts<T>(""));
+
         builder.Extend(x => x.WithOpenApi(openApi =>
         {
             openApi.RequestBody = new OpenApiRequestBody
@@ -129,26 +134,28 @@ public sealed record FromBodyBinder<T>() : ILastBinder<T>
                 {
                     ["application/json"] = new OpenApiMediaType
                     {
-                        Schema = new OpenApiSchema
-                        {
-                            Type = "object",
-                            Properties =
-                            {
-                                ["username"] = new OpenApiSchema { Type = "string" },
-                                ["email"] = new OpenApiSchema { Type = "string" },
-                                ["password"] = new OpenApiSchema { Type = "string" }
-                            },
-                            Required = new HashSet<string> { "username", "email", "password" }
-                        }
+                        Schema = OpenApiSchemaGenerator.GetOpenApiSchema<T>()
+                        // Schema = new OpenApiSchema
+                        // {
+                        //     Type = "object",
+                        //     Properties =
+                        //     {
+                        //         ["username"] = new OpenApiSchema { Type = "string" },
+                        //         ["email"] = new OpenApiSchema { Type = "string" },
+                        //         ["password"] = new OpenApiSchema { Type = "string" }
+                        //     },
+                        //     Required = new HashSet<string> { "username", "email", "password" }
+                        // }
                     }
                 }
             };
+
             return openApi;
         }));
     }
 }
  
-public sealed record FromQueryBinderInt(string Name) : ILastBinder<int>
+public sealed record FromQueryBinderInt(string Name) : IAnyBinder<int>
 {
     public ValueTask<int> BindAsync(HttpContext context)
     {
@@ -185,6 +192,11 @@ public static class Binder
         return new FromBodyBinder<T>();
     }
 
+    public static FromQueryBinderInt FromQueryInt(string name)
+    {
+        return new FromQueryBinderInt(name);
+    }
+
     public static FromRouteIntBinder FromRouteInt(string name)
     {
         return new FromRouteIntBinder(name);
@@ -206,6 +218,129 @@ public interface IBinder<T>
     void ExtendEndpoint(IEndpointBuilder builder);
 }
 
+public static class FeatureSliceRequestExtensions
+{
+    public static ResponseBuilder<TRequest, TResult, TResponse> Request<TRequest, TResult, TResponse, T0>
+    (
+        this EndpointBuilder<TRequest, TResult, TResponse> builder,
+        ILastBinder<T0> bind0,
+        Func<T0, Task<TRequest>> mapRequest
+    )
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        
+        return new (builder, new (async context => 
+        {
+            var value0 = await bind0.BindAsync(context);
+
+            return await mapRequest(value0);
+        },
+        bind0.ExtendEndpoint));
+    }
+
+    public static ResponseBuilder<TRequest, TResult, TResponse> Request<TRequest, TResult, TResponse, T0>
+    (
+        this EndpointBuilder<TRequest, TResult, TResponse> builder,
+        ILastBinder<T0> bind0,
+        Func<T0, TRequest> mapRequest
+    )
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        
+        return Request(builder, bind0, v0 => Task.FromResult(mapRequest(v0)));
+    }
+
+    public static ResponseBuilder<TRequest, TResult, TResponse> Request<TRequest, TResult, TResponse, T0, T1>
+    (
+        this EndpointBuilder<TRequest, TResult, TResponse> builder,
+        IAnyBinder<T0> bind0,
+        ILastBinder<T1> bind1,
+        Func<T0, T1, Task<TRequest>> mapRequest
+    )
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        
+        return new (builder, new (async context => 
+        {
+            var value0 = await bind0.BindAsync(context);
+            var value1 = await bind1.BindAsync(context);
+
+            return await mapRequest(value0, value1);
+        },
+        endpoint => 
+        {
+            bind0.ExtendEndpoint(endpoint);
+            bind1.ExtendEndpoint(endpoint);
+        }));
+    }
+
+    public static ResponseBuilder<TRequest, TResult, TResponse> Request<TRequest, TResult, TResponse, T0, T1>
+    (
+        this EndpointBuilder<TRequest, TResult, TResponse> builder,
+        IAnyBinder<T0> bind0,
+        ILastBinder<T1> bind1,
+        Func<T0, T1, TRequest> mapRequest
+    )
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        
+        return Request(builder, bind0, bind1, (v0, v1) => Task.FromResult(mapRequest(v0, v1)));
+    }
+
+    public static ResponseBuilder<TRequest, TResult, TResponse> Request<TRequest, TResult, TResponse, T0, T1, T2>
+    (
+        this EndpointBuilder<TRequest, TResult, TResponse> builder,
+        IAnyBinder<T0> bind0,
+        IAnyBinder<T1> bind1,
+        ILastBinder<T2> bind2,
+        Func<T0, T1, T2, Task<TRequest>> mapRequest
+    )
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        
+        return new (builder, new (async context => 
+        {
+            var value0 = await bind0.BindAsync(context);
+            var value1 = await bind1.BindAsync(context);
+            var value2 = await bind2.BindAsync(context);
+
+            return await mapRequest(value0, value1, value2);
+        },
+        endpoint => 
+        {
+            bind0.ExtendEndpoint(endpoint);
+            bind1.ExtendEndpoint(endpoint);
+            bind2.ExtendEndpoint(endpoint);
+        }));
+    }
+
+    public static ResponseBuilder<TRequest, TResult, TResponse> Request<TRequest, TResult, TResponse, T0, T1, T2>
+    (
+        this EndpointBuilder<TRequest, TResult, TResponse> builder,
+        IAnyBinder<T0> bind0,
+        IAnyBinder<T1> bind1,
+        ILastBinder<T2> bind2,
+        Func<T0, T1, T2, TRequest> mapRequest
+    )
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        
+        return Request(builder, bind0, bind1, bind2, (v0, v1, v2) => Task.FromResult(mapRequest(v0, v1, v2)));
+    }
+}
+
 public sealed record RequestBuilder<TRequest>
 (
     Func<HttpContext, Task<TRequest>> MapRequest,
@@ -213,116 +348,54 @@ public sealed record RequestBuilder<TRequest>
 )
     where TRequest : notnull;
 
-public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
+public sealed record ResponseBuilder<TRequest, TResult, TResponse>
+(
+    EndpointBuilder<TRequest, TResult, TResponse> Builder,
+    RequestBuilder<TRequest> Request
+)
+    where TRequest : notnull
+    where TResult : Result_Base<TResponse>
+    where TResponse : notnull
 {
-    public sealed partial record Options
+    public RouteHandlerBuilder Response<THttpResult>(Func<TResult, Task<THttpResult>> mapResult)
+        where THttpResult : IResult
     {
-        public sealed partial record Endpoint
-        {           
-            public sealed partial record Builder
-            {
-                public ResponseBuilder Request<T0>(ILastBinder<T0> bind0, Func<T0, Task<TRequest>> mapRequest)
-                {
-                    return new (this, new (async context => 
-                    {
-                        var value0 = await bind0.BindAsync(context);
+        Request.ExtendEndpoint(Builder);
 
-                        return await mapRequest(value0);
-                    },
-                    bind0.ExtendEndpoint));
-                }
+        Delegate onEndpoint = OnEndpoint;
 
-                public ResponseBuilder Request<T0>(ILastBinder<T0> bind0, Func<T0, TRequest> mapRequest)
-                {
-                    return Request(bind0, v0 => Task.FromResult(mapRequest(v0)));
-                }
+        return Builder.EndpointRouteBuilder.MapMethods(Builder.Path, [Builder.Method.Method], onEndpoint);
 
-                public ResponseBuilder Request<T0, T1>(IAnyBinder<T0> bind0, ILastBinder<T1> bind1, Func<T0, T1, Task<TRequest>> mapRequest)
-                {
-                    return new (this, new (async context => 
-                    {
-                        var value0 = await bind0.BindAsync(context);
-                        var value1 = await bind1.BindAsync(context);
+        async Task<THttpResult> OnEndpoint(HttpContext context)
+        {
+            var dispatch = Builder.DispatchFactory(context.RequestServices);
+            var request = await Request.MapRequest(context);
 
-                        return await mapRequest(value0, value1);
-                    },
-                    bind0.ExtendEndpoint));
-                }
+            var response = await dispatch(request);
 
-                public ResponseBuilder Request<T0, T1>(IAnyBinder<T0> bind0, ILastBinder<T1> bind1, Func<T0, T1, TRequest> mapRequest)
-                {
-                    return Request(bind0, bind1, (v0, v1) => Task.FromResult(mapRequest(v0, v1)));
-                }
+            return await  mapResult(response);
+        }
+    }
 
-                public ResponseBuilder Request<T0, T1, T2>(IAnyBinder<T0> bind0, IAnyBinder<T1> bind1, ILastBinder<T2> bind2, Func<T0, T1, T2, Task<TRequest>> mapRequest)
-                {
-                    return new (this, new (async context => 
-                    {
-                        var value0 = await bind0.BindAsync(context);
-                        var value1 = await bind1.BindAsync(context);
-                        var value2 = await bind2.BindAsync(context);
+    public RouteHandlerBuilder DefaultResponse()
+    {
+        return Response(DefaultHttpResultAsync);
+    }
 
-                        return await mapRequest(value0, value1, value2);
-                    },
-                    bind0.ExtendEndpoint));
-                }
+    public static Task<Results<Ok<TResponse>, BadRequest<string>>> DefaultHttpResultAsync(TResult result)
+    {
+        return Task.FromResult(DefaultHttpResult(result));
+    }
 
-                public ResponseBuilder Request<T0, T1, T2>(IAnyBinder<T0> bind0, IAnyBinder<T1> bind1, ILastBinder<T2> bind2, Func<T0, T1, T2, TRequest> mapRequest)
-                {
-                    return Request(bind0, bind1, bind2, (v0, v1, v2) => Task.FromResult(mapRequest(v0, v1, v2)));
-                }
-
-                public ResponseBuilder Request<T0, T1, T2, T3>(IAnyBinder<T0> bind0, IAnyBinder<T1> bind1, IAnyBinder<T2> bind2, ILastBinder<T3> bind3, Func<T0, T1, T2, T3, Task<TRequest>> mapRequest)
-                {
-                    return new (this, new (async context => 
-                    {
-                        var value0 = await bind0.BindAsync(context);
-                        var value1 = await bind1.BindAsync(context);
-                        var value2 = await bind2.BindAsync(context);
-                        var value3 = await bind3.BindAsync(context);
-
-                        return await mapRequest(value0, value1, value2, value3);
-                    },
-                    bind0.ExtendEndpoint));
-                }
-
-                public ResponseBuilder Request<T0, T1, T2, T3>(IAnyBinder<T0> bind0, IAnyBinder<T1> bind1, IAnyBinder<T2> bind2, ILastBinder<T3> bind3, Func<T0, T1, T2, T3, TRequest> mapRequest)
-                {
-                    return Request(bind0, bind1, bind2, bind3, (v0, v1, v2, v3) => Task.FromResult(mapRequest(v0, v1, v2, v3)));
-                }
-
-                public sealed record ResponseBuilder(Builder Builder, RequestBuilder<TRequest> Request)
-                {
-                    public Endpoint Response<THttpResult>(Func<TResult, Task<THttpResult>> mapResult)
-                        where THttpResult : IResult
-                    {
-                        Request.ExtendEndpoint(Builder);
-
-                        Delegate onEndpoint = OnEndpoint;
-                
-                        var endpoint = new Endpoint(Builder.Options, x => x.MapMethods(Builder.Path, [Builder.Method.Method], onEndpoint));
-
-                        Builder.Extend(endpoint);
-
-                        return endpoint!;
-
-                        async Task<THttpResult> OnEndpoint(HttpContext context)
-                        {
-                            var dispatch = context.RequestServices.GetRequiredService<Dispatch>();
-                            var request = await Request.MapRequest(context);
-
-                            var response = await dispatch(request);
-
-                            return await  mapResult(response);
-                        }
-                    }
-
-                    public Endpoint DefaultResponse()
-                    {
-                        return Response(DefaultHttpResultAsync);
-                    }
-                }
-            }
+    public static Results<Ok<TResponse>, BadRequest<string>> DefaultHttpResult(TResult result)
+    {
+        if(result.Is(out Error error).Else(out var response))
+        {
+            return error.ToBadRequest();
+        }
+        else
+        {
+            return TypedResults.Ok(response);
         }
     }
 }

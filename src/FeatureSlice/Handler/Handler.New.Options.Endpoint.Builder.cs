@@ -1,4 +1,7 @@
+using Definit.Results;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice;
 
@@ -7,45 +10,108 @@ public interface IEndpointBuilder
     public HttpMethod Method { get; }
     public string Path { get; set ;}
 
-    public void Extend(Action<IEndpointConventionBuilder> builder);
+    public void Extend(Action<RouteHandlerBuilder> builder);
 }
 
-public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
+public sealed record EndpointMapper(Action<IEndpointRouteBuilder> Map);
+
+public sealed record EndpointBuilder<TRequest, TResult, TResponse>
+(
+    HttpMethod Method,
+    IEndpointRouteBuilder EndpointRouteBuilder,
+    Func<IServiceProvider, Func<TRequest, Task<TResult>>> DispatchFactory
+)
+: IEndpointBuilder
+    where TRequest : notnull
+    where TResult : Result_Base<TResponse>
+    where TResponse : notnull
 {
-    public sealed partial record Options
+    public required string Path { get; set; }
+
+    public IReadOnlyCollection<Action<RouteHandlerBuilder>> Extensions => _extensions;
+    private readonly List<Action<RouteHandlerBuilder>> _extensions = [];
+
+    public void Extend(Action<RouteHandlerBuilder> builder)
     {
-        public Endpoint.Builder Map(HttpMethod method, string path)
+        _extensions.Add(builder);
+    }
+}
+
+public static class FeatureSliceEndpointExtensions
+{
+    public static void MapFeatureSlices(this IEndpointRouteBuilder endpointRoute)
+    {
+        var services = endpointRoute.ServiceProvider.GetServices<EndpointMapper>();
+
+        foreach(var service in services)
         {
-            return new (this, method)
-            {
-                Path = path
-            };
+            service.Map(endpointRoute);
         }
+    }
 
-        public Endpoint.Builder MapGet(string path) => Map(HttpMethod.Get, path);
-        public Endpoint.Builder MapPost(string path) => Map(HttpMethod.Post, path);
-
-        public sealed partial record Endpoint
-        {           
-            public sealed partial record Builder(Options Options, HttpMethod Method) : IEndpointBuilder
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options Map<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        HttpMethod method,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        options.Extend(services => 
+        {
+            services.AddSingleton(new EndpointMapper(route => 
             {
-                public required string Path { get; set; }
-
-                private readonly List<Action<IEndpointConventionBuilder>> _extensions = [];
-
-                public void Extend(Action<IEndpointConventionBuilder> builder)
+                var endpoint = new EndpointBuilder<TRequest, TResult, TResponse>
+                (
+                    method,
+                    route,
+                    provider => request => provider.GetRequiredService<FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Dispatch>()(request)
+                )
                 {
-                    _extensions.Add(builder);
+                    Path = path
+                };
+
+                var handler = builder(endpoint);
+
+                foreach(var extension in endpoint.Extensions)
+                {
+                    extension(handler);
                 }
+            }));
+        });
 
-                public void Extend(IEndpointConventionBuilder builder)
-                {
-                    foreach(var extension in _extensions)
-                    {
-                        extension(builder);
-                    }
-                } 
-            }
-        }
+        return options;
+    }
+
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapGet<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        return options.Map(HttpMethod.Get, path, builder);
+    }
+
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapPost<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        return options.Map(HttpMethod.Post, path, builder);
     }
 }
