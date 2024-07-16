@@ -4,7 +4,7 @@ public sealed record Dependency1();
 public sealed record Dependency2();
 
 public sealed class ExampleHandler :
-    FeatureSlice2<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
+    FeatureSlice<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
 {
     public record Request(string Value0, int Value1, int Value2);
     public record Response(int Value0, int Value1, string Value2);

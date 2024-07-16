@@ -25,7 +25,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                 extension(services);
             }
             
-            services.Add(serviceLifetime, GetDispatch);
+            services.Add(ServiceDescriptor.Describe(typeof(Dispatch), GetDispatch, serviceLifetime));
 
             Dispatch GetDispatch(IServiceProvider provider)
             {
