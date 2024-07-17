@@ -13,6 +13,8 @@ public sealed class ExampleHandler :
 
     public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
     {
+        Console.WriteLine($"Handler: {request}");
+
         await Task.CompletedTask;
 
         return new Response(request.Value2, request.Value1, request.Value0);
@@ -26,7 +28,12 @@ public sealed class ExampleHandler :
             (id, qu, body) => new (body.Value0, qu, id)
         )
         .DefaultResponse()
-        .WithTags("Handler"));
+        .WithTags("Handler"))
+    .WithJob
+    (
+        () => true,
+        () => new ("testjob", 69, 420)
+    );
 }
 
 public sealed class ExampleConsumer :
@@ -36,6 +43,8 @@ public sealed class ExampleConsumer :
 
     public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
     {
+        Console.WriteLine($"Consumer: {request}");
+
         await Task.CompletedTask;
 
         return Result.Success;

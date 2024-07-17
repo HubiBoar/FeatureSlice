@@ -32,19 +32,22 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                 extension(services);
             }
             
-            services.Add(ServiceDescriptor.Describe(typeof(Dispatch), GetDispatch, ServiceLifetime));
+            services.Add(ServiceDescriptor.Describe(typeof(Dispatch), GetDispatchLocal, ServiceLifetime));
 
-            Dispatch GetDispatch(IServiceProvider provider)
+            Dispatch GetDispatchLocal(IServiceProvider provider)
             {
-                var dispatch = DispatcherFactory(provider)
-                    .GetDispatcher
-                    (
-                        provider,
-                        DispatchFactory(provider)
-                    );
-                
-                return request => dispatch(request);
+                return request => GetDispatch(provider)(request);
             }
+        }
+
+        public Dispatch<TRequest, TResult, TResponse> GetDispatch(IServiceProvider provider)
+        {
+            return DispatcherFactory(provider)
+                .GetDispatcher
+                (
+                    provider,
+                    DispatchFactory(provider)
+                );
         }
     }
 

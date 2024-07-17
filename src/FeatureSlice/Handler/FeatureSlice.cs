@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Definit.Results;
-using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace FeatureSlice;
 
@@ -46,7 +45,6 @@ public interface IDispatcher<TRequest, TResult, TResponse>
             Dispatch<TRequest, TResult, TResponse> dispatch
         )
         {
-            Console.WriteLine("Handler");
             return dispatch;
         }
     }
@@ -74,7 +72,9 @@ public abstract partial class FeatureSliceBase<TRequest, TResult, TResponse>
     {
         public Func<IServiceProvider, IDispatcher<TRequest, TResult, TResponse>> DispatcherFactory { get; set; }
 
-        public Func<IServiceProvider, Dispatch<TRequest, TResult, TResponse>> DispatchFactory { get; }
+        public Dispatch<TRequest, TResult, TResponse> GetDispatch(IServiceProvider provider);
+
+        public void Extend(Action<IServiceCollection> services);
 
         public void Register(IServiceCollection services);
     }
