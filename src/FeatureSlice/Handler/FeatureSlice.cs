@@ -1,7 +1,56 @@
 using Microsoft.Extensions.DependencyInjection;
 using Definit.Results;
+using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace FeatureSlice;
+
+public delegate Task<TResult> Dispatch<TRequest, TResult, TResponse>(TRequest request)
+    where TRequest : notnull
+    where TResult : Result_Base<TResponse>
+    where TResponse : notnull;
+
+public sealed record FeatureSliceOptions(IServiceCollection Services);
+
+public static class DispatcherExtensions
+{
+    public static FeatureSliceOptions AddFeatureSlices(this IServiceCollection services)
+    {
+        services.AddSwaggerGen(options => options.SetCustomSchemaId());
+        return new FeatureSliceOptions(services);
+    }
+
+    public static FeatureSliceOptions DefaultDispatcher(this FeatureSliceOptions options)
+    {
+        options.Services.AddSingleton(typeof(IDispatcher<,,>), typeof(IDispatcher<,,>.Default));
+
+        return options;
+    }
+}
+
+public interface IDispatcher<TRequest, TResult, TResponse>
+    where TRequest : notnull
+    where TResult : Result_Base<TResponse>
+    where TResponse : notnull
+{
+    public Dispatch<TRequest, TResult, TResponse> GetDispatcher
+    (
+        IServiceProvider provider,
+        Dispatch<TRequest, TResult, TResponse> dispatch
+    );
+
+    public sealed class Default : IDispatcher<TRequest, TResult, TResponse>
+    {
+        public Dispatch<TRequest, TResult, TResponse> GetDispatcher
+        (
+            IServiceProvider provider,
+            Dispatch<TRequest, TResult, TResponse> dispatch
+        )
+        {
+            Console.WriteLine("Handler");
+            return dispatch;
+        }
+    }
+}
 
 public abstract class FeatureSlice<TSelf, TRequest, TResponse> : FeatureSliceBase<TSelf, TRequest, Result<TResponse>, TResponse>
     where TSelf : FeatureSlice<TSelf, TRequest, TResponse>, new()
@@ -16,7 +65,23 @@ public abstract class FeatureSlice<TSelf, TRequest> : FeatureSliceBase<TSelf, TR
 {
 }
 
+public abstract partial class FeatureSliceBase<TRequest, TResult, TResponse>
+    where TRequest : notnull
+    where TResult : Result_Base<TResponse>
+    where TResponse : notnull
+{
+    public interface ISetup
+    {
+        public Func<IServiceProvider, IDispatcher<TRequest, TResult, TResponse>> DispatcherFactory { get; set; }
+
+        public Func<IServiceProvider, Dispatch<TRequest, TResult, TResponse>> DispatchFactory { get; }
+
+        public void Register(IServiceCollection services);
+    }
+}
+
 public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
+    : FeatureSliceBase<TRequest, TResult, TResponse>
     where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
     where TRequest : notnull
     where TResult : Result_Base<TResponse>
@@ -24,41 +89,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
 {
     public delegate Task<TResult> Dispatch(TRequest request);
 
-    public abstract Options Setup { get; }
-
-    public static Options Handle<TDep0>(Func<TRequest, TDep0, Task<TResult>> handle, ServiceLifetime lifetime = ServiceLifetime.Singleton)
-        where TDep0 : notnull
-    {
-        return new Options
-        (
-            provider =>
-                request =>
-                    handle
-                    (
-                        request,
-                        provider.GetRequiredService<TDep0>()
-                    ),
-            lifetime
-        );
-    }
-
-    public static Options Handle<TDep0, TDep1>(Func<TRequest, TDep0, TDep1, Task<TResult>> handle, ServiceLifetime lifetime = ServiceLifetime.Singleton)
-        where TDep0 : notnull
-        where TDep1 : notnull
-    {
-        return new Options
-        (
-            provider =>
-                request =>
-                    handle
-                    (
-                        request,
-                        provider.GetRequiredService<TDep0>(), 
-                        provider.GetRequiredService<TDep1>()
-                    ),
-            lifetime
-        );
-    }
+    public abstract ISetup Setup { get; }
 
     public static void Register
     (

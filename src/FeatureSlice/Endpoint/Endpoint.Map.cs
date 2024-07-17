@@ -17,9 +17,9 @@ public static class FeatureSliceEndpointExtensions
         }
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options Map<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup Map<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         HttpMethod method,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
@@ -55,9 +55,9 @@ public static class FeatureSliceEndpointExtensions
         return options;
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapGet<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapGet<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
@@ -69,9 +69,9 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Get, path, builder);
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapPost<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapPost<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
@@ -83,9 +83,9 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Post, path, builder);
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapPut<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapPut<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
@@ -97,9 +97,9 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Put, path, builder);
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapPatch<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapPatch<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
@@ -111,9 +111,9 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Patch, path, builder);
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapOptions<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapOptions<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
@@ -125,9 +125,9 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Options, path, builder);
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapHead<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapHead<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
@@ -139,9 +139,9 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Head, path, builder);
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapTrace<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapTrace<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
@@ -153,9 +153,9 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Trace, path, builder);
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapDelete<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapDelete<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
@@ -167,9 +167,9 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Delete, path, builder);
     }
 
-    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapConnect<TSelf, TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapConnect<TSelf, TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )

@@ -3,21 +3,38 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice;
 
-public interface IConsumerSetup<TRequest> : IHandlerSetup<TRequest, Result, Success>
+public interface IConsumerDispatcher<TRequest> : IDispatcher<TRequest, Result, Success>
     where TRequest : notnull
 {
+    public sealed class ConsumerDefault : IConsumerDispatcher<TRequest>
+    {
+        public Dispatch<TRequest, Result, Success> GetDispatcher
+        (
+            IServiceProvider provider,
+            Dispatch<TRequest, Result, Success> dispatch
+        )
+        {
+            return dispatch;
+        }
+    }
 }
 
 public static class FeatureSliceConsumerExtensions
 {
-    public static FeatureSliceBase<TSelf, TRequest, Result, Success>.Options AsConsumer<TSelf, TRequest>
+    public static FeatureSliceBase<TRequest, Result, Success>.ISetup AsConsumer<TRequest>
     (
-        this FeatureSliceBase<TSelf, TRequest, Result, Success>.Options options
+        this FeatureSliceBase<TRequest, Result, Success>.ISetup options
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, Result, Success>, new()
         where TRequest : notnull
     {
-        options.HandlerFactory = provider => provider.GetRequiredService<IConsumerSetup<TRequest>>();
+        options.DispatcherFactory = provider => provider.GetRequiredService<IConsumerDispatcher<TRequest>>();
+        return options;
+    }
+
+    public static FeatureSliceOptions DefaultConsumerDispatcher(this FeatureSliceOptions options)
+    {
+        options.Services.AddSingleton(typeof(IConsumerDispatcher<>), typeof(IConsumerDispatcher<>.ConsumerDefault));
+
         return options;
     }
 }

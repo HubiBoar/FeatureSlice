@@ -11,7 +11,7 @@ public sealed class ExampleHandler :
     public sealed record Request(string Value0, int Value1, int Value2);
     public sealed record Response(int Value0, int Value1, string Value2);
 
-    public override Options Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
     {
         await Task.CompletedTask;
 
@@ -34,7 +34,7 @@ public sealed class ExampleConsumer :
 {
     public sealed record Request(string Value0, int Value1);
 
-    public override Options Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
     {
         await Task.CompletedTask;
 
@@ -58,6 +58,11 @@ public class Example
     {
         services.AddSingleton<Dependency1>();
         services.AddSingleton<Dependency2>();
+
+        services.AddFeatureSlices()
+            .DefaultConsumerDispatcher()
+            .DefaultDispatcher();
+
         ExampleHandler.Register(services);
         ExampleConsumer.Register(services);
     }
