@@ -22,12 +22,11 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
     where TResult : Result_Base<TResponse>
     where TResponse : notnull
 {
-
     public delegate Task<TResult> Dispatch(TRequest request);
 
     public abstract Options Setup { get; }
 
-    public static Options Handle<TDep0>(Func<TRequest, TDep0, Task<TResult>> handle)
+    public static Options Handle<TDep0>(Func<TRequest, TDep0, Task<TResult>> handle, ServiceLifetime lifetime = ServiceLifetime.Singleton)
         where TDep0 : notnull
     {
         return new Options
@@ -38,11 +37,12 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                     (
                         request,
                         provider.GetRequiredService<TDep0>()
-                    )
+                    ),
+            lifetime
         );
     }
 
-    public static Options Handle<TDep0, TDep1>(Func<TRequest, TDep0, TDep1, Task<TResult>> handle)
+    public static Options Handle<TDep0, TDep1>(Func<TRequest, TDep0, TDep1, Task<TResult>> handle, ServiceLifetime lifetime = ServiceLifetime.Singleton)
         where TDep0 : notnull
         where TDep1 : notnull
     {
@@ -55,7 +55,8 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                         request,
                         provider.GetRequiredService<TDep0>(), 
                         provider.GetRequiredService<TDep1>()
-                    )
+                    ),
+            lifetime
         );
     }
 
@@ -66,11 +67,6 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
     {
         var self = new TSelf();
 
-        self.Setup.Register
-        (
-            services,
-            (provider, dispatch) => dispatch,
-            ServiceLifetime.Singleton
-        );
+        self.Setup.Register(services);
     }
 }

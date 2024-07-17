@@ -82,4 +82,102 @@ public static class FeatureSliceEndpointExtensions
     {
         return options.Map(HttpMethod.Post, path, builder);
     }
+
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapPut<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        return options.Map(HttpMethod.Put, path, builder);
+    }
+
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapPatch<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        return options.Map(HttpMethod.Patch, path, builder);
+    }
+
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapOptions<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        return options.Map(HttpMethod.Options, path, builder);
+    }
+
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapHead<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        return options.Map(HttpMethod.Head, path, builder);
+    }
+
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapTrace<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        return options.Map(HttpMethod.Trace, path, builder);
+    }
+
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapDelete<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        return options.Map(HttpMethod.Delete, path, builder);
+    }
+
+    public static FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options MapConnect<TSelf, TRequest, TResult, TResponse>
+    (
+        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Options options,
+        string path,
+        Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
+    )
+        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        where TRequest : notnull
+        where TResult : Result_Base<TResponse>
+        where TResponse : notnull
+    {
+        return options.Map(HttpMethod.Connect, path, builder);
+    }
 }
