@@ -3,28 +3,34 @@ using Definit.Results;
 
 namespace FeatureSlice;
 
-public abstract class FeatureSlice<TSelf, TRequest, TResponse> : FeatureSliceBase<TSelf, TRequest, Result<TResponse>, TResponse>
-    where TSelf : FeatureSlice<TSelf, TRequest, TResponse>, new()
+public static partial class FeatureSlice<TRequest, TResponse>
     where TRequest : notnull
     where TResponse : notnull
 {
+    public abstract class Build<TSelf>
+        where TSelf : HandlerBase<TSelf, TRequest, Result<TResponse>, TResponse>, new()
+    {
+    }
 }
 
-public abstract class FeatureSlice<TSelf, TRequest> : FeatureSliceBase<TSelf, TRequest, Result, Success>
-    where TSelf : FeatureSlice<TSelf, TRequest>, new()
+public static partial class FeatureSlice<TRequest>
     where TRequest : notnull
 {
+    public abstract class Build<TSelf>
+        where TSelf : HandlerBase<TSelf, TRequest, Result, Success>, new()
+    {
+    }
 }
 
-public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
-    where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+public abstract partial class HandlerBase<TSelf, TRequest, TResult, TResponse>
+    where TSelf : HandlerBase<TSelf, TRequest, TResult, TResponse>, new()
     where TRequest : notnull
     where TResult : Result_Base<TResponse>
     where TResponse : notnull
 {
     public delegate Task<TResult> Dispatch(TRequest request);
 
-    public abstract Options Setup { get; }
+    public abstract Options Handler { get; }
 
     public static Options Handle<TDep0>(Func<TRequest, TDep0, Task<TResult>> handle, ServiceLifetime lifetime = ServiceLifetime.Singleton)
         where TDep0 : notnull
@@ -67,6 +73,6 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
     {
         var self = new TSelf();
 
-        self.Setup.Register(services);
+        self.Handler.Register(services);
     }
 }
