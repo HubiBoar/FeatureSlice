@@ -31,23 +31,25 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
             {
                 extension(services);
             }
-            
+
             services.Add(ServiceDescriptor.Describe(typeof(Dispatch), GetDispatchLocal, ServiceLifetime));
 
             Dispatch GetDispatchLocal(IServiceProvider provider)
             {
-                return request => GetDispatch(provider)(request);
+                var dispatch = DispatcherFactory(provider)
+                    .GetDispatcher
+                    (
+                        provider,
+                        DispatchFactory(provider)
+                    );
+
+                return request => dispatch(request);
             }
         }
 
         public Dispatch<TRequest, TResult, TResponse> GetDispatch(IServiceProvider provider)
         {
-            return DispatcherFactory(provider)
-                .GetDispatcher
-                (
-                    provider,
-                    DispatchFactory(provider)
-                );
+            return request => provider.GetRequiredService<Dispatch>()(request);
         }
     }
 
