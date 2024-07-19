@@ -2,7 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice;
 
-public static class DependencyInjectionExtensions
+internal static class DependencyInjectionExtensions
 {
     public static void Add<TService>(
         this IServiceCollection services,

@@ -58,7 +58,7 @@ public sealed class ExampleConsumer :
         )
         .DefaultResponse()
         .WithTags("Consumer"))
-    .AsConsumer();
+    .AsConsumer("ConsumerName");
 }
 
 public class Example

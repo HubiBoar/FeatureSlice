@@ -31,13 +31,18 @@ public static class FeatureSliceEndpointExtensions
     {
         options.Extend(services => 
         {
+            services.AddSwaggerGen(options => options.SetCustomSchemaId());
+
             services.AddSingleton(new EndpointMapper(route => 
             {
                 var endpoint = new EndpointBuilder<TRequest, TResult, TResponse>
                 (
                     method,
                     route,
-                    provider => request => provider.GetRequiredService<FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Dispatch>()(request)
+                    provider =>
+                        request =>
+                            provider
+                                .GetRequiredService<FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Dispatch>()(request)
                 )
                 {
                     Path = path

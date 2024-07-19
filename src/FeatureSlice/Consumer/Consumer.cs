@@ -1,21 +1,48 @@
 using Definit.Results;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FeatureSlice;
 
-public interface IConsumerDispatcher<TRequest> : IDispatcher<TRequest, Result, Success>
-    where TRequest : notnull
+public sealed record ConsumerName(string Name);
+
+public interface IConsumerDispatcher
 {
-    public sealed class ConsumerDefault : IConsumerDispatcher<TRequest>
+    public Dispatch<TRequest, Result, Success> GetDispatcher<TRequest>
+    (
+        ConsumerName consumerName,
+        IServiceProvider provider,
+        Dispatch<TRequest, Result, Success> dispatch
+    )
+        where TRequest : notnull;
+
+    public sealed class Default : IConsumerDispatcher
     {
-        public Dispatch<TRequest, Result, Success> GetDispatcher
+        public Dispatch<TRequest, Result, Success> GetDispatcher<TRequest>
         (
+            ConsumerName consumerName,
             IServiceProvider provider,
             Dispatch<TRequest, Result, Success> dispatch
         )
+            where TRequest : notnull
         {
-            return dispatch;
+            return async request =>
+            {
+                try
+                {
+                    return await dispatch(request);
+                }
+                catch(Exception exception)
+                {
+                    return exception;
+                }            
+            };
         }
+    }
+   
+    public static ServiceDescriptor RegisterDefault()
+    {
+        return new ServiceDescriptor(typeof(IConsumerDispatcher), typeof(Default), ServiceLifetime.Singleton);
     }
 }
 
@@ -23,17 +50,34 @@ public static class FeatureSliceConsumerExtensions
 {
     public static FeatureSliceBase<TRequest, Result, Success>.ISetup AsConsumer<TRequest>
     (
-        this FeatureSliceBase<TRequest, Result, Success>.ISetup options
+        this FeatureSliceBase<TRequest, Result, Success>.ISetup options,
+        ConsumerName consumerName
     )
         where TRequest : notnull
     {
-        options.DispatcherFactory = provider => provider.GetRequiredService<IConsumerDispatcher<TRequest>>();
+        options.Extend(services => services.TryAdd(IConsumerDispatcher.RegisterDefault()));
+        options.DispatcherFactory = 
+            provider => 
+                (prv, dispatch) => prv
+                    .GetRequiredService<IConsumerDispatcher>()
+                    .GetDispatcher(consumerName, prv, dispatch);
+        
         return options;
+    }
+
+    public static FeatureSliceBase<TRequest, Result, Success>.ISetup AsConsumer<TRequest>
+    (
+        this FeatureSliceBase<TRequest, Result, Success>.ISetup options,
+        string consumerName
+    )
+        where TRequest : notnull
+    {
+        return options.AsConsumer(new ConsumerName(consumerName));
     }
 
     public static FeatureSliceOptions DefaultConsumerDispatcher(this FeatureSliceOptions options)
     {
-        options.Services.AddSingleton(typeof(IConsumerDispatcher<>), typeof(IConsumerDispatcher<>.ConsumerDefault));
+        options.Services.Add(IConsumerDispatcher.RegisterDefault());
 
         return options;
     }

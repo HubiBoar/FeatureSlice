@@ -3,7 +3,7 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 namespace FeatureSlice;
 
-public static class SwaggerExtensions
+internal static class SwaggerExtensions
 {
     public static SwaggerGenOptions SetCustomSchemaId(this SwaggerGenOptions options)
     {
@@ -14,7 +14,7 @@ public static class SwaggerExtensions
     }
 }
 
-public sealed class SwaggerSchemaIdHelper
+internal sealed class SwaggerSchemaIdHelper
 {
     private readonly Dictionary<string, HashSet<Type>> _schemaNameRepetition = new();
 
