@@ -28,6 +28,24 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
+    protected HandleSetup Handle
+    (
+        Func<TRequest, Task<TResult>> handle,
+        ServiceLifetime lifetime = ServiceLifetime.Transient
+    )
+    {
+        return new HandleSetup
+        (
+            provider =>
+                request =>
+                    handle
+                    (
+                        request
+                    ),
+            OnException,
+            lifetime
+        );
+    }
     protected HandleSetup Handle<TDep0>
     (
         Func<TRequest, TDep0, Task<TResult>> handle,
