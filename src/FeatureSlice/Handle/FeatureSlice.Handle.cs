@@ -35,16 +35,10 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
     )
         where TDep0 : notnull
     {
-        return new HandleSetup
+        return Handle
         (
-            provider =>
-                request =>
-                    handle
-                    (
-                        request,
-                        provider.GetRequiredService<TDep0>()
-                    ),
-            OnException,
+            handle,
+            provider => provider.GetRequiredService<TDep0>(),
             lifetime
         );
     }
