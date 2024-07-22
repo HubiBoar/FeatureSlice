@@ -14,9 +14,9 @@ The method can can be extended so it can be invoked by:
 
 Those elements can be setup using two types of API:
 
-## [FluentGenericBuilder](src/Samples/Samples.cs)
+### [Samples](src/Samples/Samples.cs)
 
-#### Endpoint
+### Endpoint
 ```csharp
 public sealed class ExampleHandler :
     FeatureSlice<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
@@ -45,7 +45,7 @@ public sealed class ExampleHandler :
 }
 ```
 
-#### CronJob
+### CronJob
 ```csharp
 
 public sealed class ExampleHandler :
@@ -70,7 +70,7 @@ public sealed class ExampleHandler :
 }
 ```
 
-#### Consumer
+### Consumer
 ```csharp
 public sealed class ExampleConsumer :
     FeatureSlice<ExampleConsumer, ExampleConsumer.Request>
@@ -91,7 +91,7 @@ public sealed class ExampleConsumer :
 }
 ```
 
-#### Combination of all of those
+### Combination of all of those
 ```csharp
 
 public sealed class ExampleConsumer :
@@ -127,7 +127,7 @@ public sealed class ExampleConsumer :
 }
 ```
 
-#### Handlers and Consumers Expose Dispatch methods which allow them to be called from dependencies
+### FeatureSlices Expose Dispatch methods which allow them to be called from dependencies
 ```csharp
 public static void Use
 (
@@ -140,7 +140,7 @@ public static void Use
 }
 ```
 
-#### Handlers and Consumers Expose Register for DI registration
+### FeatureSlices Expose Register for DI registration
 ```csharp
 public static void Register(IServiceCollection services)
 {
