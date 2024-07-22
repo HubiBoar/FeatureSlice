@@ -70,11 +70,11 @@ public static class FeatureSliceJobExtensions
         return options.WithJob(() => 
         {
             var timeNow = DateTime.UtcNow;
-            var run = cron.GetNextOccurrences(lastTime, timeNow) is not null;
+            var occurrences = cron.GetNextOccurrences(lastTime, timeNow).ToArray();
 
             lastTime = timeNow;
 
-            return run; 
+            return occurrences.Length > 0; 
         }
         , request);
    }

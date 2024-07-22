@@ -28,6 +28,24 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
+    protected HandleSetup Handle
+    (
+        Func<TRequest, Task<TResult>> handle,
+        ServiceLifetime lifetime = ServiceLifetime.Transient
+    )
+    {
+        return new HandleSetup
+        (
+            provider =>
+                request =>
+                    handle
+                    (
+                        request
+                    ),
+            OnException,
+            lifetime
+        );
+    }
     protected HandleSetup Handle<TDep0>
     (
         Func<TRequest, TDep0, Task<TResult>> handle,
@@ -35,10 +53,16 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
     )
         where TDep0 : notnull
     {
-        return Handle
+        return new HandleSetup
         (
-            handle,
-            provider => provider.GetRequiredService<TDep0>(),
+            provider =>
+                request =>
+                    handle
+                    (
+                        request,
+                        provider.GetRequiredService<TDep0>()
+                    ),
+            OnException,
             lifetime
         );
     }
