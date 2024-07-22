@@ -12,8 +12,6 @@ public interface IEndpointBuilder
     public void Extend(Action<RouteHandlerBuilder> builder);
 }
 
-public sealed record EndpointMapper(Action<IEndpointRouteBuilder> Map);
-
 public sealed record EndpointBuilder<TRequest, TResult, TResponse>
 (
     HttpMethod Method,

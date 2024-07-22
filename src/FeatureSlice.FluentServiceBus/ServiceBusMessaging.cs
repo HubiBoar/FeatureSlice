@@ -1,98 +1,90 @@
 using FluentServiceBus;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
-using Momolith.Modules;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Definit.Results;
 
 namespace FeatureSlice.FluentServiceBus;
 
-public sealed class ServiceBusMessaging<TRequest> : IConsumerDispatcher<TRequest>
-    where TRequest : notnull
+public sealed class ServiceBusMessaging : IConsumerDispatcher
 {
-    private IRouterPublisher Publisher { get; set; } = null!;
     private readonly IServiceBusBuilder _builder;
     private readonly ServiceBusClient _client;
     private readonly ServiceBusAdministrationClient _admin;
-    private readonly List<Func<IHost, Task>> _hostExtensions;
+    private readonly List<Action> _publisherExtensions;
 
-    private ServiceBusMessaging(IServiceBusBuilder builder, IServiceCollection services, IHostExtender extender, ServiceBusClient client, ServiceBusAdministrationClient admin)
+    private ServiceBusMessaging(IServiceBusBuilder builder, IServiceCollection services, ServiceBusClient client, ServiceBusAdministrationClient admin)
     {
         _builder = builder;
         _client = client;
         _admin = admin;
-        _hostExtensions = [];
-        extender.ExtendAsync(Build);
-        services.AddSingleton<IRouterPublisher>(_ => Publisher);
+        _publisherExtensions = [];
+        services.AddFeatureSlicesExtension<IHost>((host, provider) => provider.GetRequiredService<Task<IRouterPublisher>>());
+        services.AddSingleton<Task<IRouterPublisher>>(_ => Build());
     }
 
-    public static IConsumerSetup Create(
+    public static void Register(
         IServiceBusBuilder builder,
         IServiceCollection services,
-        IHostExtender extender,
         ServiceBusClient client,
         ServiceBusAdministrationClient admin)
     {
-        return new ServiceBusMessaging(builder, services, extender, client, admin);
+        services.AddSingleton<IConsumerDispatcher>(new ServiceBusMessaging(builder, services, client, admin));
     }
 
-    public static IConsumerSetup Create(
+    public static void Create(
         IServiceCollection services,
-        IHostExtender extender,
         ServiceBusClient client,
         ServiceBusAdministrationClient admin)
     {
-        return new ServiceBusMessaging(new ServiceBusBuilder(), services, extender, client, admin);
+        services.AddSingleton<IConsumerDispatcher>(new ServiceBusMessaging(new ServiceBusBuilder(), services, client, admin));
     }
 
-    public Dispatch<TRequest, Result, Success> GetDispatcher
+    public Dispatch<TRequest, Result, Success> GetDispatcher<TRequest>
     (
+        ConsumerName consumerName,
         IServiceProvider provider,
         Dispatch<TRequest, Result, Success> dispatch
     )
+        where TRequest : notnull
     {
         var queueName = PathConverter.ToQueueName(consumerName.Name);
 
-        _hostExtensions.Add(host => {
-            var consumer = consumerFactory(host.Services);
-
+        _publisherExtensions.Add(() => {
             _builder
                 .AddQueue(queueName)
-                .WithConsumer<TMessage>(message => Consume(message, consumer));
-
-            return Task.CompletedTask;
+                .WithConsumer<TRequest>(Consume);
         });
 
-        return provider => message => Dispatch(provider, message, queueName);
+        return Dispatch;
 
-        static async Task<Result> Dispatch(IServiceProvider provider, TMessage message, QueueName queueName)
+        async Task<Result> Dispatch(TRequest message)
         {
-            var publisher = provider.GetRequiredService<IRouterPublisher>();
+            var publisher = await provider.GetRequiredService<Task<IRouterPublisher>>();
             await publisher.Publish(message, queueName.Value);
 
             return Result.Success;
         }
 
-        static async Task<Result.Or<Abandon>> Consume(TMessage message, IConsumerSetup.Consume<TMessage> consume)
+        async Task<Result.Or<Abandon>> Consume(TRequest message)
         {
-            var result = await consume(message);
+            var result = await dispatch(message);
 
-            return result.Match<Result.Or<Abandon>>(
-                success => success,
-                abandon => new Abandon(),
+            return result.Match(
+                success => Result.Or<Abandon>.Success,
                 error => error);
         }
     }
 
-    private async Task Build(IHost host)
+    private async Task<IRouterPublisher> Build()
     {
-        foreach(var extension in _hostExtensions)
+        foreach(var extension in _publisherExtensions)
         {
-            await extension(host);
+            extension();
         }
 
-        var built = await _builder.BuildRouterWithStore(_client, _admin);
-        Publisher = built.Router;
+        return (await _builder.BuildRouterWithStore(_client, _admin)).Router;
     }
+
 }

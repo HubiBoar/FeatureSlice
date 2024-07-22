@@ -1,22 +1,11 @@
 using Definit.Results;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice;
 
 public static class FeatureSliceEndpointExtensions
 {
-    public static void MapFeatureSlices(this IEndpointRouteBuilder endpointRoute)
-    {
-        var services = endpointRoute.ServiceProvider.GetServices<EndpointMapper>();
-
-        foreach(var service in services)
-        {
-            service.Map(endpointRoute);
-        }
-    }
-
     public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup Map<TSelf, TRequest, TResult, TResponse>
     (
         this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
@@ -33,12 +22,12 @@ public static class FeatureSliceEndpointExtensions
         {
             services.AddSwaggerGen(options => options.SetCustomSchemaId());
 
-            services.AddSingleton(new EndpointMapper(route => 
+            services.AddFeatureSlicesExtension<WebApplication>((host, provider) => 
             {
                 var endpoint = new EndpointBuilder<TRequest, TResult, TResponse>
                 (
                     method,
-                    route,
+                    host,
                     provider =>
                         request =>
                             provider
@@ -54,7 +43,9 @@ public static class FeatureSliceEndpointExtensions
                 {
                     extension(handler);
                 }
-            }));
+
+                return Task.CompletedTask;
+            });
         });
 
         return options;

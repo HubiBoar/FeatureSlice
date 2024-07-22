@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Definit.Results;
+using Microsoft.Extensions.Hosting;
 
 namespace FeatureSlice;
 
@@ -53,9 +54,42 @@ public sealed record FeatureSliceOptions(IServiceCollection Services);
 
 public static class DispatcherExtensions
 {
+    private sealed record Extension<THost>(Func<THost, IServiceProvider, Task> Run)
+        where THost : IHost;
+
     public static FeatureSliceOptions AddFeatureSlices(this IServiceCollection services)
     {
         return new FeatureSliceOptions(services);
+    }
+
+    public static void AddFeatureSlicesExtension<THost>(this IServiceCollection services, Func<THost, IServiceProvider, Task> extension)
+        where THost : IHost
+    {
+        services.AddSingleton(new Extension<THost>(extension));
+    }
+
+    public static async Task MapFeatureSlices<T>(this T host)
+        where T : IHost
+    {
+        await using var scope = host.Services.CreateAsyncScope();
+
+        var provider = scope.ServiceProvider;
+
+        await Task.WhenAll
+        (
+            provider
+                .GetServices<Extension<T>>()
+                .Select(x => x.Run(host, provider))
+                .ToArray()
+        );
+        
+        await Task.WhenAll
+        (
+            provider
+                .GetServices<Extension<IHost>>()
+                .Select(x => x.Run(host, provider))
+                .ToArray()
+        ); 
     }
 
     public static FeatureSliceOptions DefaultDispatcher(this FeatureSliceOptions options)

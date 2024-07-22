@@ -17,6 +17,6 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.MapFeatureSlices();
+await app.MapFeatureSlices();
 
 await app.RunAsync();

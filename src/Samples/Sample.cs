@@ -19,7 +19,7 @@ public sealed class ExampleHandler :
 
         return new Response(request.Value2, request.Value1, request.Value0);
     })
-    .MapPost("handler", builder => builder
+    .MapPost("handler", opt => opt
         .Request
         (
             From.Route.Int("id"),
@@ -31,7 +31,7 @@ public sealed class ExampleHandler :
         .WithTags("Handler"))
     .WithJob
     (
-        () => true,
+        () => DateTime.Now.TimeOfDay == new TimeSpan(10, 0, 0),
         () => new ("testjob", 69, 420)
     );
 }
@@ -49,7 +49,7 @@ public sealed class ExampleConsumer :
 
         return Result.Success;
     })
-    .MapPost("consumer", builder => builder
+    .MapPost("consumer", opt => opt
         .Request
         (
             From.Route.Int("id"),
