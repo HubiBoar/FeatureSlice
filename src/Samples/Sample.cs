@@ -29,10 +29,10 @@ public sealed class ExampleHandler :
         )
         .DefaultResponse()
         .WithTags("Handler"))
-    .WithJob
+    .WithCronJob
     (
-        () => DateTime.Now.TimeOfDay == new TimeSpan(10, 0, 0),
-        () => new ("testjob", 69, 420)
+        "5 4 * * *",
+        new Request("testjob", 1, 2)
     );
 }
 

@@ -10,6 +10,7 @@
       <PackageReference Include="Definit.Dependencies" />
       <PackageReference Include="Definit.Result" />
       <PackageReference Include="Momolith.Modules" />
+      <PackageReference Include="NCronTab" />
       <PackageReference Include="Swashbuckle.AspNetCore" />
     </ItemGroup>
 
