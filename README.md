@@ -6,262 +6,145 @@
 
 **FeatureSlice** is an library aiming to help working with Vertical/Feature Slice Architecture.
 
-FeatureSlices can be Handlers or Consumers, and have an Endpoint and/or FeatureToggle.
-- Handlers are a InMemory Request handlers which produce an Response.
-- Consumers are Message Consumers which take an Request and produce only Success or Error Result, they can be setup to use for example Azure ServiceBus to send Requests.
-- Both of those can also be set to be reachable from API as Endpoints and/or have a FeatureToggle. 
+FeatureSlices contain a Handle method that can be invoked externaly by a delegate registered in DI.
+The method can can be extended so it can be invoked by:
+- Http Endpoint
+- Queue/Topic
+- Background Job
 
 Those elements can be setup using two types of API:
 
-## [FluentGenericBuilder](src/Samples/Builder.cs)
+## [FluentGenericBuilder](src/Samples/Samples.cs)
 
 #### Endpoint
 ```csharp
-public sealed class ExampleEndpoint : FeatureSliceBuilder
-    .WithEndpoint
-    .Build<ExampleEndpoint>
+public sealed class ExampleHandler :
+    FeatureSlice<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
 {
-    protected override Endpoint Endpoint => Map.Get("test", (int age) => 
-    {
-        return Results.Ok();
-    });
-}
-```
+    public sealed record Request(string Value0, int Value1, int Value2);
+    public sealed record Response(int Value0, int Value1, string Value2);
 
-#### Handler
-```csharp
-public sealed class ExampleHandler : FeatureSliceBuilder
-    .WithHandler<ExampleHandler.Request, ExampleHandler.Response, FromServices<Dependency1, Dependency2>>
-    .Build<ExampleHandler>
-{
-    public record Request();
-    public record Response();
-
-    protected override async Task<Result<Response>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
     {
-        var (dep1, dep2) = dependencies;
+        Console.WriteLine($"Handler: {request}");
 
         await Task.CompletedTask;
 
-        return new Response();
-    }
+        return new Response(request.Value2, request.Value1, request.Value0);
+    })
+    .MapPost("handler", opt => opt
+        .Request
+        (
+            From.Route.Int("id"),
+            From.Query.Int("qu"),
+            From.Body.Json<Request>(),
+            (id, qu, body) => new Request(body.Value0, qu, id)
+        )
+        .DefaultResponse()
+        .WithTags("Handler"))
+}
+```
+
+#### CronJob
+```csharp
+
+public sealed class ExampleHandler :
+    FeatureSlice<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
+{
+    public sealed record Request(string Value0, int Value1, int Value2);
+    public sealed record Response(int Value0, int Value1, string Value2);
+
+    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+    {
+        Console.WriteLine($"Handler: {request}");
+
+        await Task.CompletedTask;
+
+        return new Response(request.Value2, request.Value1, request.Value0);
+    })
+    .WithCronJob
+    (
+        "5 4 * * *",
+        new Request("testjob", 1, 2)
+    );
 }
 ```
 
 #### Consumer
 ```csharp
-public sealed class ExampleConsumer : FeatureSliceBuilder
-    .WithConsumer<ExampleConsumer.Request, FromServices<Dependency1, Dependency2>>
-    .Build<ExampleConsumer>
+public sealed class ExampleConsumer :
+    FeatureSlice<ExampleConsumer, ExampleConsumer.Request>
 {
-    public record Request();
+    public sealed record Request(string Value0, int Value1);
 
-    protected override ConsumerName ConsumerName => new("ExampleConsumer");
-
-    protected override Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
+    public override ISetup Setup => Handle(static async (Request request, ExampleHandler.Dispatch dep2) => 
     {
-        var (dep1, dep2) = dependencies;
+        Console.WriteLine($"Consumer: {request}");
+
+        await dep2(new ExampleHandler.Request("testFromConsumer", 0, 1));
+
+        await Task.CompletedTask;
 
         return Result.Success;
-    }
+    })
+    .AsConsumer("ConsumerName");
 }
 ```
 
-#### Combination of Consumer with Endpoint, Handler with Endpoint and both with FeatureFlag
+#### Combination of all of those
 ```csharp
-public sealed class ExampleConsumerWithEndpoint : FeatureSliceBuilder
-    .WithFlag
-    .WithEndpoint
-    .WithConsumer<ExampleConsumerWithEndpoint.Request, FromServices<Dependency1, Dependency2>>
-    .Build<ExampleConsumerWithEndpoint>
+
+public sealed class ExampleConsumer :
+    FeatureSlice<ExampleConsumer, ExampleConsumer.Request>
 {
-    public record Request();
+    public sealed record Request(string Value0, int Value1);
 
-    protected override ConsumerName ConsumerName => new("ExampleConsumerWithEndpoint");
-
-    protected override Endpoint Endpoint => Map.Get("test", (int age) => 
+    public override ISetup Setup => Handle(static async (Request request, ExampleHandler.Dispatch dep2) => 
     {
-        return Results.Ok();
-    });
+        Console.WriteLine($"Consumer: {request}");
 
-    protected override Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
-    {
-        var (dep1, dep2) = dependencies;
+        await dep2(new ExampleHandler.Request("testFromConsumer", 0, 1));
+
+        await Task.CompletedTask;
 
         return Result.Success;
-    }
+    })
+    .MapPost("consumer", opt => opt
+        .Request
+        (
+            From.Route.Int("id"),
+            From.Body.Json<Request>(),
+            (id, body) => new Request(body.Value0, id)
+        )
+        .DefaultResponse()
+        .WithTags("Consumer"))
+    .AsConsumer("ConsumerName")
+    .WithCronJob
+    (
+        "5 4 * * *",
+        new Request("testjob", 1, 2)
+    );
 }
 ```
 
 #### Handlers and Consumers Expose Dispatch methods which allow them to be called from dependencies
 ```csharp
-public static void Use(
-    IPublisher publisher,
+public static void Use
+(
     ExampleConsumer.Dispatch consumer,
-    ExampleHandler.Dispatch handler,
-    ExampleConsumerWithEndpoint.Dispatch consumerWithEndpoint)
+    ExampleHandler.Dispatch handler
+)
 {
-    publisher.Dispatch(new ExampleConsumer.Request());
     consumer(new ExampleConsumer.Request());
     handler(new ExampleHandler.Request());
-    consumerWithEndpoint(new ExampleConsumerWithEndpoint.Request());
 }
 ```
 
 #### Handlers and Consumers Expose Register for DI registration
 ```csharp
-public static void Register(IServiceCollection services, Messaging.ISetup setup, WebAppExtender hostExtender)
+public static void Register(IServiceCollection services)
 {
-    ExampleEndpoint.Register(services, hostExtender);
-    ExampleConsumer.Register(services, setup);
-    ExampleHandler.Register(services, hostExtender);
-    ExampleConsumerWithEndpoint.Register(services, setup, hostExtender);
+    ExampleConsumer.Register(services);
+    ExampleHandler.Register(services);
 }
 ```
-
-## [Functional](src/Samples/Fluent.cs) which needs more manual setup
-
-#### Endpoint
-```csharp
-public static class ExampleEndpoint
-{
-    public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
-    {
-        services.FeatureSlice()
-            .WithEndpoint(
-                extender,
-                Endpoint);
-    }
-
-    private static Endpoint Endpoint => Map.Get("test", (int age) => 
-    {
-        return Results.Ok();
-    });
-}
-```
-
-#### Handler
-```csharp
-public sealed class ExampleHandler : Dispatchable<ExampleHandler, ExampleHandler.Request, Result<ExampleHandler.Response, Disabled>>
-{
-    public record Request();
-    public record Response();
-
-    public static void Register(IServiceCollection services, IHostExtender<WebApplication> extender)
-    {
-        services.FeatureSlice()
-            .WithHandler<Dispatch, Request, Response, FromServices<Dependency1, Dependency2>>(
-                Handle,
-                handler => handler.Invoke);
-    }
-
-    private static async Task<Result<Response>> Handle(Request request, FromServices<Dependency1, Dependency2> dependencies)
-    {
-        var (dep1, dep2) = dependencies;
-
-        await Task.CompletedTask;
-
-        return new Response();
-    }
-}
-```
-
-#### Consumer
-```csharp
-public static class ExampleConsumer
-{
-    public delegate Task<Result> Dispatch(Request request);
-
-    public record Request();
-
-    public static void Register(IServiceCollection services, Messaging.ISetup setup)
-    {
-        services.FeatureSlice()
-            .WithConsumer<Dispatch, Request, FromServices<Dependency1, Dependency2>>(
-                setup,
-                new ("ExampleConsumer"),
-                Consume,
-                handler => handler.Invoke);
-    }
-
-    private static async Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
-    {
-        var (dep1, dep2) = dependencies;
-
-        await Task.CompletedTask;
-
-        return Result.Success;
-    }
-}
-```
-
-#### Combination of Consumer with Endpoint, Handler with Endpoint and both with FeatureFlag
-```csharp
-public static class ExampleConsumerWithEndpoint
-{
-    public delegate Task<Result.Or<Disabled>> Dispatch(Request request);
-
-    public record Request();
-
-    public static void Register(IServiceCollection services, Messaging.ISetup setup, IHostExtender<WebApplication> extender)
-    {
-        services.FeatureSlice()
-            .WithFlag("ExampleConsumerWithEndpoint")
-            .WithEndpoint(
-                extender,
-                Endpoint)
-            .WithConsumer<Dispatch, Request, FromServices<Dependency1, Dependency2>>(
-                setup,
-                new ("ExampleConsumerWithEndpoint"),
-                Consume,
-                handler => handler.Invoke);
-    }
-
-    private static Endpoint Endpoint => Map.Get("test", (int age) => 
-    {
-        return Results.Ok();
-    });
-
-    private static async Task<Result> Consume(Request request, FromServices<Dependency1, Dependency2> dependencies)
-    {
-        var (dep1, dep2) = dependencies;
-
-        await Task.CompletedTask;
-
-        return Result.Success;
-    }
-}
-```
-
-#### Handlers and Consumers need to have manually added Dispatch methods which allow them to be called from dependencies
-```csharp
-public static void Use(
-    IPublisher publisher,
-    ExampleConsumer.Dispatch consumer,
-    ExampleHandler.Dispatch handler,
-    ExampleConsumerWithEndpoint.Dispatch consumerWithEndpoint)
-{
-    publisher.Dispatch(new ExampleConsumer.Request());
-    consumer(new ExampleConsumer.Request());
-    handler(new ExampleHandler.Request());
-    consumerWithEndpoint(new ExampleConsumerWithEndpoint.Request());
-}
-```
-
-#### Handlers and Consumers need to have manually added Register for DI registration
-```csharp
-public static void Register(IServiceCollection services, Messaging.ISetup setup, WebAppExtender hostExtender)
-{
-    ExampleEndpoint.Register(services, hostExtender);
-    ExampleConsumer.Register(services, setup);
-    ExampleHandler.Register(services, hostExtender);
-    ExampleConsumerWithEndpoint.Register(services, setup, hostExtender);
-}
-```
-
-### Samples
-[src/Samples](src/Samples)
-
-## License
-
-The code in this repo is licensed under the [MIT](LICENSE) license.
