@@ -18,7 +18,8 @@
 				"fabiospampinato.vscode-terminals",
 				"eamodio.gitlens",
 				"Postman.postman-for-vscode",
-				"sleistner.vscode-fileutils"
+				"sleistner.vscode-fileutils",
+				"ms-dotnettools.vscode-dotnet-runtime"
 			]
 		}
 	}

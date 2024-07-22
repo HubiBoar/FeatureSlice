@@ -2,16 +2,16 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
-
   <!-- Projects -->
   <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.Routing" Version="2.2.2" />
+    <PackageVersion Include="NCronTab" Version="3.3.3" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.16.2" />
     <PackageVersion Include="OneOf" Version="3.0.263" />
     <PackageVersion Include="OneOf.Else" Version="$(OneOfElseVersion)" />
     <PackageVersion Include="FluentServiceBus" Version="$(FluentServiceBusVersion)" />
   </ItemGroup>
-
   <!-- Microsoft -->
   <ItemGroup>
     <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.4">
@@ -26,12 +26,10 @@
     <PackageVersion Include="Microsoft.Extensions.Configuration.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="$(MicrosoftExtensionsVersion)" />
   </ItemGroup>
-
   <!-- Momolith -->
   <ItemGroup>
     <PackageVersion Include="Momolith.Modules" Version="$(MomolithVersion)" />
   </ItemGroup>
-
   <!-- Definit -->
   <ItemGroup>
     <PackageVersion Include="Definit.Endpoint" Version="$(DefinitVersion)" />
@@ -43,7 +41,12 @@
     <PackageVersion Include="Definit.Utils" Version="$(DefinitVersion)" />
     <PackageVersion Include="Definit.Validation.FluentValidation" Version="$(DefinitVersion)" />
   </ItemGroup>
-
+  <!-- API -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="$(MicrosoftExtensionsVersion)" />
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageVersion Include="Swashbuckle.AspNetCore.Swagger" Version="6.6.2" />
+  </ItemGroup>
   <!-- Tests -->
   <ItemGroup>
     <PackageVersion Include="FluentAssertions" Version="7.0.0-alpha.3" />

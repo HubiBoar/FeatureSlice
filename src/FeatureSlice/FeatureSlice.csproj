@@ -1,6 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <ItemGroup>
+      <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+      <PackageReference Include="Microsoft.AspNetCore.Routing" />
       <PackageReference Include="Microsoft.FeatureManagement.AspNetCore" />
       <PackageReference Include="Definit.Utils" />
       <PackageReference Include="Definit.Configuration" />
@@ -8,6 +10,8 @@
       <PackageReference Include="Definit.Dependencies" />
       <PackageReference Include="Definit.Result" />
       <PackageReference Include="Momolith.Modules" />
+      <PackageReference Include="NCronTab" />
+      <PackageReference Include="Swashbuckle.AspNetCore" />
     </ItemGroup>
 
 </Project>
