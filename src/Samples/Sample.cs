@@ -41,9 +41,11 @@ public sealed class ExampleConsumer :
 {
     public sealed record Request(string Value0, int Value1);
 
-    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, ExampleHandler.Dispatch dep2) => 
     {
         Console.WriteLine($"Consumer: {request}");
+
+        await dep2(new ExampleHandler.Request("testFromConsumer", 0, 1));
 
         await Task.CompletedTask;
 
