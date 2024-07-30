@@ -6,7 +6,7 @@ namespace FeatureSlice;
 
 public static class FeatureSliceJobExtensions
 {
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup WithJob<TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapJob<TRequest, TResult, TResponse>
     (
         this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup options,
         Func<bool> shouldRun,
@@ -40,7 +40,7 @@ public static class FeatureSliceJobExtensions
         return options;
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup WithJob<TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapJob<TRequest, TResult, TResponse>
     (
         this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup options,
         Func<bool> shouldRun,
@@ -50,10 +50,10 @@ public static class FeatureSliceJobExtensions
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
     {
-        return options.WithJob(shouldRun, () => request);
+        return options.MapJob(shouldRun, () => request);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup WithCronJob<TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapCronJob<TRequest, TResult, TResponse>
     (
         this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup options,
         string cronExpression,
@@ -67,7 +67,7 @@ public static class FeatureSliceJobExtensions
 
         var lastTime = DateTime.UtcNow;
 
-        return options.WithJob(() => 
+        return options.MapJob(() => 
         {
             var timeNow = DateTime.UtcNow;
             var occurrences = cron.GetNextOccurrences(lastTime, timeNow).ToArray();
@@ -79,7 +79,7 @@ public static class FeatureSliceJobExtensions
         , request);
    }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup WithCronJob<TRequest, TResult, TResponse>
+    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapCronJob<TRequest, TResult, TResponse>
     (
         this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup options,
         string cronExpression,
@@ -89,6 +89,6 @@ public static class FeatureSliceJobExtensions
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
     {
-        return options.WithCronJob(cronExpression, () => request);
+        return options.MapCronJob(cronExpression, () => request);
     }
 }

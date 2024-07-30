@@ -10,7 +10,7 @@ builder.Services.AddSwaggerGen(options =>
     options.SupportNonNullableReferenceTypes();
 });
 
-Example.Register(builder.Services);
+Example.Register(builder.Services, args);
 
 var app = builder.Build();
 

@@ -29,10 +29,17 @@ public sealed class ExampleHandler :
         )
         .DefaultResponse()
         .WithTags("Handler"))
-    .WithCronJob
+    .MapCronJob
     (
         "5 4 * * *",
         new Request("testjob", 1, 2)
+    )
+    .MapCli
+    (
+        Arg.Cmd("validate"),
+        Arg.Opt("option1", "o1"),
+        Arg.Opt("option2", "o2"),
+        (arg1, arg2) => new Request(arg1, int.Parse(arg2), 5)   
     );
 }
 
@@ -65,14 +72,15 @@ public sealed class ExampleConsumer :
 
 public class Example
 {
-    public static void Register(IServiceCollection services)
+    public static void Register(IServiceCollection services, string[] args)
     {
         services.AddSingleton<Dependency1>();
         services.AddSingleton<Dependency2>();
 
         services.AddFeatureSlices()
             .DefaultConsumerDispatcher()
-            .DefaultDispatcher();
+            .DefaultDispatcher()
+            .MapCli(args);
 
         ExampleHandler.Register(services);
         ExampleConsumer.Register(services);
