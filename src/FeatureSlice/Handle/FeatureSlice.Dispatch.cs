@@ -83,6 +83,11 @@ public static class DispatcherExtensions
                 .ToArray()
         );
         
+        if(typeof(T) == typeof(IHost))
+        {
+            return;
+        }
+        
         await Task.WhenAll
         (
             provider

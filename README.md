@@ -11,6 +11,7 @@ The method can can be extended so it can be invoked by:
 - Http Endpoint
 - Queue/Topic
 - Background Job
+- CLI
 
 Those elements can be setup using two types of API:
 
@@ -62,7 +63,7 @@ public sealed class ExampleHandler :
 
         return new Response(request.Value2, request.Value1, request.Value0);
     })
-    .WithCronJob
+    .MapCronJob
     (
         "5 4 * * *",
         new Request("testjob", 1, 2)
@@ -88,6 +89,32 @@ public sealed class ExampleConsumer :
         return Result.Success;
     })
     .AsConsumer("ConsumerName");
+}
+```
+
+### CLI
+```csharp
+public sealed class ExampleHandler :
+    FeatureSlice<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
+{
+    public sealed record Request(string Value0, int Value1, int Value2);
+    public sealed record Response(int Value0, int Value1, string Value2);
+
+    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+    {
+        Console.WriteLine($"Handler: {request}");
+
+        await Task.CompletedTask;
+
+        return new Response(request.Value2, request.Value1, request.Value0);
+    })
+    .MapCli
+    (
+        Arg.Cmd("validate"),
+        Arg.Opt("option1", "o1"),
+        Arg.Opt("option2", "o2"),
+        (arg1, arg2) => new Request(arg1, int.Parse(arg2), 5)   
+    );
 }
 ```
 
@@ -119,10 +146,17 @@ public sealed class ExampleConsumer :
         .DefaultResponse()
         .WithTags("Consumer"))
     .AsConsumer("ConsumerName")
-    .WithCronJob
+    .MapCronJob
     (
         "5 4 * * *",
         new Request("testjob", 1, 2)
+    )
+    .MapCli
+    (
+        Arg.Cmd("validate"),
+        Arg.Opt("option1", "o1"),
+        Arg.Opt("option2", "o2"),
+        (arg1, arg2) => new Request(arg1, int.Parse(arg2), 5)   
     );
 }
 ```
