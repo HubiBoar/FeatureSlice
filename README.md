@@ -15,7 +15,7 @@ The method can can be extended so it can be invoked by:
 
 Those elements can be setup using two types of API:
 
-### [Samples](src/Samples/Samples.cs)
+### [Samples](src/Samples/Sample.cs)
 
 ### Endpoint
 ```csharp
