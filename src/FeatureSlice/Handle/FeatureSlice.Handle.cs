@@ -2,11 +2,9 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice;
 
-public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
+public abstract partial record FeatureSliceBase<TRequest, TResult, TResponse, TFromException>
 {
-    protected abstract TResult OnException(Exception exception);
-
-    protected HandleSetup Handle<TDep0>
+    protected static Setup Handle<TDep0>
     (
         Func<TRequest, TDep0, Task<TResult>> handle,
         Func<IServiceProvider, TDep0> factory,
@@ -14,7 +12,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
     )
         where TDep0 : notnull
     {
-        return new HandleSetup
+        return new Setup
         (
             provider =>
                 request =>
@@ -23,12 +21,11 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                         request,
                         factory(provider)
                     ),
-            OnException,
             lifetime
         );
     }
 
-    protected HandleSetup Handle
+    protected static Setup Handle
     (
         Func<TRequest, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -42,7 +39,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0>
+    protected static Setup Handle<TDep0>
     (
         Func<TRequest, TDep0, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -57,7 +54,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1>
+    protected static Setup Handle<TDep0, TDep1>
     (
         Func<TRequest, TDep0, TDep1, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -77,7 +74,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2>
+    protected static Setup Handle<TDep0, TDep1, TDep2>
     (
         Func<TRequest, TDep0, TDep1, TDep2, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -99,7 +96,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -123,7 +120,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -149,7 +146,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -177,7 +174,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -207,7 +204,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -239,7 +236,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TDep8>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TDep8>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TDep8, Task<TResult>> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -273,8 +270,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    
-    protected HandleSetup Handle<TDep0>
+    protected static Setup Handle<TDep0>
     (
         Func<TRequest, TDep0, TResult> handle,
         Func<IServiceProvider, TDep0> factory,
@@ -282,7 +278,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
     )
         where TDep0 : notnull
     {
-        return new HandleSetup
+        return new Setup
         (
             provider =>
                 request =>
@@ -294,12 +290,11 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
                             factory(provider)
                         )
                     ),
-            OnException,
             lifetime
         );
     }
 
-    protected HandleSetup Handle
+    protected static Setup Handle
     (
         Func<TRequest, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -313,7 +308,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0>
+    protected static Setup Handle<TDep0>
     (
         Func<TRequest, TDep0, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -328,7 +323,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1>
+    protected static Setup Handle<TDep0, TDep1>
     (
         Func<TRequest, TDep0, TDep1, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -348,7 +343,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2>
+    protected static Setup Handle<TDep0, TDep1, TDep2>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -370,7 +365,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -394,7 +389,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -420,7 +415,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -448,7 +443,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -478,7 +473,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient
@@ -510,7 +505,7 @@ public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TRespon
         );
     }
 
-    protected HandleSetup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TDep8>
+    protected static Setup Handle<TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TDep8>
     (
         Func<TRequest, TDep0, TDep1, TDep2, TDep3, TDep4, TDep5, TDep6, TDep7, TDep8, TResult> handle,
         ServiceLifetime lifetime = ServiceLifetime.Transient

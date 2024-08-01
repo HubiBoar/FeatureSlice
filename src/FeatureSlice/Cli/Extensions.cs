@@ -28,9 +28,9 @@ public static class FeatureSliceConsoleExtensions
         return options;
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapCli<TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapCli<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup setup,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> setup,
         Arg.Command command,
         Arg.Option option0,
         Func<string, TRequest> argsMapper
@@ -76,9 +76,9 @@ public static class FeatureSliceConsoleExtensions
         return setup;
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapCli<TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapCli<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup setup,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> setup,
         Arg.Command command,
         Arg.Option option0,
         Arg.Option option1,
@@ -134,9 +134,9 @@ public static class FeatureSliceConsoleExtensions
         return setup;
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapCli<TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapCli<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup setup,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> setup,
         Arg.Command command,
         Arg.Option option0,
         Arg.Option option1,

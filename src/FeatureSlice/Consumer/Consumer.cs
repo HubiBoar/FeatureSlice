@@ -8,21 +8,21 @@ public sealed record ConsumerName(string Name);
 
 public interface IConsumerDispatcher
 {
-    public Dispatch<TRequest, Result, Success> GetDispatcher<TRequest>
+    public Handle<TRequest, Result, Success> GetDispatcher<TRequest>
     (
         ConsumerName consumerName,
         IServiceProvider provider,
-        Dispatch<TRequest, Result, Success> dispatch
+        Handle<TRequest, Result, Success> dispatch
     )
         where TRequest : notnull;
 
     public sealed class Default : IConsumerDispatcher
     {
-        public Dispatch<TRequest, Result, Success> GetDispatcher<TRequest>
+        public Handle<TRequest, Result, Success> GetDispatcher<TRequest>
         (
             ConsumerName consumerName,
             IServiceProvider provider,
-            Dispatch<TRequest, Result, Success> dispatch
+            Handle<TRequest, Result, Success> dispatch
         )
             where TRequest : notnull
         {
@@ -48,26 +48,25 @@ public interface IConsumerDispatcher
 
 public static class FeatureSliceConsumerExtensions
 {
-    public static FeatureSliceBase<TRequest, Result, Success>.ISetup AsConsumer<TRequest>
+    public static IFeatureSliceSetup<TRequest, Result, Success> AsConsumer<TRequest>
     (
-        this FeatureSliceBase<TRequest, Result, Success>.ISetup options,
+        this IFeatureSliceSetup<TRequest, Result, Success> options,
         ConsumerName consumerName
     )
         where TRequest : notnull
     {
         options.Extend(services => services.TryAdd(IConsumerDispatcher.RegisterDefault()));
-        options.DispatcherFactory = 
-            provider => 
-                (prv, dispatch) => prv
-                    .GetRequiredService<IConsumerDispatcher>()
-                    .GetDispatcher(consumerName, prv, dispatch);
+        options.DispatchFactory = 
+            (provider, dispatch) => provider
+                .GetRequiredService<IConsumerDispatcher>()
+                .GetDispatcher(consumerName, provider, dispatch);
         
         return options;
     }
 
-    public static FeatureSliceBase<TRequest, Result, Success>.ISetup AsConsumer<TRequest>
+    public static IFeatureSliceSetup<TRequest, Result, Success> AsConsumer<TRequest>
     (
-        this FeatureSliceBase<TRequest, Result, Success>.ISetup options,
+        this IFeatureSliceSetup<TRequest, Result, Success> options,
         string consumerName
     )
         where TRequest : notnull

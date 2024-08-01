@@ -25,7 +25,7 @@ public sealed class ExampleHandler :
     public sealed record Request(string Value0, int Value1, int Value2);
     public sealed record Response(int Value0, int Value1, string Value2);
 
-    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+    public override Setup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
     {
         Console.WriteLine($"Handler: {request}");
 
@@ -55,7 +55,7 @@ public sealed class ExampleHandler :
     public sealed record Request(string Value0, int Value1, int Value2);
     public sealed record Response(int Value0, int Value1, string Value2);
 
-    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+    public override Setup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
     {
         Console.WriteLine($"Handler: {request}");
 
@@ -78,7 +78,7 @@ public sealed class ExampleConsumer :
 {
     public sealed record Request(string Value0, int Value1);
 
-    public override ISetup Setup => Handle(static async (Request request, ExampleHandler.Dispatch dep2) => 
+    public override Setup Setup => Handle(static async (Request request, ExampleHandler.Dispatch dep2) => 
     {
         Console.WriteLine($"Consumer: {request}");
 
@@ -100,7 +100,7 @@ public sealed class ExampleHandler :
     public sealed record Request(string Value0, int Value1, int Value2);
     public sealed record Response(int Value0, int Value1, string Value2);
 
-    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+    public override Setup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
     {
         Console.WriteLine($"Handler: {request}");
 
@@ -126,7 +126,7 @@ public sealed class ExampleConsumer :
 {
     public sealed record Request(string Value0, int Value1);
 
-    public override ISetup Setup => Handle(static async (Request request, ExampleHandler.Dispatch dep2) => 
+    public override Setup Setup => Handle(static async (Request request, ExampleHandler.Dispatch dep2) => 
     {
         Console.WriteLine($"Consumer: {request}");
 

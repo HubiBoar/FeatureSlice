@@ -41,11 +41,11 @@ public sealed class ServiceBusMessaging : IConsumerDispatcher
         services.AddSingleton<IConsumerDispatcher>(new ServiceBusMessaging(new ServiceBusBuilder(), services, client, admin));
     }
 
-    public Dispatch<TRequest, Result, Success> GetDispatcher<TRequest>
+    public Handle<TRequest, Result, Success> GetDispatcher<TRequest>
     (
         ConsumerName consumerName,
         IServiceProvider provider,
-        Dispatch<TRequest, Result, Success> dispatch
+        Handle<TRequest, Result, Success> dispatch
     )
         where TRequest : notnull
     {

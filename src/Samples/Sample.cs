@@ -5,12 +5,9 @@ namespace FeatureSlice.Samples.Builder;
 public sealed record Dependency1();
 public sealed record Dependency2();
 
-public sealed class ExampleHandler : FeatureSlice<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
-{
-    public sealed record Request(string Value0, int Value1, int Value2);
-    public sealed record Response(int Value0, int Value1, string Value2);
-
-    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+public sealed record ExampleHandler() : FeatureSlice<ExampleHandler.Request, ExampleHandler.Response>
+(
+    Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) =>
     {
         Console.WriteLine($"Handler: {request}");
 
@@ -39,19 +36,20 @@ public sealed class ExampleHandler : FeatureSlice<ExampleHandler, ExampleHandler
         Arg.Opt("option1", "o1"),
         Arg.Opt("option2", "o2"),
         (arg1, arg2) => new Request(arg1, int.Parse(arg2), 5)   
-    );
+    )
+)
+{
+    public sealed record Request(string Value0, int Value1, int Value2);
+    public sealed record Response(int Value0, int Value1, string Value2);
 }
 
-public sealed class ExampleConsumer :
-    FeatureSlice<ExampleConsumer, ExampleConsumer.Request>
-{
-    public sealed record Request(string Value0, int Value1);
-
-    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, ExampleHandler.Dispatch dep2) => 
+public sealed record ExampleConsumer() : FeatureSlice<ExampleConsumer.Request>
+(
+    Handle(static async (Request request, Dependency1 dep1, ExampleHandler dep2) => 
     {
         Console.WriteLine($"Consumer: {request}");
 
-        await dep2(new ExampleHandler.Request("testFromConsumer", 0, 1));
+        await dep2.Dispatch(new ExampleHandler.Request("testFromConsumer", 0, 1));
 
         await Task.CompletedTask;
 
@@ -66,7 +64,10 @@ public sealed class ExampleConsumer :
         )
         .DefaultResponse()
         .WithTags("Consumer"))
-    .AsConsumer("ConsumerName");
+    .AsConsumer("ConsumerName")
+)
+{
+    public sealed record Request(string Value0, int Value1);
 }
 
 public class Example
@@ -81,7 +82,7 @@ public class Example
             .DefaultDispatcher()
             .MapCli(args);
 
-        ExampleHandler.Register(services);
-        ExampleConsumer.Register(services);
+        ExampleHandler.Register<ExampleHandler>(services);
+        ExampleConsumer.Register<ExampleConsumer>(services);
     }
 }
