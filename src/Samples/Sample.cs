@@ -24,7 +24,7 @@ public sealed record ExampleHandler() : FeatureSlice<ExampleHandler.Request, Exa
             (id, qu, body) => new (body.Value0, qu, id)
         )
         .DefaultResponse()
-        .WithTags("Handler"))
+        .WithTags("Handler"))      
     .MapCronJob
     (
         "5 4 * * *",
@@ -72,6 +72,16 @@ public sealed record ExampleConsumer() : FeatureSlice<ExampleConsumer.Request>
 
 public class Example
 {
+    public static void Use
+    (
+        ExampleConsumer consumer,
+        ExampleHandler handler
+    )
+    {
+        consumer.Dispatch(new ExampleConsumer.Request("testConsumer", 1));
+        handler.Dispatch(new ExampleHandler.Request("testHandler", 2, 3));
+    }
+
     public static void Register(IServiceCollection services, string[] args)
     {
         services.AddSingleton<Dependency1>();
@@ -82,7 +92,7 @@ public class Example
             .DefaultDispatcher()
             .MapCli(args);
 
-        ExampleHandler.Register<ExampleHandler>(services);
-        ExampleConsumer.Register<ExampleConsumer>(services);
+        services.AddFeatureSlice<ExampleHandler>();
+        services.AddFeatureSlice<ExampleConsumer>();
     }
 }

@@ -1,5 +1,4 @@
 using Definit.Results;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace FeatureSlice;
 

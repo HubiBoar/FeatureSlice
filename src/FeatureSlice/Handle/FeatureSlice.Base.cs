@@ -1,8 +1,13 @@
 using Microsoft.Extensions.DependencyInjection;
 using Definit.Results;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Reflection;
 
 namespace FeatureSlice;
+
+public interface IFeatureSlice
+{
+}
 
 public interface IFromException<TResult, TResponse>
     where TResult : Result_Base<TResponse>
@@ -34,6 +39,7 @@ public abstract partial record FeatureSliceBase<TRequest, TResult, TResponse, TF
 (
     IFeatureSliceSetup<TRequest, TResult, TResponse> Options
 )
+: IFeatureSlice
 
 where TRequest : notnull
 where TResult : Result_Base<TResponse>
@@ -94,8 +100,7 @@ where TFromException : IFromException<TResult, TResponse>
         {
             return async request =>
             {
-                try
-                {
+                try                {
                     return await _handle(provider)(request);
                 }
                 catch (Exception exception)
@@ -133,5 +138,20 @@ where TFromException : IFromException<TResult, TResponse>
         {
             return TFromException.FromException(exception);
         }
+    }
+}
+
+public static class FeatureSliceExtensions
+{
+    //TODO Reflection based version, try to source generate it
+    public static void AddFeatureSlice<T>(this IServiceCollection services)
+        where T : class, IFeatureSlice, new()
+    {
+        var type = typeof(T);
+
+        var method = type.GetMethod("Register", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)!;
+        var genericMethod = method.MakeGenericMethod(typeof(T));
+
+        genericMethod.Invoke(null, [services]);
     }
 }
