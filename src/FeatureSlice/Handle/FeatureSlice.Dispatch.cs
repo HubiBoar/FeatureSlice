@@ -9,21 +9,13 @@ public delegate Task<TResult> Dispatch<TRequest, TResult, TResponse>(TRequest re
     where TResult : Result_Base<TResponse>
     where TResponse : notnull;
 
-public delegate Dispatch<TRequest, TResult, TResponse> Dispatcher<TRequest, TResult, TResponse>
-(
-    IServiceProvider provider,
-    Dispatch<TRequest, TResult, TResponse> dispatch
-)
-    where TRequest : notnull
-    where TResult : Result_Base<TResponse>
-    where TResponse : notnull;
-
 public interface IDispatcher
 {
     public Dispatch<TRequest, TResult, TResponse> GetDispatcher<TRequest, TResult, TResponse>
     (
         IServiceProvider provider,
-        Dispatch<TRequest, TResult, TResponse> dispatch
+        Dispatch<TRequest, TResult, TResponse> dispatch,
+        Func<Exception, TResult> onException
     )
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
@@ -34,13 +26,24 @@ public interface IDispatcher
         public Dispatch<TRequest, TResult, TResponse> GetDispatcher<TRequest, TResult, TResponse>
         (
             IServiceProvider provider,
-            Dispatch<TRequest, TResult, TResponse> dispatch
+            Dispatch<TRequest, TResult, TResponse> dispatch,
+            Func<Exception, TResult> onException
         )
             where TRequest : notnull
             where TResult : Result_Base<TResponse>
             where TResponse : notnull
         {
-            return dispatch;
+            return async request =>
+            {
+                try
+                {
+                    return await dispatch(request);
+                }
+                catch (Exception exception)
+                {
+                    return onException(exception);
+                }
+            };
         }
     }
 
@@ -95,6 +98,12 @@ public static class DispatcherExtensions
                 .Select(x => x.Run(host, provider))
                 .ToArray()
         ); 
+    }
+
+    public static void AddFeatureSlice<T>(this IServiceCollection services)
+        where T : class, IFeatureSlice, new()
+    {
+        IFeatureSlice.Register<T>(services);
     }
 
     public static FeatureSliceOptions DefaultDispatcher(this FeatureSliceOptions options)

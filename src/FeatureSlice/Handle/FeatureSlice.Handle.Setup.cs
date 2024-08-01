@@ -3,7 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FeatureSlice;
 
-public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
+public abstract partial record FeatureSliceBase<TRequest, TResult, TResponse>
 {
     public sealed partial record HandleSetup
     (
