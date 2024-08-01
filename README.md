@@ -185,3 +185,21 @@ public static void Register(IServiceCollection services, string[] args)
     services.AddFeatureSlice<ExampleConsumer>();
 }
 ```
+
+### FeatureSlices can be easly mocked without the need for interfaces
+```csharp
+public static void TestMocking()
+{
+    var consumerMock = new ExampleConsumer()
+    {
+        Dispatch = request => Result.Success
+    };
+
+    var handlerMock = new ExampleHandler()
+    {
+        Dispatch = async request => new ExampleHandler.Response(1, 2, "testResponse")
+    };
+
+    Use(consumerMock, handlerMock);
+}
+```

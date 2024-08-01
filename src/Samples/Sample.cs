@@ -95,4 +95,19 @@ public class Example
         services.AddFeatureSlice<ExampleHandler>();
         services.AddFeatureSlice<ExampleConsumer>();
     }
+
+    public static void TestMocking()
+    {
+        var consumerMock = new ExampleConsumer()
+        {
+            Dispatch = request => Result.Success
+        };
+
+        var handlerMock = new ExampleHandler()
+        {
+            Dispatch = async request => new ExampleHandler.Response(1, 2, "testResponse")
+        };
+
+        Use(consumerMock, handlerMock);
+    }
 }
