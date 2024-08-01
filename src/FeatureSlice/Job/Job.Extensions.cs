@@ -6,9 +6,9 @@ namespace FeatureSlice;
 
 public static class FeatureSliceJobExtensions
 {
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapJob<TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapJob<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> options,
         Func<bool> shouldRun,
         Func<TRequest> request
     )
@@ -22,7 +22,7 @@ public static class FeatureSliceJobExtensions
         (
             provider =>
             {
-                var dispatch = options.GetDispatch(provider);
+                var dispatch = options.GetHandle(provider);
                 return new FeatureSliceJob(shouldRun, async _ =>
                 {
                     var req = request();
@@ -40,9 +40,9 @@ public static class FeatureSliceJobExtensions
         return options;
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapJob<TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapJob<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> options,
         Func<bool> shouldRun,
         TRequest request
     )
@@ -53,9 +53,9 @@ public static class FeatureSliceJobExtensions
         return options.MapJob(shouldRun, () => request);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapCronJob<TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapCronJob<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> options,
         string cronExpression,
         Func<TRequest> request
     )
@@ -79,9 +79,9 @@ public static class FeatureSliceJobExtensions
         , request);
    }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapCronJob<TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapCronJob<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TRequest, TResult, TResponse>.ISetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> options,
         string cronExpression,
         TRequest request
     )

@@ -4,15 +4,15 @@ using Microsoft.Extensions.Hosting;
 
 namespace FeatureSlice;
 
-public delegate Task<TResult> Dispatch<TRequest, TResult, TResponse>(TRequest request)
+public delegate Task<TResult> Handle<TRequest, TResult, TResponse>(TRequest request)
     where TRequest : notnull
     where TResult : Result_Base<TResponse>
     where TResponse : notnull;
 
-public delegate Dispatch<TRequest, TResult, TResponse> Dispatcher<TRequest, TResult, TResponse>
+public delegate Handle<TRequest, TResult, TResponse> DisptacherFactory<TRequest, TResult, TResponse>
 (
     IServiceProvider provider,
-    Dispatch<TRequest, TResult, TResponse> dispatch
+    Handle<TRequest, TResult, TResponse> handle
 )
     where TRequest : notnull
     where TResult : Result_Base<TResponse>
@@ -20,10 +20,10 @@ public delegate Dispatch<TRequest, TResult, TResponse> Dispatcher<TRequest, TRes
 
 public interface IDispatcher
 {
-    public Dispatch<TRequest, TResult, TResponse> GetDispatcher<TRequest, TResult, TResponse>
+    public Handle<TRequest, TResult, TResponse> GetDispatcher<TRequest, TResult, TResponse>
     (
         IServiceProvider provider,
-        Dispatch<TRequest, TResult, TResponse> dispatch
+        Handle<TRequest, TResult, TResponse> dispatch
     )
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
@@ -31,10 +31,10 @@ public interface IDispatcher
 
     public sealed class Default : IDispatcher
     {
-        public Dispatch<TRequest, TResult, TResponse> GetDispatcher<TRequest, TResult, TResponse>
+        public Handle<TRequest, TResult, TResponse> GetDispatcher<TRequest, TResult, TResponse>
         (
             IServiceProvider provider,
-            Dispatch<TRequest, TResult, TResponse> dispatch
+            Handle<TRequest, TResult, TResponse> dispatch
         )
             where TRequest : notnull
             where TResult : Result_Base<TResponse>

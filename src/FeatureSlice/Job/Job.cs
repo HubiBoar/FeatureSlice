@@ -18,9 +18,11 @@ public sealed class FeatureSliceJobRunner : BackgroundService
     {
         while(ct.IsCancellationRequested == false)
         {
-            var jobs = _jobs.Where(job => job.ShouldRun()).Select(job => Run(job, ct));
+            var jobs = _jobs.Select(job => Run(job, ct));
 
             await Task.WhenAll(jobs);
+
+            await Task.Delay(1000, ct);
         }
     }
 
@@ -28,6 +30,11 @@ public sealed class FeatureSliceJobRunner : BackgroundService
     {
         try
         {
+            if(job.ShouldRun() == false)
+            {
+                return;
+            }
+
             await job.Job(ct);
         }
         catch

@@ -6,14 +6,13 @@ namespace FeatureSlice;
 
 public static class FeatureSliceEndpointExtensions
 {
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup Map<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> Map<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> options,
         HttpMethod method,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
@@ -28,10 +27,7 @@ public static class FeatureSliceEndpointExtensions
                 (
                     method,
                     host,
-                    provider =>
-                        request =>
-                            provider
-                                .GetRequiredService<FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.Dispatch>()(request)
+                    provider => request => options.GetDispatch(provider)(request)
                 )
                 {
                     Path = path
@@ -51,13 +47,13 @@ public static class FeatureSliceEndpointExtensions
         return options;
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapGet<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapGet<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+        
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
@@ -65,13 +61,12 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Get, path, builder);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapPost<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapPost<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
@@ -79,13 +74,12 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Post, path, builder);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapPut<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapPut<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
@@ -93,13 +87,12 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Put, path, builder);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapPatch<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse> MapPatch<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse> options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
@@ -107,13 +100,12 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Patch, path, builder);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapOptions<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse>MapOptions<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse>options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
@@ -121,13 +113,12 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Options, path, builder);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapHead<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse>MapHead<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse>options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
@@ -135,13 +126,12 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Head, path, builder);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapTrace<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse>MapTrace<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse>options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
@@ -149,13 +139,12 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Trace, path, builder);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapDelete<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse>MapDelete<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse>options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull
@@ -163,13 +152,12 @@ public static class FeatureSliceEndpointExtensions
         return options.Map(HttpMethod.Delete, path, builder);
     }
 
-    public static FeatureSliceBase<TRequest, TResult, TResponse>.ISetup MapConnect<TSelf, TRequest, TResult, TResponse>
+    public static IFeatureSliceSetup<TRequest, TResult, TResponse>MapConnect<TRequest, TResult, TResponse>
     (
-        this FeatureSliceBase<TSelf, TRequest, TResult, TResponse>.HandleSetup options,
+        this IFeatureSliceSetup<TRequest, TResult, TResponse>options,
         string path,
         Func<EndpointBuilder<TRequest, TResult, TResponse>, RouteHandlerBuilder> builder
     )
-        where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
         where TRequest : notnull
         where TResult : Result_Base<TResponse>
         where TResponse : notnull

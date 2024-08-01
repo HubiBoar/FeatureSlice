@@ -19,13 +19,9 @@ Those elements can be setup using two types of API:
 
 ### Endpoint
 ```csharp
-public sealed class ExampleHandler :
-    FeatureSlice<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
-{
-    public sealed record Request(string Value0, int Value1, int Value2);
-    public sealed record Response(int Value0, int Value1, string Value2);
-
-    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+public sealed record ExampleHandler() : FeatureSlice<ExampleHandler.Request, ExampleHandler.Response>
+(
+    Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) =>
     {
         Console.WriteLine($"Handler: {request}");
 
@@ -43,19 +39,19 @@ public sealed class ExampleHandler :
         )
         .DefaultResponse()
         .WithTags("Handler"))
+)
+{
+    public sealed record Request(string Value0, int Value1, int Value2);
+    public sealed record Response(int Value0, int Value1, string Value2);
 }
 ```
 
 ### CronJob
 ```csharp
 
-public sealed class ExampleHandler :
-    FeatureSlice<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
-{
-    public sealed record Request(string Value0, int Value1, int Value2);
-    public sealed record Response(int Value0, int Value1, string Value2);
-
-    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+public sealed record ExampleHandler() : FeatureSlice<ExampleHandler.Request, ExampleHandler.Response>
+(
+    Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) =>
     {
         Console.WriteLine($"Handler: {request}");
 
@@ -67,40 +63,37 @@ public sealed class ExampleHandler :
     (
         "5 4 * * *",
         new Request("testjob", 1, 2)
-    );
+    )
+)
+{
+    public sealed record Request(string Value0, int Value1, int Value2);
+    public sealed record Response(int Value0, int Value1, string Value2);
 }
 ```
 
 ### Consumer
 ```csharp
-public sealed class ExampleConsumer :
-    FeatureSlice<ExampleConsumer, ExampleConsumer.Request>
-{
-    public sealed record Request(string Value0, int Value1);
-
-    public override ISetup Setup => Handle(static async (Request request, ExampleHandler.Dispatch dep2) => 
+public sealed record ExampleConsumer() : FeatureSlice<ExampleConsumer.Request>
+(
+    Handle(static async (Request request, Dependency1 dep1, ExampleHandler dep2) => 
     {
         Console.WriteLine($"Consumer: {request}");
 
-        await dep2(new ExampleHandler.Request("testFromConsumer", 0, 1));
+        await dep2.Dispatch(new ExampleHandler.Request("testFromConsumer", 0, 1));
 
         await Task.CompletedTask;
 
         return Result.Success;
     })
-    .AsConsumer("ConsumerName");
+    .AsConsumer("ConsumerName")
 }
 ```
 
 ### CLI
 ```csharp
-public sealed class ExampleHandler :
-    FeatureSlice<ExampleHandler, ExampleHandler.Request, ExampleHandler.Response>
-{
-    public sealed record Request(string Value0, int Value1, int Value2);
-    public sealed record Response(int Value0, int Value1, string Value2);
-
-    public override ISetup Setup => Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) => 
+public sealed record ExampleHandler() : FeatureSlice<ExampleHandler.Request, ExampleHandler.Response>
+(
+    Handle(static async (Request request, Dependency1 dep1, Dependency2 dep2) =>
     {
         Console.WriteLine($"Handler: {request}");
 
@@ -114,23 +107,24 @@ public sealed class ExampleHandler :
         Arg.Opt("option1", "o1"),
         Arg.Opt("option2", "o2"),
         (arg1, arg2) => new Request(arg1, int.Parse(arg2), 5)   
-    );
+    )
+)
+{
+    public sealed record Request(string Value0, int Value1, int Value2);
+    public sealed record Response(int Value0, int Value1, string Value2);
 }
 ```
 
 ### Combination of all of those
 ```csharp
 
-public sealed class ExampleConsumer :
-    FeatureSlice<ExampleConsumer, ExampleConsumer.Request>
-{
-    public sealed record Request(string Value0, int Value1);
-
-    public override ISetup Setup => Handle(static async (Request request, ExampleHandler.Dispatch dep2) => 
+public sealed record ExampleConsumer() : FeatureSlice<ExampleConsumer.Request>
+(
+    Handle(static async (Request request, Dependency1 dep1, ExampleHandler dep2) => 
     {
         Console.WriteLine($"Consumer: {request}");
 
-        await dep2(new ExampleHandler.Request("testFromConsumer", 0, 1));
+        await dep2.Dispatch(new ExampleHandler.Request("testFromConsumer", 0, 1));
 
         await Task.CompletedTask;
 
@@ -145,7 +139,7 @@ public sealed class ExampleConsumer :
         )
         .DefaultResponse()
         .WithTags("Consumer"))
-    .AsConsumer("ConsumerName")
+
     .MapCronJob
     (
         "5 4 * * *",
@@ -157,7 +151,11 @@ public sealed class ExampleConsumer :
         Arg.Opt("option1", "o1"),
         Arg.Opt("option2", "o2"),
         (arg1, arg2) => new Request(arg1, int.Parse(arg2), 5)   
-    );
+    )
+)
+{
+    public sealed record Request(string Value0, int Value1, int Value2);
+    public sealed record Response(int Value0, int Value1, string Value2);
 }
 ```
 
@@ -165,20 +163,25 @@ public sealed class ExampleConsumer :
 ```csharp
 public static void Use
 (
-    ExampleConsumer.Dispatch consumer,
-    ExampleHandler.Dispatch handler
+    ExampleConsumer consumer,
+    ExampleHandler handler
 )
 {
-    consumer(new ExampleConsumer.Request());
-    handler(new ExampleHandler.Request());
+    consumer.Dispatch(new ExampleConsumer.Request("testConsumer", 1));
+    handler.Dispatch(new ExampleHandler.Request("testHandler", 2, 3));
 }
 ```
 
 ### FeatureSlices Expose Register for DI registration
 ```csharp
-public static void Register(IServiceCollection services)
+public static void Register(IServiceCollection services, string[] args)
 {
-    ExampleConsumer.Register(services);
-    ExampleHandler.Register(services);
+    services.AddFeatureSlices()
+        .DefaultConsumerDispatcher()
+        .DefaultDispatcher()
+        .MapCli(args);
+
+    services.AddFeatureSlice<ExampleHandler>();
+    services.AddFeatureSlice<ExampleConsumer>();
 }
 ```

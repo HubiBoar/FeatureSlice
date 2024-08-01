@@ -1,25 +1,45 @@
-
-using Microsoft.Extensions.DependencyInjection;
 using Definit.Results;
 
 namespace FeatureSlice;
 
-public abstract class FeatureSlice<TSelf, TRequest, TResponse> : FeatureSliceBase<TSelf, TRequest, Result<TResponse>, TResponse>
-    where TSelf : FeatureSlice<TSelf, TRequest, TResponse>, new()
+public abstract partial record FeatureSlice<TRequest, TResponse>
+(
+    IFeatureSliceSetup<TRequest, Result<TResponse>, TResponse> Options
+)
+: FeatureSliceBase<TRequest, Result<TResponse>, TResponse, ResultFromException<TResponse>>
+(
+    Options
+)
     where TRequest : notnull
     where TResponse : notnull
 {
-    protected sealed override Result<TResponse> OnException(Exception exception)
+}
+
+public abstract partial record FeatureSlice<TRequest>
+(
+    IFeatureSliceSetup<TRequest, Result, Success> Options
+)
+: FeatureSliceBase<TRequest, Result, Success, ResultFromException>
+(
+    Options
+)
+    where TRequest : notnull
+{
+}
+
+public sealed class ResultFromException<TResponse> : IFromException<Result<TResponse>, TResponse>
+    where TResponse : notnull
+{
+    public static Result<TResponse> FromException(Exception exception)
     {
         return exception;
     }
 }
 
-public abstract class FeatureSlice<TSelf, TRequest> : FeatureSliceBase<TSelf, TRequest, Result, Success>
-    where TSelf : FeatureSlice<TSelf, TRequest>, new()
-    where TRequest : notnull
+
+public sealed class ResultFromException : IFromException<Result, Success>
 {
-    protected sealed override Result OnException(Exception exception)
+    public static Result FromException(Exception exception)
     {
         return exception;
     }

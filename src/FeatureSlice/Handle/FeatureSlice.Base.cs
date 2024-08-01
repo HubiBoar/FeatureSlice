@@ -1,43 +1,157 @@
 using Microsoft.Extensions.DependencyInjection;
 using Definit.Results;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using System.Reflection;
 
 namespace FeatureSlice;
 
-public abstract partial class FeatureSliceBase<TSelf, TRequest, TResult, TResponse>
-    : FeatureSliceBase<TRequest, TResult, TResponse>
-    where TSelf : FeatureSliceBase<TSelf, TRequest, TResult, TResponse>, new()
+public interface IFeatureSlice
+{
+}
+
+public interface IFromException<TResult, TResponse>
+    where TResult : Result_Base<TResponse>
+    where TResponse : notnull
+{
+    public abstract static TResult FromException(Exception exception);
+}
+
+public interface IFeatureSliceSetup<TRequest, TResult, TResponse> : IFromException<TResult, TResponse>
     where TRequest : notnull
     where TResult : Result_Base<TResponse>
     where TResponse : notnull
 {
-    public delegate Task<TResult> Dispatch(TRequest request);
+    public ServiceLifetime ServiceLifetime { get; set; }
 
-    public abstract ISetup Setup { get; }
+    public DisptacherFactory<TRequest, TResult, TResponse> DispatchFactory { get; set; }
 
-    public static void Register
-    (
-        IServiceCollection services
-    )
+
+    public Handle<TRequest, TResult, TResponse> GetHandle(IServiceProvider provider);
+
+    public Handle<TRequest, TResult, TResponse> GetDispatch(IServiceProvider provider);
+
+    public void Extend(Action<IServiceCollection> extension);
+
+    internal void RunExtensions(IServiceCollection services);
+}
+
+public abstract partial record FeatureSliceBase<TRequest, TResult, TResponse, TFromException>
+(
+    IFeatureSliceSetup<TRequest, TResult, TResponse> Options
+)
+: IFeatureSlice
+
+where TRequest : notnull
+where TResult : Result_Base<TResponse>
+where TResponse : notnull
+where TFromException : IFromException<TResult, TResponse>
+
+{
+    public Handle<TRequest, TResult, TResponse> Dispatch { get; init; } = null!;
+
+    public static void Register<T>(IServiceCollection services)
+        where T : FeatureSliceBase<TRequest, TResult, TResponse, TFromException>, new()
     {
-        var self = new TSelf();
+        services.TryAdd(IDispatcher.RegisterDefault());
 
-        self.Setup.Register(services);
+        var options = new T().Options;
+        options.RunExtensions(services);
+
+        services.Add
+        (
+            ServiceDescriptor.Describe
+            (
+                typeof(T),
+                provider =>
+                {
+                    var slice = new T()
+                    {
+                        Dispatch = options.GetDispatch(provider)
+                    };
+
+                    return slice;
+                },
+                options.ServiceLifetime
+            )
+        );
+    }
+
+    public sealed class Setup : IFeatureSliceSetup<TRequest, TResult, TResponse>
+    {
+        public ServiceLifetime ServiceLifetime { get; set; }
+
+        private readonly Func<IServiceProvider, Handle<TRequest, TResult, TResponse>> _handle;
+
+        public Setup
+        (
+            Func<IServiceProvider, Handle<TRequest, TResult, TResponse>> handle,
+            ServiceLifetime serviceLifetime = ServiceLifetime.Transient
+        )
+        {
+            _handle = handle;
+            ServiceLifetime = serviceLifetime;
+        }
+
+        public DisptacherFactory<TRequest, TResult, TResponse> DispatchFactory { get; set; } = DefaultDispatcher;
+
+        private readonly List<Action<IServiceCollection>> _extensions = [];
+
+        public Handle<TRequest, TResult, TResponse> GetHandle(IServiceProvider provider)
+        {
+            return async request =>
+            {
+                try                {
+                    return await _handle(provider)(request);
+                }
+                catch (Exception exception)
+                {
+                    return TFromException.FromException(exception);
+                }
+            };
+        }
+
+        public Handle<TRequest, TResult, TResponse> GetDispatch(IServiceProvider provider)
+        {
+            var handle = GetHandle(provider);
+            return DispatchFactory(provider, handle);
+        }
+
+        public void Extend(Action<IServiceCollection> extension)
+        {
+            _extensions.Add(extension);
+        }
+
+        private static Handle<TRequest, TResult, TResponse> DefaultDispatcher(IServiceProvider provider, Handle<TRequest, TResult, TResponse> handle)
+        {
+            return provider.GetRequiredService<IDispatcher>().GetDispatcher(provider, handle);
+        }
+
+        void IFeatureSliceSetup<TRequest, TResult, TResponse>.RunExtensions(IServiceCollection services)
+        {
+            foreach(var extension in _extensions)
+            {
+                extension(services);
+            }
+        }
+
+        public static TResult FromException(Exception exception)
+        {
+            return TFromException.FromException(exception);
+        }
     }
 }
 
-public abstract partial class FeatureSliceBase<TRequest, TResult, TResponse>
-    where TRequest : notnull
-    where TResult : Result_Base<TResponse>
-    where TResponse : notnull
+public static class FeatureSliceExtensions
 {
-    public interface ISetup
+    //TODO Reflection based version, try to source generate it
+    public static void AddFeatureSlice<T>(this IServiceCollection services)
+        where T : class, IFeatureSlice, new()
     {
-        public Func<IServiceProvider, Dispatcher<TRequest, TResult, TResponse>> DispatcherFactory { get; set; }
+        var type = typeof(T);
 
-        public Dispatch<TRequest, TResult, TResponse> GetDispatch(IServiceProvider provider);
+        var method = type.GetMethod("Register", BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)!;
+        var genericMethod = method.MakeGenericMethod(typeof(T));
 
-        public void Extend(Action<IServiceCollection> services);
-
-        public void Register(IServiceCollection services);
+        genericMethod.Invoke(null, [services]);
     }
 }
