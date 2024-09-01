@@ -6,14 +6,13 @@
 
 **FeatureSlice** is an library aiming to help working with Vertical/Feature Slice Architecture.
 
-FeatureSlices contain a Handle method that can be invoked externaly by a delegate registered in DI.
+FeatureSlices contain a public Dispatch delegate property that can be invoked by dependencies.
 The method can can be extended so it can be invoked by:
 - Http Endpoint
 - Queue/Topic
 - Background Job
 - CLI
-
-Those elements can be setup using two types of API:
+and is easly extendable.
 
 ### [Samples](src/Samples/Sample.cs)
 
