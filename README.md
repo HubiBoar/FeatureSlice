@@ -12,7 +12,6 @@ The method can can be extended so it can be invoked by:
 - Queue/Topic
 - Background Job
 - CLI
-and is easly extendable.
 
 ### [Samples](src/Samples/Sample.cs)
 
