@@ -70,7 +70,7 @@ public sealed record ExampleHandler() : FeatureSlice<ExampleHandler.Request, Exa
 ```
 
 ### Consumer
-Which requires in this case a QueueName that this handler will subscribe to.
+Which requires a QueueName that this handler will subscribe to.
 ```csharp
 public sealed record ExampleConsumer() : FeatureSlice<ExampleConsumer.Request>
 (
