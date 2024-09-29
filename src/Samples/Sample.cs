@@ -15,7 +15,7 @@ public sealed record ExampleHandler() : FeatureSlice<ExampleHandler.Request, Exa
 
         return new Response(request.Value2, request.Value1, request.Value0);
     })
-    .MapPost("handler", opt => opt
+    .MapPost("handler", static opt => opt
         .Request
         (
             From.Route.Int("id"),
@@ -24,7 +24,7 @@ public sealed record ExampleHandler() : FeatureSlice<ExampleHandler.Request, Exa
             (id, qu, body) => new (body.Value0, qu, id)
         )
         .DefaultResponse()
-        .WithTags("Handler"))      
+        .WithTags("Handler"))
     .MapCronJob
     (
         "5 4 * * *",
@@ -35,7 +35,7 @@ public sealed record ExampleHandler() : FeatureSlice<ExampleHandler.Request, Exa
         Arg.Cmd("validate"),
         Arg.Opt("option1", "o1"),
         Arg.Opt("option2", "o2"),
-        (arg1, arg2) => new Request(arg1, int.Parse(arg2), 5)   
+        (arg1, arg2) => new Request(arg1, int.Parse(arg2), 5)
     )
 )
 {
@@ -55,7 +55,7 @@ public sealed record ExampleConsumer() : FeatureSlice<ExampleConsumer.Request>
 
         return Result.Success;
     })
-    .MapPost("consumer", opt => opt
+    .MapPost("consumer", static opt => opt
         .Request
         (
             From.Route.Int("id"),
