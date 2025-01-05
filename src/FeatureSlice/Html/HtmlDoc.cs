@@ -1,15 +1,18 @@
+using System.Text;
+
 namespace FeatureSlice.Html;
 
 public interface IAttribute
 {
-    public static abstract string Name { get; }
+    public string _Name { get; }
+    string _Value { get; }
 }
 
 public static partial class Attribute
 {
-    public sealed record Href(string Url) : IAttribute
+    public sealed record Href(string _Value) : IAttribute
     {
-        public static string Name { get; } = "href";
+        public string _Name { get; } = "href";
     }
 
     public sealed record Target(Target.Type Value) : IAttribute
@@ -22,30 +25,129 @@ public static partial class Attribute
             Top
         }
 
-        public static string Name { get; } = "target";
+        public string _Name { get; } = "target";
+
+        public string _Value { get; } = Value switch
+        {
+            Type.Self => "_self",
+            Type.Blank => "_blank",
+            Type.Parent => "_parent",
+            Type.Top => "_top",
+            _ => throw new ArgumentOutOfRangeException(nameof(Target.Value), Value, null)
+        };
     }
+}
+
+public static class HtmlHelper
+{
+    public static string Name(IElement element)
+    {
+        var attributes = element._Attributes;
+        var name = element._Name;
+
+        var attributesString = attributes.Count == 0 ? string.Empty : " " + string.Join(string.Empty, attributes.Select(x => $"""{x._Name}="{x._Value}" """)); 
+
+        return $"<{name}{attributesString}>";
+    }
+
+    public static string ToHtml(this IElement element) => element.ToHtml();
 }
 
 public interface IElement
 {
-    public static abstract string Name { get; }
+    public string _Name { get; }
+
+    public IReadOnlyList<IAttribute> _Attributes { get; }
+
+    public static IReadOnlyList<IAttribute> Get(params IAttribute?[] values)
+    {
+        return values.Where(x => x is not null).Select(x => x!).ToList();
+    }
+
+    public static IReadOnlyList<IElement> Get(params IElement?[] values)
+    {
+        return values.Where(x => x is not null).Select(x => x!).ToList();
+    }
+
+    public virtual string ParseToHtml()
+    {
+        return HtmlHelper.Name(this);
+    }
 }
 
-public sealed record Document(Head? Head, Body? Body) : IElement
+public interface IElementWithValue : IElement
 {
-    public static string Name { get; } = "html";
+    public string _Value { get; } 
 
-    public string ToHtml() => string.Empty;
+    string IElement.ParseToHtml()
+    {
+        var attributes = _Attributes;
+        var value = _Value;
+        var name = _Name;
+
+        var stringBuilder = new StringBuilder();
+
+        var htmlName = HtmlHelper.Name(this);
+
+        return $"{htmlName}{value}</{name}>";
+    }
 }
 
-public sealed record Head(Title? Title, Base? Base)  : IElement
+public interface IElementWithChildren : IElement
 {
-    public static string Name { get; } = "head";
+    public IReadOnlyList<IElement> _Children { get; }
+
+    string IElement.ParseToHtml()
+    {
+        var attributes = _Attributes;
+        var children = _Children;
+        var name = _Name;
+
+        var stringBuilder = new StringBuilder();
+
+        var htmlName = HtmlHelper.Name(this);
+
+        stringBuilder.AppendLine(htmlName);
+
+        foreach (var child in children)
+        {
+            var childHtml = child.ToHtml();
+            var childString = string.Join("\n\t", childHtml.Split('\n')); 
+
+            stringBuilder.AppendLine(childString);
+        }
+
+        stringBuilder.AppendLine($"</{name}>");
+
+        return stringBuilder.ToString();
+    }
 }
 
-public sealed record Title(string Value) : IElement
+public sealed record Document(Head? Head, Body? Body) : IElementWithChildren
 {
-    public static string Name { get; } = "title";
+    public string _Name { get; } = "html";
+
+    public IReadOnlyList<IAttribute> _Attributes { get; } = [];
+
+    public IReadOnlyList<IElement> _Children { get; } = IElement.Get(Head, Body);
+}
+
+public sealed record Head(Title? Title, Base? Base)  : IElementWithChildren
+{
+    public string _Name { get; } = "head";
+
+    public IReadOnlyList<IAttribute> _Attributes { get; } = [];
+
+    public IReadOnlyList<IElement> _Children { get; } = IElement.Get(Title, Base);
+}
+
+public sealed record Title(string Value) : IElementWithChildren
+{
+    public string _Name { get; } = "title";
+
+    public IReadOnlyList<IAttribute> _Attributes { get; } = [];
+
+    public IReadOnlyList<IElement> _Children { get; } = IElement.Get(Value);
 }
 
 public sealed record Base(Attribute.Href Href, Attribute.Target? Target) : IElement
