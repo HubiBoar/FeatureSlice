@@ -5,24 +5,26 @@ public interface IAttribute
     public static abstract string Name { get; }
 }
 
-public sealed record Href(string Url) : IAttribute
+public static partial class Attribute
 {
-    public static string Name { get; } = "href";
-}
-
-public sealed record Target(Target.Type Value) : IAttribute
-{
-    public enum Type
+    public sealed record Href(string Url) : IAttribute
     {
-        Self,
-        Blank,
-        Parent,
-        Top
+        public static string Name { get; } = "href";
     }
 
-    public static string Name { get; } = "target";
-}
+    public sealed record Target(Target.Type Value) : IAttribute
+    {
+        public enum Type
+        {
+            Self,
+            Blank,
+            Parent,
+            Top
+        }
 
+        public static string Name { get; } = "target";
+    }
+}
 
 public interface IElement
 {
@@ -46,7 +48,7 @@ public sealed record Title(string Value) : IElement
     public static string Name { get; } = "title";
 }
 
-public sealed record Base(Href Href, Target? Target) : IElement
+public sealed record Base(Attribute.Href Href, Attribute.Target? Target) : IElement
 {
     public static string Name { get; } = "base";
 }
@@ -80,10 +82,10 @@ public static partial class HTML
 {
     public static class target
     {
-        public static Target self { get; }   = new Target(Target.Type.Self);
-        public static Target blank { get; }  = new Target(Target.Type.Blank);
-        public static Target parent { get; } = new Target(Target.Type.Parent);
-        public static Target top { get; }    = new Target(Target.Type.Top);
+        public static Attribute.Target self { get; }   = new Attribute.Target(Attribute.Target.Type.Self);
+        public static Attribute.Target blank { get; }  = new Attribute.Target(Attribute.Target.Type.Blank);
+        public static Attribute.Target parent { get; } = new Attribute.Target(Attribute.Target.Type.Parent);
+        public static Attribute.Target top { get; }    = new Attribute.Target(Attribute.Target.Type.Top);
     }
 
     public static string Document(Head? Head = null, Body? Body = null)
@@ -101,14 +103,14 @@ public static partial class HTML
         return new Title(title);
     }
 
-    public static Base Base(Href href, Target? target = null)
+    public static Base Base(Attribute.Href href, Attribute.Target? target = null)
     {
         return new Base(href, target);
     }
 
-    public static Href href(string url)
+    public static Attribute.Href href(string url)
     {
-        return new Href(url);
+        return new Attribute.Href(url);
     }
 
     public static Body Body()
