@@ -53,11 +53,6 @@ public sealed record Base(Attribute.Href Href, Attribute.Target? Target) : IElem
     public static string Name { get; } = "base";
 }
 
-public sealed record Meta() : IElement
-{
-    public static string Name { get; } = "meta";
-}
-
 public sealed record Link() : IElement
 {
     public static string Name { get; } = "link";
@@ -93,7 +88,7 @@ public static partial class HTML
         return new Document(Head, Body).ToHtml();
     }
 
-    public static Head Head(Title? Title = null, Base? Base = null)
+    public static Head Head(Title? Title = null, Base? Base = null, MetaList? Meta = null)
     {
         return new Head(Title, Base);
     }
