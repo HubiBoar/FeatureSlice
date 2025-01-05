@@ -7,12 +7,19 @@ internal static class Sample
     public static string Test() =>
     Document
     (
-        Head(title: Title("test"), Base: Base(Href("https://www.example.com/"), Target(Target.Type.Self))),
-        //<head>
-        //  <title> test </title>
-        //  <base href="https://www.example.com/" target="_self">
-        //</head>
-        //   
+        Head
+        (
+            Title("test"),
+            Base(href("https://www.example.com/"), target.self)
+        ),
         Body()
     );
+    //<html>
+    //  <head>
+    //    <title> test </title>
+    //    <base href="https://www.example.com/" target="_self">
+    //  </head>
+    //  <body>
+    //  </body>
+    //</html>  
 }

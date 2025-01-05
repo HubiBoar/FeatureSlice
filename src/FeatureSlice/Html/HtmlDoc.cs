@@ -32,6 +32,8 @@ public interface IElement
 public sealed record Document(Head? Head, Body? Body) : IElement
 {
     public static string Name { get; } = "html";
+
+    public string ToHtml() => string.Empty;
 }
 
 public sealed record Head(Title? Title, Base? Base)  : IElement
@@ -76,19 +78,22 @@ public sealed class Body : IElement
 
 public static partial class HTML
 {
-    public static string Document(Head head, Body body)
+    public static class target
     {
-        return string.Empty;
+        public static Target self { get; }   = new Target(Target.Type.Self);
+        public static Target blank { get; }  = new Target(Target.Type.Blank);
+        public static Target parent { get; } = new Target(Target.Type.Parent);
+        public static Target top { get; }    = new Target(Target.Type.Top);
     }
 
-    public static Head Head()
+    public static string Document(Head? Head = null, Body? Body = null)
     {
-        return new Head(null, null);
+        return new Document(Head, Body).ToHtml();
     }
 
-    public static Head Head(Title? title = null, Base? Base = null)
+    public static Head Head(Title? Title = null, Base? Base = null)
     {
-        return new Head(title, Base);
+        return new Head(Title, Base);
     }
 
     public static Title Title(string title)
@@ -101,14 +106,9 @@ public static partial class HTML
         return new Base(href, target);
     }
 
-    public static Href Href(string url)
+    public static Href href(string url)
     {
         return new Href(url);
-    }
-
-    public static Target Target(Target.Type type)
-    {
-        return new Target(type);
     }
 
     public static Body Body()
