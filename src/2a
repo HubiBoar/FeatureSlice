@@ -14,8 +14,7 @@ internal static class Sample
             Meta
             (
                 Meta(charset.UTF_8),
-                Meta(name("name"), content("content")),
-                Meta(http_equiv("name"), content("content"))
+                Meta(name("name"), content("content"))
             )
         ),
         Body()
