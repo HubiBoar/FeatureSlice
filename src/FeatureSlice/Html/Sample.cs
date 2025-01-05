@@ -10,7 +10,12 @@ internal static class Sample
         Head
         (
             Title("test"),
-            Base(href("https://www.example.com/"), target.self)
+            Base(href("https://www.example.com/"), target.self),
+            Meta
+            (
+                Meta.charset(charset.UTF_8),
+                Meta.name("name", "content")
+            )
         ),
         Body()
     );
