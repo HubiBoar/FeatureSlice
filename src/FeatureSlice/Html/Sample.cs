@@ -10,23 +10,23 @@ internal static class Sample
         Head
         (
             Title("test"),
-            Base(href("https://www.example.com/"), target.self),
-            Meta
+            Meta: Meta
             (
                 Meta(charset.UTF_8),
                 Meta(name("name"), content("content")),
                 Meta(http_equiv("name"), content("content"))
             ),
-            Link
+            Base: Base(href("https://www.example.com/"), target.self),
+            Link: Link
             (
                 Link(href("href"), rel("test"), sizes: sizes("sizes")),
                 Link(href("href"), rel("test"))
             ),
-            Style(type.style.css)
+            Style: Style(type.style.css)
             (
                 "css"
             ),
-            Script
+            Script: Script
             (
                 Script(type.script.javascript)
                 (
