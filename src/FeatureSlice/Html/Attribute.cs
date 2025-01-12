@@ -4,7 +4,3 @@ public interface IAttribute
 {
     public string ToHtml();
 }
-
-public static partial class Attribute
-{
-}

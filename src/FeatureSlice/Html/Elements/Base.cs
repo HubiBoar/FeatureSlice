@@ -1,13 +1,13 @@
 namespace FeatureSlice.Html;
 
-public sealed record Base(Attribute.Href Href, Attribute.Target? Target) : IElement
+public sealed record Base(href href, target? target) : IElement
 {
-    public string ToHtml() => HtmlHelper.Simple("base", [ Href, Target ]);
+    public string ToHtml() => HtmlHelper.Simple("base", [ href, target ]);
 }
 
 public static partial class HTML
 {
-    public static Base Base(Attribute.Href href, Attribute.Target? target = null)
+    public static Base Base(href href, target? target = null)
     {
         return new Base(href, target);
     }

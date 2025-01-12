@@ -22,20 +22,20 @@ internal static class Sample
                 Link(href("href"), rel("test"), sizes: sizes("sizes")),
                 Link(href("href"), rel("test"))
             ),
-            Style(Style.type.css)
+            Style(type.style.css)
             (
                 "css"
             ),
             Script
             (
-                Script(Script.type.javascript)
+                Script(type.script.javascript)
                 (
                     """console.log("Inline script executed.");"""
                 ),
                 Script
                 (
                     src("javascript.js"),
-                    @async: @async,
+                    async: async,
                     defer: defer
                 )
             )
