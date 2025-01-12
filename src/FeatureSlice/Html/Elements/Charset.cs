@@ -4,7 +4,8 @@ public static partial class Attribute
 {
     public sealed record Charset(string Value) : IAttribute
     {
-        public static string Name { get; } = "charset";
+        public string ToHtml() => HtmlHelper.Attribute("charset", Value);
+
         public enum Type
         {
             UTF_8,
