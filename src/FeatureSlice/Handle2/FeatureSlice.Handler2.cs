@@ -66,14 +66,11 @@ public sealed record Html(string Value)
     public static Html Empty { get; } = new Html(string.Empty);
 }
 
-public interface IFeatureSliceHtml : IFeatureSliceSetup
+public interface IFeatureSliceHtml<TRequest> : IFeatureSliceSetup
 {
     string Route { get; }
     string Method { get; }
-}
 
-public interface IFeatureSliceHtml<TRequest> : IFeatureSliceHtml
-{
     Html GetHtml(TRequest request);
 }
 
@@ -115,9 +112,11 @@ where TDeps: IDependencies<TDeps>
     public TResponse Handle(TRequest request, TDeps deps) => Method(request, deps);
 }
 
-public abstract record FeatureSlice(IFeatureSliceBuilder Builder)
+internal interface IFeatureSliceBase;
+
+public abstract record FeatureSlice<TRequest, TResponse>(IFeatureSliceBuilder Builder) : IFeatureSliceBase
 {
-    public static FeatureSliceBuilder<IFeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>> Handle<TRequest, TDep0, TDep1, TResponse>
+    public static FeatureSliceBuilder<IFeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>> Handle<TDep0, TDep1>
     (
         Func<TRequest, TDep0, TDep1, TResponse> handle
     )
@@ -161,8 +160,7 @@ public static class Extension
         return new FeatureSliceBuilder<IFeatureSliceHtml<TRequest>>(builder, new FeatureSliceHtml<TRequest>(route, method, get));
     }
 
-    public static Html Call<T>(this Html html)
-        where T : IFeatureSliceHtml, new()
+    public static Html Htmx<T, TRequest>(this Html html)
     {
         return html;
     }
@@ -171,13 +169,13 @@ public static class Extension
 public sealed record Dep0;
 public sealed record Dep1;
 
-public sealed partial record Example() : FeatureSlice
+public sealed partial record Example() : FeatureSlice<Example.Request, Example.Response>
 (
-    Handle<Request, Dep0, Dep1, Response>(static (request, dep0, dep1) => 
+    Handle(static (Request request, Dep0 dep0, Dep1 dep1) => 
     {
         return new Response();
     })
-    .Html<Request>("Get", "/route", request => Html.Empty.Call<Example>())
+    .Html<Request>("Get", "/route", request => Html.Empty.Htmx<Example, Request>())
 )
 {
     public sealed record Request();
@@ -185,22 +183,24 @@ public sealed partial record Example() : FeatureSlice
 }
 
 //Auto generated
-public sealed partial record Example :
-    IFeatureSliceDispatch<Example.Request, Example.Response, Deps<Dep0, Dep1>>,
-    IFeatureSliceHtml
-{
-    public Func<Request, Response> Dispatch
-    {
-        get => TryGetSetup<IFeatureSliceDispatch<Example.Request, Example.Response, Deps<Dep0, Dep1>>>()!.Dispatch; 
-        set => TryGetSetup<IFeatureSliceDispatch<Example.Request, Example.Response, Deps<Dep0, Dep1>>>()!.Dispatch = value;
-    }
-
-    public string Route => TryGetSetup<IFeatureSliceHtml>()!.Route;
-
-    public string Method => TryGetSetup<IFeatureSliceHtml>()!.Method;
-
-    public Response Handle(Request request, Deps<Dep0, Dep1> deps)
-    {
-        return TryGetSetup<IFeatureSliceDispatch<Example.Request, Example.Response, Deps<Dep0, Dep1>>>()!.Handle(request, deps);
-    }
-}
+//public sealed partial record Example :
+//    IFeatureSliceDispatch<Example.Request, Example.Response, Deps<Dep0, Dep1>>,
+//    IFeatureSliceHtml<Example.Request>
+//{
+//    public Func<Request, Response> Dispatch
+//    {
+//        get => TryGetSetup<IFeatureSliceDispatch<Example.Request, Example.Response, Deps<Dep0, Dep1>>>()!.Dispatch; 
+//        set => TryGetSetup<IFeatureSliceDispatch<Example.Request, Example.Response, Deps<Dep0, Dep1>>>()!.Dispatch = value;
+//    }
+//
+//    public string Route => TryGetSetup<IFeatureSliceHtml<Example.Request>>()!.Route;
+//
+//    public string Method => TryGetSetup<IFeatureSliceHtml<Example.Request>>()!.Method;
+//
+//    public Html GetHtml(Request request) => TryGetSetup<IFeatureSliceHtml<Example.Request>>()!.GetHtml(request); 
+//
+//    public Response Handle(Request request, Deps<Dep0, Dep1> deps)
+//    {
+//        return TryGetSetup<IFeatureSliceDispatch<Example.Request, Example.Response, Deps<Dep0, Dep1>>>()!.Handle(request, deps);
+//    }
+//}

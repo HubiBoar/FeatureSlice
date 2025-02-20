@@ -13,6 +13,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeatureSlice.Samples", "Sam
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeatureSlice.FluentServiceBus", "FeatureSlice.FluentServiceBus\FeatureSlice.FluentServiceBus.csproj", "{C97F4E6F-126D-48FF-BCDB-0F11004BB099}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FeatureSlice.Generator", "FeatureSlice.Generator\FeatureSlice.Generator.csproj", "{3DA48BC3-5202-4A99-901C-505C49C9257B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +36,10 @@ Global
 		{C97F4E6F-126D-48FF-BCDB-0F11004BB099}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C97F4E6F-126D-48FF-BCDB-0F11004BB099}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C97F4E6F-126D-48FF-BCDB-0F11004BB099}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3DA48BC3-5202-4A99-901C-505C49C9257B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3DA48BC3-5202-4A99-901C-505C49C9257B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3DA48BC3-5202-4A99-901C-505C49C9257B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3DA48BC3-5202-4A99-901C-505C49C9257B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{DE536C37-637B-45A6-BC52-71EA40F4F5CA} = {C213DE64-2AEF-4CA5-A132-5BEC4F1F26E8}
