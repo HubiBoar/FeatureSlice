@@ -73,58 +73,71 @@ internal sealed class Generator : IIncrementalGenerator
 
         var methodsString = string.Join("\n", methods);
 
-        var nodes = string.Join("\n", type.DescendantNodes()
-                .OfType<PrimaryConstructorBaseTypeSyntax>()
-                .SelectMany(x => x
-                    .ChildNodes()
+        var invocations = type
+            .DescendantNodes()
+            .OfType<PrimaryConstructorBaseTypeSyntax>()
+            .SelectMany(x => x
+                .DescendantNodes()
+                .OfType<InvocationExpressionSyntax>()
+                .Where(y => y
+                    .Ancestors()
                     .OfType<ArgumentListSyntax>()
-                    .SelectMany(y => y
-                        .ChildNodes()
-                        .SelectMany(z => z
-                            .ChildNodes()
-                            .SelectMany(z => z
-                                .ChildNodes()
-                                .Select(z =>
-                                {
-                                    return z.GetType().ToString();
-                                }))))));
+                    .Count() == 1));
 
-        var creation = type.DescendantNodes().OfType<InvocationExpressionSyntax>().Select(x => 
+        var types = invocations.Select(x => 
         {
-            if (x is null)
-            {
-                return "//null";
-            }
-
-            if (x.SyntaxTree is null)
-            {
-                return "//null1";
-            }
-
             var methodSymbol = compilation
                 .GetSemanticModel(x.SyntaxTree)
                 .GetSymbolInfo(x).Symbol as IMethodSymbol;
 
             if (methodSymbol is null)
             {
-                return "//null2";
+                return null;
             }
-            else if (methodSymbol.ReturnType is null)
+
+            return methodSymbol.ReturnType;
+
+        })
+        .Where(x => x is not null)
+        .Select(x => x!)
+        .ToArray();
+
+        var interfaces = types
+            .Select(x =>
             {
-                return $"//null3 {methodSymbol.ToDisplayString()}";
-            }
+                if (x.ContainingNamespace.ToDisplayString() != "FeatureSlice.Handle2" || x.Name != "FeatureSliceBuilder")
+                {
+                    return null;
+                }
 
-            return "//" + methodSymbol.ReturnType.ToDisplayString();
+                if (x is INamedTypeSymbol named is false)
+                {
+                    return null;
+                }
 
-        }).ToArray();
+                var arg = named.TypeArguments.First();
 
-        var creationString = string.Join("\n", creation);
+                return arg;
+            })
+            .Where(x => x is not null)
+            .Select(x => x!)
+            .Distinct();
+
+        var interfacesString = string.Join(",\n    ", interfaces.Select(x => x.ToDisplayString()));
+
+        var members = string.Join(",\n    ", interfaces.SelectMany(x => {
+
+            return x.GetMembers().Where(m => m.IsAbstract).Select(m => m.ToDisplayString());
+        }));
 
         var result = $$"""
 
-        public partial class {{symbol.Name}}
+        namespace {{symbol.ContainingNamespace.ToDisplayString()}};
+
+        public partial class {{symbol.Name}} :
+            {{interfacesString}}
         {
-        {{nodes}}
+            {{members}}
         }
         """;
 
