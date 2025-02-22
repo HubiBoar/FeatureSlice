@@ -8,6 +8,8 @@ namespace FeatureSlice.Generator;
 [Generator]
 internal sealed class Generator : IIncrementalGenerator
 {
+    private const string Namespace = "FeatureSlice.Handle2";
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var provider = context.SyntaxProvider.CreateSyntaxProvider
@@ -39,9 +41,12 @@ internal sealed class Generator : IIncrementalGenerator
                 .GetSemanticModel(type.SyntaxTree)
                 .GetDeclaredSymbol(type) as INamedTypeSymbol;
 
-            if (symbol is not null && symbol.AllInterfaces.Any(x => x.ToDisplayString() == "FeatureSlice.Handle2.IFeatureSliceBase"))
+            if (symbol is not null
+                && symbol.IsAbstract is false
+                && symbol.ToDisplayString() != $"{Namespace}.FeatureSlice<TRequest, TResponse>"
+                && symbol.AllInterfaces.Any(x => x.ToDisplayString() == $"{Namespace}.IFeatureSliceBase"))
             {
-                var result = GetType(symbol, type, compilation);
+                var result = GetType(context, symbol, type, compilation);
                 
                 if (classes.ContainsKey(result.ClassName) is false)
                 {
@@ -58,6 +63,7 @@ internal sealed class Generator : IIncrementalGenerator
 
     private static (string Code, string ClassName) GetType
     (
+        SourceProductionContext context,
         INamedTypeSymbol symbol,
         TypeDeclarationSyntax type,
         Compilation compilation
@@ -105,7 +111,7 @@ internal sealed class Generator : IIncrementalGenerator
         var interfaces = types
             .Select(x =>
             {
-                if (x.ContainingNamespace.ToDisplayString() != "FeatureSlice.Handle2" || x.Name != "FeatureSliceBuilder")
+                if (x.ContainingNamespace.ToDisplayString() != Namespace || x.Name != "FeatureSliceBuilder")
                 {
                     return null;
                 }
@@ -121,7 +127,7 @@ internal sealed class Generator : IIncrementalGenerator
             })
             .Where(x => x is not null)
             .Select(x => x!)
-            .Distinct();
+            .ToArray();
 
         var interfacesString = string.Join(",\n    ", interfaces.Select(x => x.ToDisplayString()));
         var abstractMembers = interfaces
@@ -142,10 +148,11 @@ internal sealed class Generator : IIncrementalGenerator
             .OfType<IMethodSymbol>()
             .Where(x => 
                 x.MethodKind == MethodKind.Ordinary 
-                && x.ToDisplayString() != "FeatureSlice.Handle2.IFeatureSliceSetup.Configure(System.IServiceProvider)")
+                && x.ToDisplayString() != $"{Namespace}.IFeatureSliceSetup.Configure(System.IServiceProvider)"
+                && x.DeclaredAccessibility == Accessibility.Public)
             .ToArray();  
 
-        var propertyMembers = abstractMembers.OfType<IPropertySymbol>().ToArray();  
+        var propertyMembers = abstractMembers.OfType<IPropertySymbol>().Where(x => x.DeclaredAccessibility == Accessibility.Public).ToArray();  
 
         var members = string.Join(",\n    ", abstractMembers.Select(x =>  $"// {x.GetType().Name} :: {x.ToDisplayString()}"));
 
@@ -154,24 +161,32 @@ internal sealed class Generator : IIncrementalGenerator
                 var returnType = x.ReturnsVoid ? "void" : x.ReturnType.ToDisplayString();
                 var containingType = x.ContainingType.ToDisplayString();
                 var name = x.Name;
-                var fullName = $"{containingType}.{name}(" + string.Join(",", x.Parameters.Select(x => x.ToDisplayString())) + ")";
-                var parameters = string.Join(",", x.Parameters.Select(z => z.Name));
+                var parametersDeclared = string.Join(", ", x.Parameters.Select(z => z.ToDisplayString()));
+                var parameters = string.Join(", ", x.Parameters.Select(z => z.Name));
 
-                return $"    {returnType} {fullName} => this.TryGetSetup<{containingType}>()!.{name}({parameters});";
+                return $"""
+                    public {returnType} {name}({parametersDeclared})
+                        => this.TryGetSetup<{containingType}>()!.{name}({parameters});
+
+                """;
             }));
 
         var propertyMembersString = string.Join("\n", propertyMembers
             .Select(x => {
                 var returnType = x.Type.ToDisplayString(); 
-                var fullName = x.ToDisplayString();
                 var containingType = x.ContainingType.ToDisplayString();
                 var name = x.Name;
 
-                var get = x.GetMethod is null ? string.Empty : $"get => this.TryGetSetup<{containingType}>()!.{name};";
-                var set = x.SetMethod is null ? string.Empty : $"set => this.TryGetSetup<{containingType}>()!.{name} = value;";
+                var get = x.GetMethod is null || x.DeclaredAccessibility != Accessibility.Public
+                ? string.Empty 
+                : $"get => this.TryGetSetup<{containingType}>()!.{name};";
+
+                var set = x.SetMethod is null || x.DeclaredAccessibility != Accessibility.Public
+                ? string.Empty 
+                : $"set => this.TryGetSetup<{containingType}>()!.{name} = value;";
 
                 return $$"""
-                    {{returnType}} {{fullName}}
+                    public {{returnType}} {{name}}
                     {
                         {{get}}
                         {{set}}
