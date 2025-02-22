@@ -1,5 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
-
 namespace FeatureSlice.Handle2;
 
 public sealed record Html(string Value)
