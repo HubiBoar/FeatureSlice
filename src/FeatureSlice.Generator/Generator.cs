@@ -124,20 +124,80 @@ internal sealed class Generator : IIncrementalGenerator
             .Distinct();
 
         var interfacesString = string.Join(",\n    ", interfaces.Select(x => x.ToDisplayString()));
+        var abstractMembers = interfaces
+            .SelectMany(x => x
+                .AllInterfaces
+                .SelectMany(y => y
+                    .GetMembers()
+                    .Where(m => m.IsAbstract)))
+            .Concat(
+                interfaces
+                .SelectMany(x => x
+                    .GetMembers()
+                    .Where(m => m.IsAbstract)))
+            .Distinct()
+            .ToArray();
 
-        var members = string.Join(",\n    ", interfaces.SelectMany(x => {
+        var methodsMembers = abstractMembers
+            .OfType<IMethodSymbol>()
+            .Where(x => 
+                x.MethodKind == MethodKind.Ordinary 
+                && x.ToDisplayString() != "FeatureSlice.Handle2.IFeatureSliceSetup.Configure(System.IServiceProvider)")
+            .ToArray();  
 
-            return x.GetMembers().Where(m => m.IsAbstract).Select(m => m.ToDisplayString());
-        }));
+        var propertyMembers = abstractMembers.OfType<IPropertySymbol>().ToArray();  
+
+        var members = string.Join(",\n    ", abstractMembers.Select(x =>  $"// {x.GetType().Name} :: {x.ToDisplayString()}"));
+
+        var methodMembersString = string.Join("\n", methodsMembers
+            .Select(x => {
+                var returnType = x.ReturnsVoid ? "void" : x.ReturnType.ToDisplayString();
+                var containingType = x.ContainingType.ToDisplayString();
+                var name = x.Name;
+                var fullName = $"{containingType}.{name}(" + string.Join(",", x.Parameters.Select(x => x.ToDisplayString())) + ")";
+                var parameters = string.Join(",", x.Parameters.Select(z => z.Name));
+
+                return $"    {returnType} {fullName} => this.TryGetSetup<{containingType}>()!.{name}({parameters});";
+            }));
+
+        var propertyMembersString = string.Join("\n", propertyMembers
+            .Select(x => {
+                var returnType = x.Type.ToDisplayString(); 
+                var fullName = x.ToDisplayString();
+                var containingType = x.ContainingType.ToDisplayString();
+                var name = x.Name;
+
+                var get = x.GetMethod is null ? string.Empty : $"get => this.TryGetSetup<{containingType}>()!.{name};";
+                var set = x.SetMethod is null ? string.Empty : $"set => this.TryGetSetup<{containingType}>()!.{name} = value;";
+
+                return $$"""
+                    {{returnType}} {{fullName}}
+                    {
+                        {{get}}
+                        {{set}}
+                    }
+
+                """;
+            }));
 
         var result = $$"""
 
         namespace {{symbol.ContainingNamespace.ToDisplayString()}};
 
-        public partial class {{symbol.Name}} :
+        public sealed partial record {{symbol.Name}} :
             {{interfacesString}}
         {
+            //Members
+            
             {{members}}
+
+            //Methods
+            
+        {{methodMembersString}}
+
+            //Properties
+            
+        {{propertyMembersString}}
         }
         """;
 

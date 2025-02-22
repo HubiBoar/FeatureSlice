@@ -112,9 +112,17 @@ where TDeps: IDependencies<TDeps>
     public TResponse Handle(TRequest request, TDeps deps) => Method(request, deps);
 }
 
-internal interface IFeatureSliceBase;
+public interface IFeatureSliceBase
+{
+    public interface IRequest<TRequest> : IFeatureSliceBase
+    {
+        public interface IResponse<TResponse> : IRequest<TRequest>
+        {
+        }
+    }
+}
 
-public abstract record FeatureSlice<TRequest, TResponse>(IFeatureSliceBuilder Builder) : IFeatureSliceBase
+public abstract record FeatureSlice<TRequest, TResponse>(IFeatureSliceBuilder Builder) : IFeatureSliceBase.IRequest<TRequest>.IResponse<TResponse>
 {
     public static FeatureSliceBuilder<IFeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>> Handle<TDep0, TDep1>
     (
@@ -161,6 +169,7 @@ public static class Extension
     }
 
     public static Html Htmx<T, TRequest>(this Html html)
+        where T : IFeatureSliceBase.IRequest<TRequest>
     {
         return html;
     }
