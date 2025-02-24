@@ -111,7 +111,7 @@ internal sealed class Generator : IIncrementalGenerator
         var interfaces = types
             .Select(x =>
             {
-                if (x.ContainingNamespace.ToDisplayString() != Namespace || x.Name != "FeatureSliceBuilder")
+                if (x.ContainingNamespace.ToDisplayString() != Namespace || x.Name != "IFeatureSliceBuilder")
                 {
                     return null;
                 }

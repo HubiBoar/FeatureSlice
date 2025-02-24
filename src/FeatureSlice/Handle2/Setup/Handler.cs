@@ -10,7 +10,9 @@ public interface IFeatureSliceBase
     }
 }
 
-public abstract partial record FeatureSlice<TRequest, TResponse>(IFeatureSliceBuilder Builder) : IFeatureSliceBase.IRequest<TRequest>.IResponse<TResponse>
+public abstract partial record FeatureSlice<TRequest, TResponse>(
+    IFeatureSliceBuilder Builder
+    ) : IFeatureSliceBase.IRequest<TRequest>.IResponse<TResponse>
 {
     protected T? TryGetSetup<T>()
         where T : IFeatureSliceSetup

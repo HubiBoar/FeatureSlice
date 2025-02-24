@@ -9,7 +9,8 @@ public partial record Example() : FeatureSlice<Example.Request, Example.Response
     {
         return new Response();
     })
-    .Html<Request>("Get", "/route", request => Html.Empty.Htmx<Example, Request>())
+    .Route<Request>("Get", "/route") 
+        .Html(request => Html.Empty.Htmx<Example, Request>())
 )
 {
     public sealed record Request();

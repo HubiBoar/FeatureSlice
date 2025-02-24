@@ -1,28 +1,40 @@
+
 namespace FeatureSlice.Handle2;
 
-public interface IFeatureSliceRouteBuilder
+public interface IFeatureSliceRouteBuilder<TRequest> : IFeatureSliceSetup
 {
     string Route { get; }
     string Method { get; }
-    IFeatureSliceBuilder Builder { get; }
 }
 
-internal sealed record FeatureSliceRouteBuilder
+internal sealed record FeatureSliceRouteBuilder<TRequest>
 (
     string Route,
-    string Method,
-    IFeatureSliceBuilder Builder
-);
+    string Method
+)
+: IFeatureSliceRouteBuilder<TRequest>
+{
+    public void Configure(IServiceProvider provider)
+    {
+        throw new NotImplementedException();
+    }
+}
 
 public static class FeatureSliceRouteBuilderExtension
 {
-    public static FeatureSliceRouteBuilder Route<TRequest>
+    public static IFeatureSliceBuilder<IFeatureSliceRouteBuilder<TRequest>, IFeatureSliceRouteBuilder<TRequest>> Route<TRequest>
     (
         this IFeatureSliceBuilder builder,
         string method, 
         string route
     )
     {
-        return new FeatureSliceRouteBuilder(route, method, builder);
+        var ret = new FeatureSliceRouteBuilder<TRequest>(route, method);
+        return new FeatureSliceBuilder<
+            IFeatureSliceRouteBuilder<TRequest>,
+            IFeatureSliceRouteBuilder<TRequest>>(
+                builder,
+                ret,
+                ret);
     }
 }

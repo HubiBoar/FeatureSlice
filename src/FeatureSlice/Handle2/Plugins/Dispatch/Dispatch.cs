@@ -33,19 +33,22 @@ where TDeps: IDependencies<TDeps>
 
 public abstract partial record FeatureSlice<TRequest, TResponse>
 {
-    public static FeatureSliceBuilder<IFeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>> Handle<TDep0, TDep1>
+    public static IFeatureSliceBuilder<IFeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>> Handle<TDep0, TDep1>
     (
         Func<TRequest, TDep0, TDep1, TResponse> handle
     )
         where TDep0 : notnull
         where TDep1 : notnull
     {
-        return new FeatureSliceBuilder<IFeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>>
+        var dispatch = new FeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>
         (
-            new FeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>
-            (
-                (request, deps) => handle(request, deps.Dep0, deps.Dep1)
-            )
+            (request, deps) => handle(request, deps.Dep0, deps.Dep1)
+        );
+
+        return new FeatureSliceBuilder<IFeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>, IFeatureSliceSetup>
+        (
+            dispatch,
+            dispatch
         );
     }
 }

@@ -5,16 +5,17 @@ public sealed record Html(string Value)
     public static Html Empty { get; } = new Html(string.Empty);
 }
 
-public interface IFeatureSliceHtml<TRequest> : IFeatureSliceSetup
+public interface IFeatureSliceHtml<TRequest> : IFeatureSliceSetup, IFeatureSliceRouteBuilder<TRequest>
 {
-    string Route { get; }
-    string Method { get; }
-
     Html GetHtml(TRequest request);
 }
 
-public sealed record FeatureSliceHtml<TRequest>(string Route, string Method, Func<TRequest, Html> Get) : IFeatureSliceHtml<TRequest>
+internal sealed record FeatureSliceHtml<TRequest>(IFeatureSliceRouteBuilder<TRequest> Builder, Func<TRequest, Html> Get) : IFeatureSliceHtml<TRequest>
 {
+    public string Route => Builder.Route;
+
+    public string Method => Builder.Method;
+
     public void Configure(IServiceProvider provider) {}
 
     public Html GetHtml(TRequest request) => Get(request);
@@ -22,15 +23,15 @@ public sealed record FeatureSliceHtml<TRequest>(string Route, string Method, Fun
 
 public static class Extension
 {
-    public static FeatureSliceBuilder<IFeatureSliceHtml<TRequest>> Html<TRequest>
+    public static IFeatureSliceBuilder<IFeatureSliceHtml<TRequest>, IFeatureSliceRouteBuilder<TRequest>> Html<TRequest>
     (
-        this IFeatureSliceBuilder builder,
-        string method, 
-        string route,
+        this IFeatureSliceBuilder.IWithMetadata<IFeatureSliceRouteBuilder<TRequest>> builder,
         Func<TRequest, Html> get
     )
     {
-        return new FeatureSliceBuilder<IFeatureSliceHtml<TRequest>>(builder, new FeatureSliceHtml<TRequest>(route, method, get));
+        return new FeatureSliceBuilder<IFeatureSliceHtml<TRequest>, IFeatureSliceRouteBuilder<TRequest>>(
+            new FeatureSliceHtml<TRequest>(builder.Metadata, get),
+            builder.Metadata);
     }
 
     public static Html Htmx<T, TRequest>(this Html html)
