@@ -22,21 +22,21 @@ public static class OpenApi
         Nullable = nullable,
     };
 
-    public static OpenApiSchema GetBoolean(bool nullable)  => Schema("boolean", null, nullable);
-    public static OpenApiSchema GetString(bool nullable)   => Schema("string", null, nullable);
-    public static OpenApiSchema GetByte(bool nullable)     => Schema("string", "byte", nullable);
-    public static OpenApiSchema GetInt32(bool nullable)    => Schema("integer", "int32", nullable);
-    public static OpenApiSchema GetInt64(bool nullable)    => Schema("integer", "int64", nullable);
-    public static OpenApiSchema GetFloat(bool nullable)    => Schema("number", "float", nullable);
-    public static OpenApiSchema GetDouble(bool nullable)   => Schema("number", "double", nullable);
-    public static OpenApiSchema GetDecimal(bool nullable)  => Schema("number", "double", nullable);
-    public static OpenApiSchema GetDateTime(bool nullable) => Schema("string", "date-time", nullable);
-    public static OpenApiSchema GetDateSpan(bool nullable) => Schema("string", "date-span", nullable);
-    public static OpenApiSchema GetGuid(bool nullable)     => Schema("string", "uuid", nullable);
-    public static OpenApiSchema GetChar(bool nullable)     => Schema("string", null, nullable);
-    public static OpenApiSchema GetUri(bool nullable)      => Schema("string", "uri", nullable);
-    public static OpenApiSchema GetObject(bool nullable)   => Schema("object", null, nullable);
-    public static OpenApiSchema GetArray(bool nullable)    => Schema("array", null, nullable);
+    public static OpenApiSchema GetBoolean(bool nullable)  => Schema("boolean", null,        nullable);
+    public static OpenApiSchema GetString(bool nullable)   => Schema("string",  null,        nullable);
+    public static OpenApiSchema GetByte(bool nullable)     => Schema("string",  "byte",      nullable);
+    public static OpenApiSchema GetInt32(bool nullable)    => Schema("integer", "int32",     nullable);
+    public static OpenApiSchema GetInt64(bool nullable)    => Schema("integer", "int64",     nullable);
+    public static OpenApiSchema GetFloat(bool nullable)    => Schema("number",  "float",     nullable);
+    public static OpenApiSchema GetDouble(bool nullable)   => Schema("number",  "double",    nullable);
+    public static OpenApiSchema GetDecimal(bool nullable)  => Schema("number",  "double",    nullable);
+    public static OpenApiSchema GetDateTime(bool nullable) => Schema("string",  "date-time", nullable);
+    public static OpenApiSchema GetDateSpan(bool nullable) => Schema("string",  "date-span", nullable);
+    public static OpenApiSchema GetGuid(bool nullable)     => Schema("string",  "uuid",      nullable);
+    public static OpenApiSchema GetChar(bool nullable)     => Schema("string",  null,        nullable);
+    public static OpenApiSchema GetUri(bool nullable)      => Schema("string",  "uri",       nullable);
+    public static OpenApiSchema GetObject(bool nullable)   => Schema("object",  null,        nullable);
+    public static OpenApiSchema GetArray(bool nullable)    => Schema("array",   null,        nullable);
 
 
     public sealed record Bool : IParameterOpenApiType<bool>

@@ -1,31 +1,27 @@
 namespace FeatureSlice.Handle2;
 
-public interface IFeatureSliceDispatch<TRequest, TResponse> : IFeatureSliceSetup
-{
-    Func<TRequest, TResponse> Dispatch { get; set; }
-}
-
-public interface IFeatureSliceDispatch<TRequest, TResponse, TDeps>
-: IFeatureSliceDispatch<TRequest, TResponse>
+public interface IFeatureSliceHandle<TRequest, TResponse, TDeps> : IFeatureSliceSetup
 where TDeps: IDependencies<TDeps>
 {
     public TResponse Handle(TRequest request, TDeps deps);
 }
 
-public sealed record FeatureSliceDispatch<TRequest, TResponse, TDeps>
+public sealed record FeatureSliceHandle<TRequest, TResponse, TDeps>
 (
     Func<TRequest, TDeps, TResponse> Method
 )
-: IFeatureSliceDispatch<TRequest, TResponse, TDeps>
+: IFeatureSliceHandle<TRequest, TResponse, TDeps>
 where TDeps: IDependencies<TDeps>
 {
-    public Func<TRequest, TResponse> Dispatch { get; set; } = null!;
-
     public void Configure(IServiceProvider provider)
+    {
+    }
+
+    public TResponse HandleHelper(IServiceProvider provider, TRequest request)
     {
         var deps = TDeps.Get(provider);
 
-        Dispatch = request => Handle(request, deps); 
+        return Handle(request, deps); 
     }
 
     public TResponse Handle(TRequest request, TDeps deps) => Method(request, deps);
@@ -33,22 +29,20 @@ where TDeps: IDependencies<TDeps>
 
 public abstract partial record FeatureSlice<TRequest, TResponse>
 {
-    public static IFeatureSliceBuilder<IFeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>> Handle<TDep0, TDep1>
+    public static FeatureSlice<TRequest, TResponse>.Config<IFeatureSliceHandle<TRequest, TResponse, Deps<TDep0, TDep1>>> Handle<TDep0, TDep1>
     (
         Func<TRequest, TDep0, TDep1, TResponse> handle
     )
         where TDep0 : notnull
         where TDep1 : notnull
     {
-        var dispatch = new FeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>
+        var dispatch = new FeatureSliceHandle<TRequest, TResponse, Deps<TDep0, TDep1>>
         (
             (request, deps) => handle(request, deps.Dep0, deps.Dep1)
         );
 
-        return new FeatureSliceBuilder<IFeatureSliceDispatch<TRequest, TResponse, Deps<TDep0, TDep1>>, IFeatureSliceSetup>
-        (
-            dispatch,
-            dispatch
-        );
+        var builder = new FeatureSlice<TRequest, TResponse>.Builder(dispatch.HandleHelper);
+
+        return new (dispatch, builder);
     }
 }

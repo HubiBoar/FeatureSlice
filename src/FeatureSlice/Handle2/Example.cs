@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+
 namespace FeatureSlice.Handle2;
 
 public sealed record Dep0;
@@ -9,7 +11,7 @@ public partial record Example() : FeatureSlice<Example.Request, Example.Response
     {
         return new Response();
     })
-    .Route<Request>("Get", "/route") 
+    .Route(HttpMethod.Get, "/route") 
         .Html(request => Html.Empty.Htmx<Example, Request>())
 )
 {
@@ -22,5 +24,18 @@ public static class Test
     public static void Run(Example example)
     {
         example.Dispatch(new Example.Request());
+    }
+
+    public static void Register(IServiceCollection services)
+    {
+        Example.Register(services);
+    }
+
+    public static void Tests()
+    {
+        var example = new Example()
+        {
+            Dispatch = (request) => null!
+        };
     }
 }

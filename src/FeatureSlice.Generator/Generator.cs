@@ -111,7 +111,7 @@ internal sealed class Generator : IIncrementalGenerator
         var interfaces = types
             .Select(x =>
             {
-                if (x.ContainingNamespace.ToDisplayString() != Namespace || x.Name != "IFeatureSliceBuilder")
+                if (x.ContainingNamespace.ToDisplayString() != Namespace || x.Name != "Config")
                 {
                     return null;
                 }
@@ -195,13 +195,36 @@ internal sealed class Generator : IIncrementalGenerator
                 """;
             }));
 
+        var symbolNamespace = symbol.ContainingNamespace.ToDisplayString();
+        var symbolFullName = symbol.ToDisplayString();
+        var symbolName = symbol.Name;
+
         var result = $$"""
+        using System.Diagnostics.CodeAnalysis;
+        using Microsoft.Extensions.DependencyInjection;
 
-        namespace {{symbol.ContainingNamespace.ToDisplayString()}};
+        namespace {{symbolNamespace}};
 
-        public sealed partial record {{symbol.Name}} :
+        public sealed partial record {{symbolName}} :
             {{interfacesString}}
         {
+            [SetsRequiredMembers]
+            public {{symbolName}}(IServiceProvider provider) : this()
+            {
+                Configuration.Builder.Configure(provider);
+                Dispatch = request => Configuration.Builder.Dispatch(provider, request);
+            }
+
+            void {{Namespace}}.IFeatureSliceSetup.Configure(IServiceProvider provider)
+            {
+                Configuration.Builder.Configure(provider);
+            }
+
+            public static void Register(IServiceCollection services)
+            {
+                services.AddSingleton<{{symbolFullName}}>(provider => new {{symbolFullName}}(provider));
+            }
+
             //Members
             
             {{members}}

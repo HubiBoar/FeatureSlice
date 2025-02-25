@@ -1,40 +1,42 @@
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Routing;
 
 namespace FeatureSlice.Handle2;
 
-public interface IFeatureSliceRouteBuilder<TRequest> : IFeatureSliceSetup
+public interface IRouteBuilder : IFeatureSliceSetup
 {
+    public HttpMethod Method { get; }
     string Route { get; }
-    string Method { get; }
+
+    public void Extend(Action<RouteHandlerBuilder> builder);
 }
 
-internal sealed record FeatureSliceRouteBuilder<TRequest>
+internal sealed record RouteBuilder
 (
-    string Route,
-    string Method
+    HttpMethod Method, 
+    string Route
 )
-: IFeatureSliceRouteBuilder<TRequest>
+: IRouteBuilder
 {
     public void Configure(IServiceProvider provider)
     {
-        throw new NotImplementedException();
+    }
+
+    public void Extend(Action<RouteHandlerBuilder> builder)
+    {
     }
 }
 
 public static class FeatureSliceRouteBuilderExtension
 {
-    public static IFeatureSliceBuilder<IFeatureSliceRouteBuilder<TRequest>, IFeatureSliceRouteBuilder<TRequest>> Route<TRequest>
+    public static FeatureSlice<TRequest, TResponse>.Config<IRouteBuilder, IRouteBuilder> Route<TRequest, TResponse>
     (
-        this IFeatureSliceBuilder builder,
-        string method, 
+        this FeatureSlice<TRequest, TResponse>.IConfig config,
+        HttpMethod method, 
         string route
     )
     {
-        var ret = new FeatureSliceRouteBuilder<TRequest>(route, method);
-        return new FeatureSliceBuilder<
-            IFeatureSliceRouteBuilder<TRequest>,
-            IFeatureSliceRouteBuilder<TRequest>>(
-                builder,
-                ret,
-                ret);
+        var routeBuilder = new RouteBuilder(method, route);
+        return new (routeBuilder, routeBuilder, config.Builder);
     }
 }
