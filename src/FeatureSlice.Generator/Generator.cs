@@ -198,6 +198,9 @@ internal sealed class Generator : IIncrementalGenerator
         var symbolNamespace = symbol.ContainingNamespace.ToDisplayString();
         var symbolFullName = symbol.ToDisplayString();
         var symbolName = symbol.Name;
+        var baseInterface = symbol.AllInterfaces.Single(x => x.ToDisplayString().StartsWith($"{Namespace}.IFeatureSliceBase.IDispatch"));
+        var typeRequest = baseInterface.TypeArguments.First().ToDisplayString();
+        var typeResponse = baseInterface.TypeArguments.Last().ToDisplayString();
 
         var result = $$"""
         using System.Diagnostics.CodeAnalysis;
@@ -208,21 +211,19 @@ internal sealed class Generator : IIncrementalGenerator
         public sealed partial record {{symbolName}} :
             {{interfacesString}}
         {
-            [SetsRequiredMembers]
-            public {{symbolName}}(IServiceProvider provider) : this()
-            {
-                Configuration.Builder.Configure(provider);
-                Dispatch = request => Configuration.Builder.Dispatch(provider, request);
-            }
+            public delegate {{typeResponse}} Dispatch({{typeRequest}} request);
 
             void {{Namespace}}.IFeatureSliceSetup.Configure(IServiceProvider provider)
             {
-                Configuration.Builder.Configure(provider);
             }
 
             public static void Register(IServiceCollection services)
             {
-                services.AddSingleton<{{symbolFullName}}>(provider => new {{symbolFullName}}(provider));
+                services.AddSingleton<{{symbolFullName}}.Dispatch>(provider =>
+                {
+                    var featureSlice = new {{symbolFullName}}();
+                    return request => featureSlice.Configuration.Builder.Build(provider)(request);
+                });
             }
 
             //Members

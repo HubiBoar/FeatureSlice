@@ -5,8 +5,7 @@ namespace FeatureSlice.Handle2;
 public sealed record Dep0;
 public sealed record Dep1;
 
-public partial record Example() : FeatureSlice<Example.Request, Example.Response>
-(
+public partial record Example() : FeatureSlice<Example.Request, Example.Response> (
     Handle(static (Request request, Dep0 dep0, Dep1 dep1) => 
     {
         return new Response();
@@ -21,9 +20,9 @@ public partial record Example() : FeatureSlice<Example.Request, Example.Response
 
 public static class Test
 {
-    public static void Run(Example example)
+    public static void Run(Example.Dispatch example)
     {
-        example.Dispatch(new Example.Request());
+        example(new Example.Request());
     }
 
     public static void Register(IServiceCollection services)
@@ -33,9 +32,6 @@ public static class Test
 
     public static void Tests()
     {
-        var example = new Example()
-        {
-            Dispatch = (request) => null!
-        };
+        var example = new Example();
     }
 }

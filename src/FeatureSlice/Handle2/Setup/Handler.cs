@@ -9,7 +9,6 @@ public interface IFeatureSliceBase
 
     public interface IDispatch<TRequest, TResponse> : IRequest<TRequest>, IResponse<TResponse>
     {
-        public Func<TRequest, TResponse> Dispatch { get; init; } 
     }
 }
 
@@ -17,11 +16,9 @@ public abstract partial record FeatureSlice<TRequest, TResponse>(FeatureSlice<TR
 :
     IFeatureSliceBase.IDispatch<TRequest, TResponse>
 {
-    public required Func<TRequest, TResponse> Dispatch { get; init; }
-
     public sealed class Builder
     {
-        public Func<IServiceProvider, TRequest, TResponse> Dispatch { get; }
+        private Func<IServiceProvider, TRequest, TResponse> Dispatch { get; }
 
         private readonly List<IFeatureSliceSetup> _setups;
 
@@ -38,12 +35,14 @@ public abstract partial record FeatureSlice<TRequest, TResponse>(FeatureSlice<TR
             return _setups.OfType<T>().FirstOrDefault();
         }
 
-        public void Configure(IServiceProvider provider)
+        public Func<TRequest, TResponse> Build(IServiceProvider provider)
         {
             foreach (var setup in _setups)
             {
                 setup.Configure(provider);
             }
+
+            return request => Dispatch(provider, request);
         }
 
         public void AddSetup(IFeatureSliceSetup setup)
