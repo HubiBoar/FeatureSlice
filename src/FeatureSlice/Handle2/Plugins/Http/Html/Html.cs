@@ -7,7 +7,7 @@ public sealed record Html(string Value)
     public static Html Empty { get; } = new Html(string.Empty);
 }
 
-public interface IFeatureSliceHtml<TRequest> : IFeatureSliceSetup, IRouteBuilder
+public interface IFeatureSliceHtml<TRequest> : IFeatureSliceSetup 
 {
     Html GetHtml(TRequest request);
 }
@@ -19,8 +19,6 @@ internal sealed record FeatureSliceHtml<TRequest>(IRouteBuilder Builder, Func<TR
     public HttpMethod Method => Builder.Method;
 
     public void Configure(IServiceProvider provider) {}
-
-    public void Extend(Action<RouteHandlerBuilder> builder) => Builder.Extend(builder);
 
     public Html GetHtml(TRequest request) => Get(request);
 }
